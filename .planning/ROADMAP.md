@@ -94,7 +94,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 0/2 | Planning complete | - |
+| 1. Data Foundation | 1/2 | Executing | - |
 | 2. Core Tracking UI | 0/0 | Not started | - |
 | 3. Settings | 0/0 | Not started | - |
 | 4. Calendar & Streaks | 0/0 | Not started | - |
