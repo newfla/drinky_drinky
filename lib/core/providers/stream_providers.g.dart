@@ -8,14 +8,22 @@ part of 'stream_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Watch today's water entries as a reactive stream.
+/// Watch water entries for the given [dateKey] as a reactive stream.
+///
+/// Callers should pass [dateKey] computed from [DateTime.now()] at widget
+/// build time (e.g. via [todayDateKey()]) so the stream re-subscribes with
+/// the correct date on every rebuild and naturally refreshes after midnight.
 
-@ProviderFor(todayWaterEntries)
-final todayWaterEntriesProvider = TodayWaterEntriesProvider._();
+@ProviderFor(waterEntriesForDate)
+final waterEntriesForDateProvider = WaterEntriesForDateFamily._();
 
-/// Watch today's water entries as a reactive stream.
+/// Watch water entries for the given [dateKey] as a reactive stream.
+///
+/// Callers should pass [dateKey] computed from [DateTime.now()] at widget
+/// build time (e.g. via [todayDateKey()]) so the stream re-subscribes with
+/// the correct date on every rebuild and naturally refreshes after midnight.
 
-final class TodayWaterEntriesProvider
+final class WaterEntriesForDateProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<WaterEntryEntity>>,
@@ -25,20 +33,31 @@ final class TodayWaterEntriesProvider
     with
         $FutureModifier<List<WaterEntryEntity>>,
         $StreamProvider<List<WaterEntryEntity>> {
-  /// Watch today's water entries as a reactive stream.
-  TodayWaterEntriesProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'todayWaterEntriesProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+  /// Watch water entries for the given [dateKey] as a reactive stream.
+  ///
+  /// Callers should pass [dateKey] computed from [DateTime.now()] at widget
+  /// build time (e.g. via [todayDateKey()]) so the stream re-subscribes with
+  /// the correct date on every rebuild and naturally refreshes after midnight.
+  WaterEntriesForDateProvider._({
+    required WaterEntriesForDateFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'waterEntriesForDateProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
-  String debugGetCreateSourceHash() => _$todayWaterEntriesHash();
+  String debugGetCreateSourceHash() => _$waterEntriesForDateHash();
+
+  @override
+  String toString() {
+    return r'waterEntriesForDateProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -48,36 +67,97 @@ final class TodayWaterEntriesProvider
 
   @override
   Stream<List<WaterEntryEntity>> create(Ref ref) {
-    return todayWaterEntries(ref);
+    final argument = this.argument as String;
+    return waterEntriesForDate(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WaterEntriesForDateProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
   }
 }
 
-String _$todayWaterEntriesHash() => r'9d233dd27ff11e0707f2f35c277d67b6dd9aaaa8';
+String _$waterEntriesForDateHash() =>
+    r'26248f3eaf09c0019e02f086506d979b3e75641f';
 
-/// Watch today's total ml consumed as a reactive stream.
+/// Watch water entries for the given [dateKey] as a reactive stream.
+///
+/// Callers should pass [dateKey] computed from [DateTime.now()] at widget
+/// build time (e.g. via [todayDateKey()]) so the stream re-subscribes with
+/// the correct date on every rebuild and naturally refreshes after midnight.
 
-@ProviderFor(todayTotalMl)
-final todayTotalMlProvider = TodayTotalMlProvider._();
-
-/// Watch today's total ml consumed as a reactive stream.
-
-final class TodayTotalMlProvider
-    extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
-    with $FutureModifier<int>, $StreamProvider<int> {
-  /// Watch today's total ml consumed as a reactive stream.
-  TodayTotalMlProvider._()
+final class WaterEntriesForDateFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<WaterEntryEntity>>, String> {
+  WaterEntriesForDateFamily._()
     : super(
-        from: null,
-        argument: null,
         retry: null,
-        name: r'todayTotalMlProvider',
-        isAutoDispose: false,
+        name: r'waterEntriesForDateProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
+        isAutoDispose: true,
       );
 
+  /// Watch water entries for the given [dateKey] as a reactive stream.
+  ///
+  /// Callers should pass [dateKey] computed from [DateTime.now()] at widget
+  /// build time (e.g. via [todayDateKey()]) so the stream re-subscribes with
+  /// the correct date on every rebuild and naturally refreshes after midnight.
+
+  WaterEntriesForDateProvider call(String dateKey) =>
+      WaterEntriesForDateProvider._(argument: dateKey, from: this);
+
   @override
-  String debugGetCreateSourceHash() => _$todayTotalMlHash();
+  String toString() => r'waterEntriesForDateProvider';
+}
+
+/// Watch total ml consumed for the given [dateKey] as a reactive stream.
+///
+/// Callers should pass [dateKey] computed from [DateTime.now()] at widget
+/// build time (e.g. via [todayDateKey()]) so the stream re-subscribes with
+/// the correct date on every rebuild and naturally refreshes after midnight.
+
+@ProviderFor(totalMlForDate)
+final totalMlForDateProvider = TotalMlForDateFamily._();
+
+/// Watch total ml consumed for the given [dateKey] as a reactive stream.
+///
+/// Callers should pass [dateKey] computed from [DateTime.now()] at widget
+/// build time (e.g. via [todayDateKey()]) so the stream re-subscribes with
+/// the correct date on every rebuild and naturally refreshes after midnight.
+
+final class TotalMlForDateProvider
+    extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
+    with $FutureModifier<int>, $StreamProvider<int> {
+  /// Watch total ml consumed for the given [dateKey] as a reactive stream.
+  ///
+  /// Callers should pass [dateKey] computed from [DateTime.now()] at widget
+  /// build time (e.g. via [todayDateKey()]) so the stream re-subscribes with
+  /// the correct date on every rebuild and naturally refreshes after midnight.
+  TotalMlForDateProvider._({
+    required TotalMlForDateFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'totalMlForDateProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$totalMlForDateHash();
+
+  @override
+  String toString() {
+    return r'totalMlForDateProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -86,11 +166,52 @@ final class TodayTotalMlProvider
 
   @override
   Stream<int> create(Ref ref) {
-    return todayTotalMl(ref);
+    final argument = this.argument as String;
+    return totalMlForDate(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TotalMlForDateProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
   }
 }
 
-String _$todayTotalMlHash() => r'85f194149c99e49ef6839d0448c8ac927c85899d';
+String _$totalMlForDateHash() => r'46cf92c93dd6e8d396684c5d47de6b62ce61ffc7';
+
+/// Watch total ml consumed for the given [dateKey] as a reactive stream.
+///
+/// Callers should pass [dateKey] computed from [DateTime.now()] at widget
+/// build time (e.g. via [todayDateKey()]) so the stream re-subscribes with
+/// the correct date on every rebuild and naturally refreshes after midnight.
+
+final class TotalMlForDateFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<int>, String> {
+  TotalMlForDateFamily._()
+    : super(
+        retry: null,
+        name: r'totalMlForDateProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Watch total ml consumed for the given [dateKey] as a reactive stream.
+  ///
+  /// Callers should pass [dateKey] computed from [DateTime.now()] at widget
+  /// build time (e.g. via [todayDateKey()]) so the stream re-subscribes with
+  /// the correct date on every rebuild and naturally refreshes after midnight.
+
+  TotalMlForDateProvider call(String dateKey) =>
+      TotalMlForDateProvider._(argument: dateKey, from: this);
+
+  @override
+  String toString() => r'totalMlForDateProvider';
+}
 
 /// Watch user settings as a reactive stream.
 
