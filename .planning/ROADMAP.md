@@ -12,7 +12,7 @@ Drinky Drinky delivers a focused hydration tracker in five phases. We start with
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Data Foundation** - Drift schema, DAOs, repositories, and Riverpod providers that all features depend on
+- [x] **Phase 1: Data Foundation** - Drift schema, DAOs, repositories, and Riverpod providers that all features depend on
 - [ ] **Phase 2: Core Tracking UI** - Home screen with progress ring, quick-add presets, undo, and today's timeline
 - [ ] **Phase 3: Settings** - Daily target, preset customization, notification interval, and DND window configuration
 - [ ] **Phase 4: Calendar & Streaks** - Monthly history calendar with green/red days and consecutive streak counter
@@ -34,8 +34,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Scaffold project, Drift schema + DAOs + entities, wire repositories + providers + router
-- [ ] 01-02-PLAN.md -- DAO unit tests and human verification of full stack launch
+- [x] 01-01-PLAN.md -- Scaffold project, Drift schema + DAOs + entities, wire repositories + providers + router
+- [x] 01-02-PLAN.md -- DAO unit tests and human verification of full stack launch
 
 ### Phase 2: Core Tracking UI
 **Goal**: Users can open the app, log water with a single tap, see their progress update instantly, undo mistakes, and review today's intake history
@@ -94,7 +94,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 1/2 | Executing | - |
+| 1. Data Foundation | 2/2 | Complete | 2026-06-03 |
 | 2. Core Tracking UI | 0/0 | Not started | - |
 | 3. Settings | 0/0 | Not started | - |
 | 4. Calendar & Streaks | 0/0 | Not started | - |
