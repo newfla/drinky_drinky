@@ -84,8 +84,11 @@ class SettingsRepository {
         );
   }
 
-  /// Update a preset's amount.
-  Future<void> updatePreset(int id, int amountMl) {
+  /// Update a preset's amount. Returns the number of rows affected.
+  ///
+  /// Returns 0 if no row with [id] exists. Throws [ArgumentError] if
+  /// [amountMl] is not greater than 0.
+  Future<int> updatePreset(int id, int amountMl) {
     return _db.drinkPresetDao.updatePreset(id, amountMl);
   }
 }

@@ -16,8 +16,14 @@ class DrinkPresetDao extends DatabaseAccessor<AppDatabase>
         .watch();
   }
 
-  /// Update a preset's amount.
-  Future<void> updatePreset(int id, int amountMl) {
+  /// Update a preset's amount. Returns the number of rows affected.
+  ///
+  /// Returns 0 if no row with [id] exists (silent no-op). Throws
+  /// [ArgumentError] if [amountMl] is not greater than 0.
+  Future<int> updatePreset(int id, int amountMl) {
+    if (amountMl <= 0) {
+      throw ArgumentError.value(amountMl, 'amountMl', 'Must be greater than 0');
+    }
     return (update(drinkPresets)..where((t) => t.id.equals(id)))
         .write(DrinkPresetsCompanion(amountMl: Value(amountMl)));
   }
