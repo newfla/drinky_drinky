@@ -38,7 +38,25 @@ class SettingsRepository {
   }
 
   /// Update settings from domain entity.
+  ///
+  /// Throws [ArgumentError] if any field is outside its valid range.
   Future<void> updateSettings(UserSettingsEntity entity) {
+    if (entity.dailyTargetMl <= 0) {
+      throw ArgumentError('dailyTargetMl must be > 0');
+    }
+    if (entity.notificationIntervalMinutes <= 0) {
+      throw ArgumentError('notificationIntervalMinutes must be > 0');
+    }
+    if (entity.dndStartHour < 0 ||
+        entity.dndStartHour > 23 ||
+        entity.dndEndHour < 0 ||
+        entity.dndEndHour > 23 ||
+        entity.dndStartMinute < 0 ||
+        entity.dndStartMinute > 59 ||
+        entity.dndEndMinute < 0 ||
+        entity.dndEndMinute > 59) {
+      throw ArgumentError('DND hour/minute values out of valid range');
+    }
     return _db.userSettingsDao.updateSettings(
       UserSettingsCompanion(
         dailyTargetMl: Value(entity.dailyTargetMl),
