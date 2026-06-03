@@ -28,10 +28,20 @@ class WaterRepository {
       throw ArgumentError.value(
           amountMl, 'amountMl', 'Must be greater than 0');
     }
-    // T-01-02: Validate dateKey matches YYYY-MM-DD format
+    // T-01-02: Validate dateKey matches YYYY-MM-DD format and is a real calendar date.
     if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(dateKey)) {
       throw ArgumentError.value(
           dateKey, 'dateKey', 'Must match YYYY-MM-DD format');
+    }
+    final parsed = DateTime.tryParse(dateKey);
+    final roundTrip = parsed == null
+        ? null
+        : '${parsed.year.toString().padLeft(4, '0')}-'
+            '${parsed.month.toString().padLeft(2, '0')}-'
+            '${parsed.day.toString().padLeft(2, '0')}';
+    if (parsed == null || roundTrip != dateKey) {
+      throw ArgumentError.value(
+          dateKey, 'dateKey', 'Not a valid calendar date');
     }
     await _db.waterEntryDao.insertEntry(
       WaterEntriesCompanion.insert(
