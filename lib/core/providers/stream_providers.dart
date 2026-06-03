@@ -6,18 +6,27 @@ import 'repository_providers.dart';
 
 part 'stream_providers.g.dart';
 
-/// Watch today's water entries as a reactive stream.
-@Riverpod(keepAlive: true)
-Stream<List<WaterEntryEntity>> todayWaterEntries(Ref ref) {
+/// Watch water entries for the given [dateKey] as a reactive stream.
+///
+/// Callers should pass [dateKey] computed from [DateTime.now()] at widget
+/// build time (e.g. via [todayDateKey()]) so the stream re-subscribes with
+/// the correct date on every rebuild and naturally refreshes after midnight.
+@riverpod
+Stream<List<WaterEntryEntity>> waterEntriesForDate(
+    Ref ref, String dateKey) {
   final repo = ref.watch(waterRepositoryProvider);
-  return repo.watchEntriesForDate(_todayDateKey());
+  return repo.watchEntriesForDate(dateKey);
 }
 
-/// Watch today's total ml consumed as a reactive stream.
-@Riverpod(keepAlive: true)
-Stream<int> todayTotalMl(Ref ref) {
+/// Watch total ml consumed for the given [dateKey] as a reactive stream.
+///
+/// Callers should pass [dateKey] computed from [DateTime.now()] at widget
+/// build time (e.g. via [todayDateKey()]) so the stream re-subscribes with
+/// the correct date on every rebuild and naturally refreshes after midnight.
+@riverpod
+Stream<int> totalMlForDate(Ref ref, String dateKey) {
   final repo = ref.watch(waterRepositoryProvider);
-  return repo.watchTotalForDate(_todayDateKey());
+  return repo.watchTotalForDate(dateKey);
 }
 
 /// Watch user settings as a reactive stream.
@@ -35,7 +44,11 @@ Stream<List<DrinkPresetEntity>> drinkPresets(Ref ref) {
 }
 
 /// Format today's date as YYYY-MM-DD for date_key queries.
-String _todayDateKey() {
+///
+/// Call this at widget build time (e.g. inside [build] or a [ConsumerWidget]'s
+/// build method) so that the returned string reflects the actual current date
+/// each time the widget rebuilds, rather than a date captured once at startup.
+String todayDateKey() {
   final now = DateTime.now();
   return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 }
