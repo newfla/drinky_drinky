@@ -43,13 +43,18 @@ class WaterEntryDao extends DatabaseAccessor<AppDatabase>
         .go();
   }
 
-  /// Watch entries in a date range (for calendar view).
+  /// Watch entries in a date range (for calendar view), ordered by date then
+  /// time ascending.
   Stream<List<WaterEntry>> watchEntriesInRange(
       String startDateKey, String endDateKey) {
     return (select(waterEntries)
           ..where((t) =>
               t.dateKey.isBiggerOrEqualValue(startDateKey) &
-              t.dateKey.isSmallerOrEqualValue(endDateKey)))
+              t.dateKey.isSmallerOrEqualValue(endDateKey))
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.dateKey),
+            (t) => OrderingTerm.asc(t.loggedAt),
+          ]))
         .watch();
   }
 }
