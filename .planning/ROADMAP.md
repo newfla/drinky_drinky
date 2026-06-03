@@ -31,7 +31,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Repositories expose reactive streams that emit updates when underlying data changes
   4. Riverpod providers are wired to repositories so widgets can watch data without direct DB access
   5. Unit tests pass against an in-memory database covering all DAO operations
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md -- Scaffold project, Drift schema + DAOs + entities, wire repositories + providers + router
+- [ ] 01-02-PLAN.md -- DAO unit tests and human verification of full stack launch
 
 ### Phase 2: Core Tracking UI
 **Goal**: Users can open the app, log water with a single tap, see their progress update instantly, undo mistakes, and review today's intake history
@@ -90,7 +94,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 0/0 | Not started | - |
+| 1. Data Foundation | 0/2 | Planning complete | - |
 | 2. Core Tracking UI | 0/0 | Not started | - |
 | 3. Settings | 0/0 | Not started | - |
 | 4. Calendar & Streaks | 0/0 | Not started | - |
