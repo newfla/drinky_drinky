@@ -72,7 +72,7 @@ void main() {
         ),
       );
 
-      await db.waterEntryDao.deleteLastEntry();
+      await db.waterEntryDao.deleteLastEntry('2026-06-03');
 
       final entries =
           await db.waterEntryDao.watchEntriesForDate('2026-06-03').first;

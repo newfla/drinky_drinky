@@ -42,8 +42,9 @@ class WaterRepository {
     );
   }
 
-  /// Delete the most recent entry (undo). Returns count of rows deleted.
-  Future<int> deleteLastEntry() => _db.waterEntryDao.deleteLastEntry();
+  /// Delete the most recent entry for [dateKey] (undo). Returns count of rows deleted.
+  Future<int> deleteLastEntry(String dateKey) =>
+      _db.waterEntryDao.deleteLastEntry(dateKey);
 
   /// Watch total ml consumed for a specific date.
   Stream<int> watchTotalForDate(String dateKey) {

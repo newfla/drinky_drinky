@@ -31,9 +31,10 @@ class WaterEntryDao extends DatabaseAccessor<AppDatabase>
     return query.watchSingle().map((row) => row.read(totalMl) ?? 0);
   }
 
-  /// Delete the most recent entry (for undo). Returns number of rows deleted.
-  Future<int> deleteLastEntry() async {
+  /// Delete the most recent entry for [dateKey] (for undo). Returns number of rows deleted.
+  Future<int> deleteLastEntry(String dateKey) async {
     final lastEntry = await (select(waterEntries)
+          ..where((t) => t.dateKey.equals(dateKey))
           ..orderBy([(t) => OrderingTerm.desc(t.loggedAt)])
           ..limit(1))
         .getSingleOrNull();
