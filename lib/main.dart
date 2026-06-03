@@ -11,18 +11,19 @@ void main() {
   );
 }
 
-class DrinkyDrinkyApp extends StatelessWidget {
+class DrinkyDrinkyApp extends ConsumerWidget {
   const DrinkyDrinkyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
     return MaterialApp.router(
       title: 'Drinky Drinky',
       theme: ThemeData(
         colorSchemeSeed: Colors.blue,
         useMaterial3: true,
       ),
-      routerConfig: appRouter,
+      routerConfig: router,
     );
   }
 }
