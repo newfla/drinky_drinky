@@ -1,0 +1,46 @@
+name: drinky_drinky
+description: "A hydration tracking app that helps you meet your daily water goal."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^3.3.1
+  riverpod_annotation: ^4.0.2
+
+  # Database
+  drift: ^2.33.0
+  drift_flutter: ^0.3.0
+  path_provider: ^2.1.5
+
+  # Navigation
+  go_router: ^17.3.0
+
+  # Data Classes
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # Code Generation
+  build_runner: ^2.15.0
+  drift_dev: ^2.33.0
+  riverpod_generator: ^4.0.3
+  freezed: ^3.2.5
+
+  # Note: riverpod_lint and custom_lint excluded due to analyzer version
+  # conflict with drift_dev 2.33.0 (custom_lint needs analyzer ^8.0.0,
+  # drift_dev needs analyzer >=10.0.0). Re-add when versions align.
+
+flutter:
+  uses-material-design: true
