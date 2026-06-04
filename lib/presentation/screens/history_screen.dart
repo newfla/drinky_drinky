@@ -10,7 +10,7 @@ class HistoryScreen extends StatelessWidget {
         title: const Text('History'),
       ),
       body: const Center(
-        child: Text('History Screen'),
+        child: Text('Coming soon'),
       ),
     );
   }
