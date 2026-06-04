@@ -119,11 +119,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: presets.map((preset) {
-              return FilledButton(
-                onPressed: () => _onQuickAdd(preset.amountMl),
-                child: Text('+${preset.amountMl} ml'),
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: FilledButton(
+                    onPressed: () => _onQuickAdd(preset.amountMl),
+                    child: Text('+${preset.amountMl} ml'),
+                  ),
+                ),
               );
             }).toList(),
           ),
