@@ -55,7 +55,13 @@ Plans:
   3. User can undo the last water entry and see the progress bar revert accordingly
   4. User can see a chronological timeline of today's individual intakes with timestamp and amount below the progress bar
 
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+
+- [ ] 02-01-PLAN.md -- Navigation shell (StatefulShellRoute.indexedStack + NavigationBar), stub screens, add percent_indicator
+- [ ] 02-02-PLAN.md -- Full home screen: progress ring, quick-add buttons, SnackBar undo, timeline, midnight reset
+
 **UI hint**: yes
 
 ### Phase 3: Settings
@@ -112,7 +118,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 2/2 | Complete    | 2026-06-03 |
-| 2. Core Tracking UI | 0/0 | Not started | - |
+| 2. Core Tracking UI | 0/2 | Planned | - |
 | 3. Settings | 0/0 | Not started | - |
 | 4. Calendar & Streaks | 0/0 | Not started | - |
 | 5. Notifications | 0/0 | Not started | - |
