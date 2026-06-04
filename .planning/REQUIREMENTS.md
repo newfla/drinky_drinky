@@ -9,10 +9,10 @@ Requirements for initial release. Each maps to a roadmap phase.
 
 ### Home Screen
 
-- [ ] **HOME-01**: User can see their daily water intake progress via an animated circular progress bar showing current intake vs daily target
-- [ ] **HOME-02**: User can log water intake with a single tap via quick-add preset buttons showing the amount in ml
-- [ ] **HOME-03**: User can undo the last water entry from the home screen
-- [ ] **HOME-04**: User can see a chronological timeline of today's individual intakes with timestamp and amount below the progress bar
+- [x] **HOME-01**: User can see their daily water intake progress via an animated circular progress bar showing current intake vs daily target
+- [x] **HOME-02**: User can log water intake with a single tap via quick-add preset buttons showing the amount in ml
+- [x] **HOME-03**: User can undo the last water entry from the home screen
+- [x] **HOME-04**: User can see a chronological timeline of today's individual intakes with timestamp and amount below the progress bar
 
 ### Settings
 
@@ -73,10 +73,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HOME-01 | Phase 2 | Pending |
-| HOME-02 | Phase 2 | Pending |
-| HOME-03 | Phase 2 | Pending |
-| HOME-04 | Phase 2 | Pending |
+| HOME-01 | Phase 2 | Complete |
+| HOME-02 | Phase 2 | Complete |
+| HOME-03 | Phase 2 | Complete |
+| HOME-04 | Phase 2 | Complete |
 | SETT-01 | Phase 3 | Pending |
 | SETT-02 | Phase 3 | Pending |
 | SETT-03 | Phase 3 | Pending |
@@ -88,6 +88,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NOTF-03 | Phase 5 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 13 total
 - Mapped to phases: 13
 - Unmapped: 0 ✓
