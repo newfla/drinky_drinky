@@ -67,7 +67,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         data: (settings) {
           final totalMl = totalAsync.value ?? 0;
-          final entries = entriesAsync.value ?? <WaterEntryEntity>[];
+          final entries = (entriesAsync.value ?? <WaterEntryEntity>[]).reversed.toList();
           final presets = presetsAsync.value ?? <DrinkPresetEntity>[];
 
           return _buildContent(context, settings, totalMl, entries, presets);
