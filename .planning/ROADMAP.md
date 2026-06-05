@@ -14,7 +14,7 @@ Drinky Drinky delivers a focused hydration tracker in five phases. We start with
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Foundation** - Drift schema, DAOs, repositories, and Riverpod providers that all features depend on
-- [ ] **Phase 2: Core Tracking UI** - Home screen with progress ring, quick-add presets, undo, and today's timeline
+- [x] **Phase 2: Core Tracking UI** - Home screen with progress ring, quick-add presets, undo, and today's timeline (completed 2026-06-04)
 - [x] **Phase 3: Settings** - Daily target, preset customization, notification interval, and DND window configuration (completed 2026-06-05)
 - [x] **Phase 4: Calendar & Streaks** - Monthly history calendar with green/red days and consecutive streak counter (completed 2026-06-05)
 - [ ] **Phase 5: Notifications** - Scheduled reminders with DND awareness, permission flow, and auto-stop on goal
