@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Phase 4 Plan 01 complete — HistoryScreen with calendar & streaks implemented
-last_updated: "2026-06-05T14:10:00.000Z"
+status: complete
+stopped_at: Phase 5 Plan 01 complete — NotificationService, PermissionScreen, rolling-window scheduling, goal-reached cancel
+last_updated: "2026-06-05T15:30:00.000Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 5
-  completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
-  percent: 80
+  completed_phases: 5
+  total_plans: 7
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
-**Current focus:** Phase 03 — settings
+**Current focus:** v1.0 complete — all 13 requirements delivered across 5 phases
 
 ## Current Position
 
-Phase: 4
+Phase: 5
 Plan: 01 complete
-Status: Phase 04 Plan 01 complete
+Status: All phases complete — v1.0 milestone delivered
 Last activity: 2026-06-05
 
-Progress: [████████░░] 80%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -96,6 +96,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-05T14:10:00.000Z
-Stopped at: Phase 4 Plan 01 complete — HistoryScreen with calendar & streaks implemented (HIST-01, HIST-02)
-Resume file: None (Phase 4 has 1 plan; Phase 5 notifications is next)
+Last session: 2026-06-05T15:30:00.000Z
+Stopped at: Phase 5 Plan 01 complete — all v1.0 requirements delivered (NOTF-01, NOTF-02, NOTF-03)
+Resume file: None — milestone complete

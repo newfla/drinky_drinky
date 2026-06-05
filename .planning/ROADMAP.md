@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Core Tracking UI** - Home screen with progress ring, quick-add presets, undo, and today's timeline (completed 2026-06-04)
 - [x] **Phase 3: Settings** - Daily target, preset customization, notification interval, and DND window configuration (completed 2026-06-05)
 - [x] **Phase 4: Calendar & Streaks** - Monthly history calendar with green/red days and consecutive streak counter (completed 2026-06-05)
-- [ ] **Phase 5: Notifications** - Scheduled reminders with DND awareness, permission flow, and auto-stop on goal
+- [x] **Phase 5: Notifications** - Scheduled reminders with DND awareness, permission flow, and auto-stop on goal (completed 2026-06-05)
 
 ## Phase Details
 
@@ -118,11 +118,11 @@ Plans:
   3. App presents a dedicated permission request screen explaining why notifications are needed before triggering the system prompt
   4. Notifications automatically stop for the remainder of the day once the daily goal is reached
 
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 
-- [ ] 05-01-PLAN.md — NotificationService singleton, PermissionScreen, GoRouter redirect, HomeScreen goal-reached cancel, SettingsScreen reschedule triggers, Android manifest receivers, iOS delegate
+- [x] 05-01-PLAN.md — NotificationService singleton, PermissionScreen, GoRouter redirect, HomeScreen goal-reached cancel, SettingsScreen reschedule triggers, Android manifest receivers, iOS delegate
 
 ## Progress
 
@@ -135,4 +135,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Core Tracking UI | 2/2 | Complete    | 2026-06-04 |
 | 3. Settings | 1/1 | Complete    | 2026-06-05 |
 | 4. Calendar & Streaks | 1/1 | Complete    | 2026-06-05 |
-| 5. Notifications | 0/1 | In progress | - |
+| 5. Notifications | 1/1 | Complete    | 2026-06-05 |

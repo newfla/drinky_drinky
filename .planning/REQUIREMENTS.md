@@ -28,9 +28,9 @@ Requirements for initial release. Each maps to a roadmap phase.
 
 ### Notifications
 
-- [ ] **NOTF-01**: App sends reminder notifications at the user-configured interval, excluding the DND window and after the daily goal is reached
-- [ ] **NOTF-02**: App shows a dedicated permission request screen (pre-permission) explaining why notifications are needed before triggering the system prompt
-- [ ] **NOTF-03**: Notifications automatically stop for the remainder of the day once the daily goal is reached
+- [x] **NOTF-01**: App sends reminder notifications at the user-configured interval, excluding the DND window and after the daily goal is reached
+- [x] **NOTF-02**: App shows a dedicated permission request screen (pre-permission) explaining why notifications are needed before triggering the system prompt
+- [x] **NOTF-03**: Notifications automatically stop for the remainder of the day once the daily goal is reached
 
 ## v2 Requirements
 
@@ -83,9 +83,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SETT-04 | Phase 3 | Complete |
 | HIST-01 | Phase 4 | Complete |
 | HIST-02 | Phase 4 | Complete |
-| NOTF-01 | Phase 5 | Pending |
-| NOTF-02 | Phase 5 | Pending |
-| NOTF-03 | Phase 5 | Pending |
+| NOTF-01 | Phase 5 | Complete |
+| NOTF-02 | Phase 5 | Complete |
+| NOTF-03 | Phase 5 | Complete |
 
 **Coverage:**
 
