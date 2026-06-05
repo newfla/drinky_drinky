@@ -520,17 +520,11 @@ String _formatTime(BuildContext context, int hour, int minute) {
 | A3 | `IgnorePointer` + `Opacity(opacity: 0.38)` is the standard Material disabled-row pattern | Architecture Patterns | Low -- straightforward Flutter widgets; opacity 0.38 is the M3 disabled alpha |
 | A4 | `ref.read()` must be used in callbacks, `ref.watch()` only in `build()` | Pitfalls | Low -- core Riverpod contract; unlikely to change |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Slider label overlay vs inline label**
-   - What we know: D-05 and D-11 specify "a label above the slider shows the current value." The Slider widget has a built-in `label` parameter that shows a tooltip-style overlay during drag.
-   - What's unclear: Whether "above" means a separate `Text` widget placed above the Slider in the Column, or the built-in Slider label popup.
-   - Recommendation: Use a separate `Text` widget above the Slider in the layout, as D-05 says "A label above the slider shows the current value in ml, updating live as the user drags." This implies persistent visibility, not just during drag. The built-in label only shows during interaction.
+1. **Slider label overlay vs inline label** — RESOLVED: Use a separate persistent `Text` widget above the Slider in the Column layout. D-05/D-11 say "updating live as the user drags," implying persistent visibility, not the built-in tooltip overlay which only shows during drag.
 
-2. **Preset dialog pre-fill: text selection on open**
-   - What we know: D-09 says "pre-filled with the current amount"
-   - What's unclear: Whether the text should be pre-selected (so the user can immediately type a replacement) or cursor placed at end.
-   - Recommendation: Pre-select all text via `controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length)` in the dialog's `initState` or via `autofocus: true` on the TextField. This is standard UX for edit-in-place.
+2. **Preset dialog pre-fill: text selection on open** — RESOLVED: Pre-select all text via `controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length)` assigned after controller creation. Standard edit-in-place UX so the user can immediately type a replacement value.
 
 ## Security Domain
 

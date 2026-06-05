@@ -72,9 +72,9 @@ Plans:
 **Requirements**: SETT-01, SETT-02, SETT-03, SETT-04
 **Success Criteria** (what must be TRUE):
 
-  1. User can set a daily water target in ml (displayed also as L) and see it reflected on the home screen progress bar
+  1. User can set a daily water target in ml and see it reflected on the home screen progress bar
   2. User can customize the amount for each quick-add preset button and see updated labels on the home screen
-  3. User can configure the notification reminder interval in minutes or hours
+  3. User can configure the notification reminder interval in minutes
   4. User can define a DND window with start and end times during which no notifications will be sent
 
 **Plans:** 1 plan
@@ -95,10 +95,7 @@ Plans:
   2. User can navigate between months to review historical hydration data
   3. User can see their current streak of consecutive days with the daily goal reached
 
-**Plans:** 1 plan
-
-Plans:
-- [ ] 03-01-PLAN.md — Full settings screen: daily target slider, preset edit dialogs, notification interval slider, DND toggle + time pickers
+**Plans**: TBD
 **UI hint**: yes
 
 ### Phase 5: Notifications
@@ -114,10 +111,7 @@ Plans:
   3. App presents a dedicated permission request screen explaining why notifications are needed before triggering the system prompt
   4. Notifications automatically stop for the remainder of the day once the daily goal is reached
 
-**Plans:** 1 plan
-
-Plans:
-- [ ] 03-01-PLAN.md — Full settings screen: daily target slider, preset edit dialogs, notification interval slider, DND toggle + time pickers
+**Plans**: TBD
 
 ## Progress
 
