@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 import '../database/app_database.dart';
 import '../../domain/entities/water_entry_entity.dart';
 
@@ -60,4 +62,26 @@ class WaterRepository {
   Stream<int> watchTotalForDate(String dateKey) {
     return _db.waterEntryDao.watchTotalForDate(dateKey);
   }
+
+  /// Watch daily totals for a date range, grouped by dateKey.
+  ///
+  /// Returns a [Stream<Map<String, int>>] where key = dateKey (YYYY-MM-DD)
+  /// and value = sum of amountMl for that day. Days with no entries are
+  /// absent from the map (not zero). Used by both calendar and streak
+  /// providers (D-01, D-02).
+  Stream<Map<String, int>> watchDailyTotalsInRange(
+      String startDateKey, String endDateKey) {
+    return _db.waterEntryDao
+        .watchEntriesInRange(startDateKey, endDateKey)
+        .map((entries) {
+      final grouped = groupBy(entries, (e) => e.dateKey);
+      return grouped.map((dateKey, dayEntries) =>
+          MapEntry(dateKey, dayEntries.fold(0, (sum, e) => sum + e.amountMl)));
+    });
+  }
+
+  /// Get the earliest dateKey in the database. Pass-through to DAO.
+  /// Returns null if no entries exist (new user) per D-05.
+  Future<String?> getEarliestDateKey() =>
+      _db.waterEntryDao.getEarliestDateKey();
 }

@@ -57,4 +57,14 @@ class WaterEntryDao extends DatabaseAccessor<AppDatabase>
           ]))
         .watch();
   }
+
+  /// Get the earliest dateKey in the water_entries table.
+  /// Returns null if no entries exist (new user).
+  Future<String?> getEarliestDateKey() async {
+    final result = await (select(waterEntries)
+          ..orderBy([(t) => OrderingTerm.asc(t.dateKey)])
+          ..limit(1))
+        .getSingleOrNull();
+    return result?.dateKey;
+  }
 }

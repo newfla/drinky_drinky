@@ -25,6 +25,7 @@ dependencies:
 
   # UI Components
   percent_indicator: ^4.2.5
+  table_calendar: ^3.2.0
 
   # Data Classes
   freezed_annotation: ^3.1.0
