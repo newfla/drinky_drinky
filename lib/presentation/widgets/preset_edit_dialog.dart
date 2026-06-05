@@ -4,72 +4,82 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/repository_providers.dart';
 import '../../domain/entities/drink_preset_entity.dart';
 
-/// Shows an [AlertDialog] for editing a single preset amount with validation.
-///
-/// The dialog pre-fills the current [preset] amount and validates that the
-/// entered value is between 50 and 2000 ml. The Confirm button is disabled
-/// when the value is invalid. On confirm, the preset is immediately saved
-/// via [SettingsRepository.updatePreset].
 Future<void> showPresetEditDialog(
   BuildContext context,
   WidgetRef ref,
   DrinkPresetEntity preset,
 ) async {
-  final controller = TextEditingController(text: preset.amountMl.toString());
-  // Pre-select all text so the user can immediately type a replacement value.
-  controller.selection = TextSelection(
-    baseOffset: 0,
-    extentOffset: controller.text.length,
-  );
-
   await showDialog<void>(
     context: context,
-    builder: (dialogContext) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          final text = controller.text;
-          final parsed = int.tryParse(text);
-          final isValid = parsed != null && parsed >= 50 && parsed <= 2000;
-          final showError = text.isNotEmpty && !isValid;
-          // Capture validated value to avoid null assertion below.
-          final validatedAmount = isValid ? parsed : null;
-
-          return AlertDialog(
-            title: Text('Edit Preset ${preset.sortOrder + 1}'),
-            content: TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              decoration: InputDecoration(
-                labelText: 'Amount (ml)',
-                suffixText: 'ml',
-                errorText:
-                    showError ? 'Enter a value between 50 and 2000' : null,
-              ),
-              onChanged: (_) => setDialogState(() {}),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: validatedAmount != null
-                    ? () {
-                        ref
-                            .read(settingsRepositoryProvider)
-                            .updatePreset(preset.id, validatedAmount);
-                        Navigator.of(dialogContext).pop();
-                      }
-                    : null,
-                child: const Text('Confirm'),
-              ),
-            ],
-          );
-        },
-      );
-    },
+    builder: (dialogContext) => _PresetEditDialog(ref: ref, preset: preset),
   );
+}
 
-  controller.dispose();
+class _PresetEditDialog extends StatefulWidget {
+  const _PresetEditDialog({required this.ref, required this.preset});
+  final WidgetRef ref;
+  final DrinkPresetEntity preset;
+
+  @override
+  State<_PresetEditDialog> createState() => _PresetEditDialogState();
+}
+
+class _PresetEditDialogState extends State<_PresetEditDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.preset.amountMl.toString());
+    _controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _controller.text.length,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = _controller.text;
+    final parsed = int.tryParse(text);
+    final isValid = parsed != null && parsed >= 50 && parsed <= 2000;
+    final showError = text.isNotEmpty && !isValid;
+
+    return AlertDialog(
+      title: Text('Edit Preset ${widget.preset.sortOrder + 1}'),
+      content: TextField(
+        controller: _controller,
+        keyboardType: TextInputType.number,
+        autofocus: true,
+        decoration: InputDecoration(
+          labelText: 'Amount (ml)',
+          suffixText: 'ml',
+          errorText: showError ? 'Enter a value between 50 and 2000' : null,
+        ),
+        onChanged: (_) => setState(() {}),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: isValid
+              ? () {
+                  widget.ref
+                      .read(settingsRepositoryProvider)
+                      .updatePreset(widget.preset.id, parsed);
+                  Navigator.of(context).pop();
+                }
+              : null,
+          child: const Text('Confirm'),
+        ),
+      ],
+    );
+  }
 }
