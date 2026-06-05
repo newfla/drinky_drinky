@@ -309,7 +309,7 @@ String _$drinkPresetsHash() => r'd662ffa8b2558fe41a71fdd2c5a6dae4719bf01e';
 ///
 /// Family provider: each (year, month) combination is cached separately by
 /// Riverpod. Navigating back to a previously visited month does not re-query
-/// (D-07). Returns a Map<dateKey, totalMl> where absent keys mean no data
+/// (D-07). Returns a `Map<dateKey, totalMl>` where absent keys mean no data
 /// for that day (D-01).
 
 @ProviderFor(calendarMonth)
@@ -319,7 +319,7 @@ final calendarMonthProvider = CalendarMonthFamily._();
 ///
 /// Family provider: each (year, month) combination is cached separately by
 /// Riverpod. Navigating back to a previously visited month does not re-query
-/// (D-07). Returns a Map<dateKey, totalMl> where absent keys mean no data
+/// (D-07). Returns a `Map<dateKey, totalMl>` where absent keys mean no data
 /// for that day (D-01).
 
 final class CalendarMonthProvider
@@ -334,7 +334,7 @@ final class CalendarMonthProvider
   ///
   /// Family provider: each (year, month) combination is cached separately by
   /// Riverpod. Navigating back to a previously visited month does not re-query
-  /// (D-07). Returns a Map<dateKey, totalMl> where absent keys mean no data
+  /// (D-07). Returns a `Map<dateKey, totalMl>` where absent keys mean no data
   /// for that day (D-01).
   CalendarMonthProvider._({
     required CalendarMonthFamily super.from,
@@ -386,7 +386,7 @@ String _$calendarMonthHash() => r'c6e7445d9773a6a3f6fc2b67242dd305e054c134';
 ///
 /// Family provider: each (year, month) combination is cached separately by
 /// Riverpod. Navigating back to a previously visited month does not re-query
-/// (D-07). Returns a Map<dateKey, totalMl> where absent keys mean no data
+/// (D-07). Returns a `Map<dateKey, totalMl>` where absent keys mean no data
 /// for that day (D-01).
 
 final class CalendarMonthFamily extends $Family
@@ -404,7 +404,7 @@ final class CalendarMonthFamily extends $Family
   ///
   /// Family provider: each (year, month) combination is cached separately by
   /// Riverpod. Navigating back to a previously visited month does not re-query
-  /// (D-07). Returns a Map<dateKey, totalMl> where absent keys mean no data
+  /// (D-07). Returns a `Map<dateKey, totalMl>` where absent keys mean no data
   /// for that day (D-01).
 
   CalendarMonthProvider call(int year, int month) =>

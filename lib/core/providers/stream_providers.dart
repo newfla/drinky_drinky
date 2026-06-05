@@ -63,7 +63,7 @@ String todayDateKey() {
 ///
 /// Family provider: each (year, month) combination is cached separately by
 /// Riverpod. Navigating back to a previously visited month does not re-query
-/// (D-07). Returns a Map<dateKey, totalMl> where absent keys mean no data
+/// (D-07). Returns a `Map<dateKey, totalMl>` where absent keys mean no data
 /// for that day (D-01).
 @riverpod
 Stream<Map<String, int>> calendarMonth(Ref ref, int year, int month) {
