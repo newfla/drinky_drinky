@@ -77,7 +77,10 @@ Plans:
   3. User can configure the notification reminder interval in minutes or hours
   4. User can define a DND window with start and end times during which no notifications will be sent
 
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 03-01-PLAN.md — Full settings screen: daily target slider, preset edit dialogs, notification interval slider, DND toggle + time pickers
 **UI hint**: yes
 
 ### Phase 4: Calendar & Streaks
@@ -92,7 +95,10 @@ Plans:
   2. User can navigate between months to review historical hydration data
   3. User can see their current streak of consecutive days with the daily goal reached
 
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 03-01-PLAN.md — Full settings screen: daily target slider, preset edit dialogs, notification interval slider, DND toggle + time pickers
 **UI hint**: yes
 
 ### Phase 5: Notifications
@@ -108,7 +114,10 @@ Plans:
   3. App presents a dedicated permission request screen explaining why notifications are needed before triggering the system prompt
   4. Notifications automatically stop for the remainder of the day once the daily goal is reached
 
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 03-01-PLAN.md — Full settings screen: daily target slider, preset edit dialogs, notification interval slider, DND toggle + time pickers
 
 ## Progress
 
