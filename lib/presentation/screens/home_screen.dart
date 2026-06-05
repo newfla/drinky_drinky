@@ -6,6 +6,7 @@ import 'package:percent_indicator/percent_indicator.dart';
 
 import '../../core/providers/repository_providers.dart';
 import '../../core/providers/stream_providers.dart';
+import '../../core/services/notification_service.dart';
 import '../../domain/entities/drink_preset_entity.dart';
 import '../../domain/entities/user_settings_entity.dart';
 import '../../domain/entities/water_entry_entity.dart';
@@ -28,13 +29,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _dateKey = todayDateKey();
 
     _lifecycleListener = AppLifecycleListener(
-      onResume: _checkDateChange,
+      onResume: () {
+        _checkDateChange();
+        _rescheduleNotifications();
+      },
     );
 
     _midnightTimer = Timer.periodic(
       const Duration(seconds: 60),
       (_) => _checkDateChange(),
     );
+  }
+
+  void _rescheduleNotifications() async {
+    final settings = ref.read(userSettingsProvider).value;
+    if (settings == null) return;
+    await NotificationService.instance.scheduleWindow(settings);
   }
 
   void _checkDateChange() {
@@ -57,6 +67,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final totalAsync = ref.watch(totalMlForDateProvider(_dateKey));
     final entriesAsync = ref.watch(waterEntriesForDateProvider(_dateKey));
     final presetsAsync = ref.watch(drinkPresetsProvider);
+
+    // NOTF-03 / D-07: Goal-reached auto-stop — cancel all pending notifications
+    // when today's total first crosses the daily target (while app is open).
+    // Guard: target > 0 prevents cancelling when no target is set.
+    // Crossing check: only fires on the transition from below → at/above target
+    // to avoid calling cancelAll() on every subsequent log entry.
+    ref.listen<AsyncValue<int>>(
+      totalMlForDateProvider(_dateKey),
+      (previous, next) {
+        final prev = previous?.value ?? 0;
+        final curr = next.value ?? 0;
+        final target =
+            ref.read(userSettingsProvider).value?.dailyTargetMl ?? 0;
+        if (target > 0 && prev < target && curr >= target) {
+          NotificationService.instance.cancelAll();
+        }
+      },
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Drinky Drinky')),
