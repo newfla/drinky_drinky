@@ -118,7 +118,11 @@ Plans:
   3. App presents a dedicated permission request screen explaining why notifications are needed before triggering the system prompt
   4. Notifications automatically stop for the remainder of the day once the daily goal is reached
 
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+
+- [ ] 05-01-PLAN.md — NotificationService singleton, PermissionScreen, GoRouter redirect, HomeScreen goal-reached cancel, SettingsScreen reschedule triggers, Android manifest receivers, iOS delegate
 
 ## Progress
 
@@ -131,4 +135,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Core Tracking UI | 2/2 | Complete    | 2026-06-04 |
 | 3. Settings | 1/1 | Complete    | 2026-06-05 |
 | 4. Calendar & Streaks | 1/1 | Complete    | 2026-06-05 |
-| 5. Notifications | 0/0 | Not started | - |
+| 5. Notifications | 0/1 | In progress | - |
