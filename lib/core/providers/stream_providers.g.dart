@@ -304,3 +304,236 @@ final class DrinkPresetsProvider
 }
 
 String _$drinkPresetsHash() => r'd662ffa8b2558fe41a71fdd2c5a6dae4719bf01e';
+
+/// Watch daily totals for a specific month as a reactive stream.
+///
+/// Family provider: each (year, month) combination is cached separately by
+/// Riverpod. Navigating back to a previously visited month does not re-query
+/// (D-07). Returns a Map<dateKey, totalMl> where absent keys mean no data
+/// for that day (D-01).
+
+@ProviderFor(calendarMonth)
+final calendarMonthProvider = CalendarMonthFamily._();
+
+/// Watch daily totals for a specific month as a reactive stream.
+///
+/// Family provider: each (year, month) combination is cached separately by
+/// Riverpod. Navigating back to a previously visited month does not re-query
+/// (D-07). Returns a Map<dateKey, totalMl> where absent keys mean no data
+/// for that day (D-01).
+
+final class CalendarMonthProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Map<String, int>>,
+          Map<String, int>,
+          Stream<Map<String, int>>
+        >
+    with $FutureModifier<Map<String, int>>, $StreamProvider<Map<String, int>> {
+  /// Watch daily totals for a specific month as a reactive stream.
+  ///
+  /// Family provider: each (year, month) combination is cached separately by
+  /// Riverpod. Navigating back to a previously visited month does not re-query
+  /// (D-07). Returns a Map<dateKey, totalMl> where absent keys mean no data
+  /// for that day (D-01).
+  CalendarMonthProvider._({
+    required CalendarMonthFamily super.from,
+    required (int, int) super.argument,
+  }) : super(
+         retry: null,
+         name: r'calendarMonthProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$calendarMonthHash();
+
+  @override
+  String toString() {
+    return r'calendarMonthProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<Map<String, int>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<Map<String, int>> create(Ref ref) {
+    final argument = this.argument as (int, int);
+    return calendarMonth(ref, argument.$1, argument.$2);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CalendarMonthProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$calendarMonthHash() => r'c6e7445d9773a6a3f6fc2b67242dd305e054c134';
+
+/// Watch daily totals for a specific month as a reactive stream.
+///
+/// Family provider: each (year, month) combination is cached separately by
+/// Riverpod. Navigating back to a previously visited month does not re-query
+/// (D-07). Returns a Map<dateKey, totalMl> where absent keys mean no data
+/// for that day (D-01).
+
+final class CalendarMonthFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<Map<String, int>>, (int, int)> {
+  CalendarMonthFamily._()
+    : super(
+        retry: null,
+        name: r'calendarMonthProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Watch daily totals for a specific month as a reactive stream.
+  ///
+  /// Family provider: each (year, month) combination is cached separately by
+  /// Riverpod. Navigating back to a previously visited month does not re-query
+  /// (D-07). Returns a Map<dateKey, totalMl> where absent keys mean no data
+  /// for that day (D-01).
+
+  CalendarMonthProvider call(int year, int month) =>
+      CalendarMonthProvider._(argument: (year, month), from: this);
+
+  @override
+  String toString() => r'calendarMonthProvider';
+}
+
+/// Watch the current streak of consecutive days where the daily goal was met.
+///
+/// Counts backwards from yesterday (today is incomplete, D-08). Queries the
+/// full history from 2020-01-01 as a safe lower bound. Returns 0 when no
+/// goal is set (target <= 0, Pitfall 6).
+
+@ProviderFor(streak)
+final streakProvider = StreakProvider._();
+
+/// Watch the current streak of consecutive days where the daily goal was met.
+///
+/// Counts backwards from yesterday (today is incomplete, D-08). Queries the
+/// full history from 2020-01-01 as a safe lower bound. Returns 0 when no
+/// goal is set (target <= 0, Pitfall 6).
+
+final class StreakProvider
+    extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
+    with $FutureModifier<int>, $StreamProvider<int> {
+  /// Watch the current streak of consecutive days where the daily goal was met.
+  ///
+  /// Counts backwards from yesterday (today is incomplete, D-08). Queries the
+  /// full history from 2020-01-01 as a safe lower bound. Returns 0 when no
+  /// goal is set (target <= 0, Pitfall 6).
+  StreakProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'streakProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$streakHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<int> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<int> create(Ref ref) {
+    return streak(ref);
+  }
+}
+
+String _$streakHash() => r'84d377d912f95bb3678b67b67aef08e99e4e6f30';
+
+/// Persist the focused month in the calendar across tab switches.
+///
+/// keepAlive: true so the state survives when HistoryScreen is not visible
+/// (D-09). Initialized to the current month. The widget calls
+/// [ref.read(focusedMonthProvider.notifier).set(month)] on page change.
+
+@ProviderFor(FocusedMonth)
+final focusedMonthProvider = FocusedMonthProvider._();
+
+/// Persist the focused month in the calendar across tab switches.
+///
+/// keepAlive: true so the state survives when HistoryScreen is not visible
+/// (D-09). Initialized to the current month. The widget calls
+/// [ref.read(focusedMonthProvider.notifier).set(month)] on page change.
+final class FocusedMonthProvider
+    extends $NotifierProvider<FocusedMonth, DateTime> {
+  /// Persist the focused month in the calendar across tab switches.
+  ///
+  /// keepAlive: true so the state survives when HistoryScreen is not visible
+  /// (D-09). Initialized to the current month. The widget calls
+  /// [ref.read(focusedMonthProvider.notifier).set(month)] on page change.
+  FocusedMonthProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'focusedMonthProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$focusedMonthHash();
+
+  @$internal
+  @override
+  FocusedMonth create() => FocusedMonth();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DateTime value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DateTime>(value),
+    );
+  }
+}
+
+String _$focusedMonthHash() => r'a13edcbf60c2e7a6ff991fec7f1d20ed9f9e3281';
+
+/// Persist the focused month in the calendar across tab switches.
+///
+/// keepAlive: true so the state survives when HistoryScreen is not visible
+/// (D-09). Initialized to the current month. The widget calls
+/// [ref.read(focusedMonthProvider.notifier).set(month)] on page change.
+
+abstract class _$FocusedMonth extends $Notifier<DateTime> {
+  DateTime build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<DateTime, DateTime>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<DateTime, DateTime>,
+              DateTime,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

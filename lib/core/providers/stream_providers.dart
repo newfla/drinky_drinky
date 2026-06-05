@@ -6,6 +6,12 @@ import 'repository_providers.dart';
 
 part 'stream_providers.g.dart';
 
+/// Local helper to convert an arbitrary DateTime to a dateKey string (YYYY-MM-DD).
+/// Matches the format used by [todayDateKey()].
+String _toDateKey(DateTime d) {
+  return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+}
+
 /// Watch water entries for the given [dateKey] as a reactive stream.
 ///
 /// Callers should pass [dateKey] computed from [DateTime.now()] at widget
@@ -51,4 +57,77 @@ Stream<List<DrinkPresetEntity>> drinkPresets(Ref ref) {
 String todayDateKey() {
   final now = DateTime.now();
   return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+}
+
+/// Watch daily totals for a specific month as a reactive stream.
+///
+/// Family provider: each (year, month) combination is cached separately by
+/// Riverpod. Navigating back to a previously visited month does not re-query
+/// (D-07). Returns a Map<dateKey, totalMl> where absent keys mean no data
+/// for that day (D-01).
+@riverpod
+Stream<Map<String, int>> calendarMonth(Ref ref, int year, int month) {
+  final repo = ref.watch(waterRepositoryProvider);
+  final firstDay = DateTime(year, month, 1);
+  final lastDay = DateTime(year, month + 1, 0); // day 0 = last day of prev month
+  final startKey = _toDateKey(firstDay);
+  final endKey = _toDateKey(lastDay);
+  return repo.watchDailyTotalsInRange(startKey, endKey);
+}
+
+/// Watch the current streak of consecutive days where the daily goal was met.
+///
+/// Counts backwards from yesterday (today is incomplete, D-08). Queries the
+/// full history from 2020-01-01 as a safe lower bound. Returns 0 when no
+/// goal is set (target <= 0, Pitfall 6).
+@riverpod
+Stream<int> streak(Ref ref) async* {
+  final repo = ref.watch(waterRepositoryProvider);
+  final settings = ref.watch(userSettingsProvider).value;
+
+  if (settings == null) {
+    yield 0;
+    return;
+  }
+
+  final dailyTarget = settings.dailyTargetMl;
+  if (dailyTarget <= 0) {
+    yield 0;
+    return;
+  }
+
+  final yesterday = DateTime.now().subtract(const Duration(days: 1));
+  final yesterdayKey = _toDateKey(yesterday);
+
+  yield* repo
+      .watchDailyTotalsInRange('2020-01-01', yesterdayKey)
+      .map((totals) {
+    int count = 0;
+    var current = yesterday;
+    while (true) {
+      final key = _toDateKey(current);
+      final total = totals[key] ?? 0;
+      if (total >= dailyTarget) {
+        count++;
+        current = current.subtract(const Duration(days: 1));
+      } else {
+        break;
+      }
+    }
+    return count;
+  });
+}
+
+/// Persist the focused month in the calendar across tab switches.
+///
+/// keepAlive: true so the state survives when HistoryScreen is not visible
+/// (D-09). Initialized to the current month. The widget calls
+/// [ref.read(focusedMonthProvider.notifier).set(month)] on page change.
+@Riverpod(keepAlive: true)
+class FocusedMonth extends _$FocusedMonth {
+  @override
+  DateTime build() => DateTime.now();
+
+  /// Update the focused month (called from TableCalendar.onPageChanged).
+  void set(DateTime month) => state = month;
 }
