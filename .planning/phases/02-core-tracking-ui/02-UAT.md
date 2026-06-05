@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 02-core-tracking-ui
 source: [02-01-SUMMARY.md, 02-02-SUMMARY.md]
 started: 2026-06-04T15:30:00Z
@@ -71,11 +71,14 @@ blocked: 0
 ## Gaps
 
 - truth: "After logging past 100%, ring center text shows actual total (e.g. '2200 / 2000 ml'), not 'Goal reached!'"
-  status: failed
+  status: fixed
   reason: "User reported: il testo nel ring rimane 'Goal reached!'"
   severity: major
   test: 8
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "home_screen.dart:111 — condition `isGoalMet` (totalMl >= target) kept showing 'Goal reached!' for any amount at or above target; should only show it when totalMl == target exactly"
+  artifacts:
+    - path: "lib/presentation/screens/home_screen.dart"
+      issue: "Line 111: `isGoalMet ? 'Goal reached!' : ...` never reverts to ml display once goal is met"
+  missing:
+    - "Change condition to `isGoalMet && totalMl == target` so over-goal amounts show actual total"
   debug_session: ""
