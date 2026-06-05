@@ -53,6 +53,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _dailyGoalCard(context, settings),
           _sectionLabel(context, 'QUICK-ADD PRESETS'),
           _presetsCard(context, presets),
+          _sectionLabel(context, 'NOTIFICATIONS'),
+          _notificationsCard(context, settings),
         ],
       ),
     );
@@ -118,5 +120,135 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         }).toList(),
       ),
     );
+  }
+
+  Widget _notificationsCard(
+    BuildContext context,
+    UserSettingsEntity settings,
+  ) {
+    final currentInterval =
+        _intervalDrag ?? settings.notificationIntervalMinutes.toDouble();
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Interval slider (D-11)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${currentInterval.toInt()} min',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Slider(
+                  value: currentInterval,
+                  min: 5,
+                  max: 240,
+                  divisions: 47,
+                  onChanged: (val) {
+                    setState(() => _intervalDrag = val);
+                  },
+                  onChangeEnd: (val) {
+                    setState(() => _intervalDrag = null);
+                    ref.read(settingsRepositoryProvider).updateSettings(
+                          settings.copyWith(
+                            notificationIntervalMinutes: val.toInt(),
+                          ),
+                        );
+                  },
+                ),
+              ],
+            ),
+          ),
+          // DND toggle (D-12)
+          SwitchListTile(
+            title: const Text('Do Not Disturb'),
+            subtitle: Text(settings.dndEnabled ? 'On' : 'Off'),
+            value: settings.dndEnabled,
+            onChanged: (val) {
+              ref.read(settingsRepositoryProvider).updateSettings(
+                    settings.copyWith(dndEnabled: val),
+                  );
+            },
+          ),
+          // DND time rows (D-12/D-13) -- greyed out when disabled
+          IgnorePointer(
+            ignoring: !settings.dndEnabled,
+            child: Opacity(
+              opacity: settings.dndEnabled ? 1.0 : 0.38,
+              child: Column(
+                children: [
+                  ListTile(
+                    title: const Text('Start time'),
+                    trailing: Text(
+                      _formatTime(
+                        context,
+                        settings.dndStartHour,
+                        settings.dndStartMinute,
+                      ),
+                    ),
+                    onTap: () =>
+                        _pickDndTime(isStart: true, settings: settings),
+                  ),
+                  ListTile(
+                    title: const Text('End time'),
+                    trailing: Text(
+                      _formatTime(
+                        context,
+                        settings.dndEndHour,
+                        settings.dndEndMinute,
+                      ),
+                    ),
+                    onTap: () =>
+                        _pickDndTime(isStart: false, settings: settings),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickDndTime({
+    required bool isStart,
+    required UserSettingsEntity settings,
+  }) async {
+    final initial = isStart
+        ? TimeOfDay(
+            hour: settings.dndStartHour, minute: settings.dndStartMinute)
+        : TimeOfDay(
+            hour: settings.dndEndHour, minute: settings.dndEndMinute);
+
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+    );
+
+    if (picked != null && mounted) {
+      final updated = isStart
+          ? settings.copyWith(
+              dndStartHour: picked.hour, dndStartMinute: picked.minute)
+          : settings.copyWith(
+              dndEndHour: picked.hour, dndEndMinute: picked.minute);
+      ref.read(settingsRepositoryProvider).updateSettings(updated);
+    }
+  }
+
+  String _formatTime(BuildContext context, int hour, int minute) {
+    final use24h = MediaQuery.alwaysUse24HourFormatOf(context);
+    if (use24h) {
+      return '${hour.toString().padLeft(2, '0')}:'
+          '${minute.toString().padLeft(2, '0')}';
+    } else {
+      final period = hour >= 12 ? 'PM' : 'AM';
+      final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+      return '$displayHour:${minute.toString().padLeft(2, '0')} $period';
+    }
   }
 }
