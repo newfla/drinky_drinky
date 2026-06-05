@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/providers/repository_providers.dart';
 import '../../core/providers/stream_providers.dart';
+import '../../core/services/notification_service.dart';
 import '../../domain/entities/drink_preset_entity.dart';
 import '../../domain/entities/user_settings_entity.dart';
 import '../widgets/preset_edit_dialog.dart';
@@ -18,6 +20,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Local slider state during drag to avoid DB writes on every frame.
   double? _dailyTargetDrag;
   double? _intervalDrag;
+
+  /// Whether notification permission is currently denied (D-03).
+  bool _permissionDenied = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPermission();
+  }
+
+  Future<void> _checkPermission() async {
+    final granted = await NotificationService.instance.permissionGranted();
+    if (mounted) setState(() => _permissionDenied = !granted);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,6 +150,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Permission-denied banner (D-03)
+          if (_permissionDenied)
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.errorContainer,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.notifications_off_outlined,
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Notifications are disabled. Tap to open system Settings.',
+                      style:
+                          Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onErrorContainer,
+                              ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => openAppSettings(),
+                    child: Text(
+                      'Open',
+                      style: TextStyle(
+                        color:
+                            Theme.of(context).colorScheme.onErrorContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // Interval slider (D-11)
           Padding(
             padding: const EdgeInsets.all(16),
@@ -159,6 +218,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             notificationIntervalMinutes: val.toInt(),
                           ),
                         );
+                    // D-05: Reschedule on interval change.
+                    NotificationService.instance.scheduleWindow(
+                      settings.copyWith(
+                        notificationIntervalMinutes: val.toInt(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -173,6 +238,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ref.read(settingsRepositoryProvider).updateSettings(
                     settings.copyWith(dndEnabled: val),
                   );
+              // D-05: Reschedule on DND toggle.
+              NotificationService.instance.scheduleWindow(
+                settings.copyWith(dndEnabled: val),
+              );
             },
           ),
           // DND time rows (D-12/D-13) -- greyed out when disabled
@@ -237,6 +306,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           : settings.copyWith(
               dndEndHour: picked.hour, dndEndMinute: picked.minute);
       ref.read(settingsRepositoryProvider).updateSettings(updated);
+      // D-05: Reschedule on DND time change.
+      NotificationService.instance.scheduleWindow(updated);
     }
   }
 

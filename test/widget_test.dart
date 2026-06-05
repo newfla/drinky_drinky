@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:drinky_drinky/main.dart';
 import 'package:drinky_drinky/core/providers/database_provider.dart';
@@ -9,6 +10,12 @@ import 'package:drinky_drinky/data/database/app_database.dart';
 
 void main() {
   testWidgets('App renders home screen', (WidgetTester tester) async {
+    // Simulate a returning user so the GoRouter redirect skips /permission
+    // and goes straight to the home screen (drinky_permissionScreenShown = true).
+    SharedPreferences.setMockInitialValues({
+      'drinky_permissionScreenShown': true,
+    });
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -19,6 +26,10 @@ void main() {
         child: const DrinkyDrinkyApp(),
       ),
     );
+
+    // Allow async redirect callback to resolve.
+    await tester.pump();
+    await tester.pump();
 
     expect(find.text('Drinky Drinky'), findsOneWidget);
 
