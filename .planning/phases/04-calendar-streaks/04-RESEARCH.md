@@ -575,7 +575,7 @@ Widget? _buildDayCell(DateTime day, bool? metGoal, {required bool isToday}) {
 | A6 | `DateTime(year, month + 1, 0)` correctly gives last day of month in Dart | Don't Hand-Roll | Low -- this is standard Dart DateTime behavior but not verified via official docs in this session |
 | A7 | `collection` package can be imported directly since it's a transitive dependency | Standard Stack | Low -- Dart allows importing transitive deps, though explicit dep is best practice. Since collection is from the Dart team and used by Flutter itself, risk is minimal |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `collection` be added as an explicit dependency in pubspec.yaml?**
    - What we know: `collection` is a transitive dependency (already in pubspec.lock). It can be imported directly.
