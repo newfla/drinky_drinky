@@ -124,6 +124,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 2/2 | Complete    | 2026-06-03 |
 | 2. Core Tracking UI | 2/2 | Complete    | 2026-06-04 |
-| 3. Settings | 1/1 | Complete   | 2026-06-05 |
+| 3. Settings | 1/1 | Complete    | 2026-06-05 |
 | 4. Calendar & Streaks | 0/0 | Not started | - |
 | 5. Notifications | 0/0 | Not started | - |

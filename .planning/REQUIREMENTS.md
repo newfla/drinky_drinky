@@ -16,10 +16,10 @@ Requirements for initial release. Each maps to a roadmap phase.
 
 ### Settings
 
-- [ ] **SETT-01**: User can set a global daily water target in ml (displayed also as L)
-- [ ] **SETT-02**: User can customize the amount for each quick-add preset button
-- [ ] **SETT-03**: User can configure the notification reminder interval (in minutes or hours)
-- [ ] **SETT-04**: User can define a DND window with start time and end time during which no notifications are sent
+- [x] **SETT-01**: User can set a global daily water target in ml (displayed also as L)
+- [x] **SETT-02**: User can customize the amount for each quick-add preset button
+- [x] **SETT-03**: User can configure the notification reminder interval (in minutes or hours)
+- [x] **SETT-04**: User can define a DND window with start time and end time during which no notifications are sent
 
 ### History
 
@@ -77,10 +77,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HOME-02 | Phase 2 | Complete |
 | HOME-03 | Phase 2 | Complete |
 | HOME-04 | Phase 2 | Complete |
-| SETT-01 | Phase 3 | Pending |
-| SETT-02 | Phase 3 | Pending |
-| SETT-03 | Phase 3 | Pending |
-| SETT-04 | Phase 3 | Pending |
+| SETT-01 | Phase 3 | Complete |
+| SETT-02 | Phase 3 | Complete |
+| SETT-03 | Phase 3 | Complete |
+| SETT-04 | Phase 3 | Complete |
 | HIST-01 | Phase 4 | Pending |
 | HIST-02 | Phase 4 | Pending |
 | NOTF-01 | Phase 5 | Pending |
