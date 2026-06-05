@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Foundation** - Drift schema, DAOs, repositories, and Riverpod providers that all features depend on
 - [ ] **Phase 2: Core Tracking UI** - Home screen with progress ring, quick-add presets, undo, and today's timeline
-- [ ] **Phase 3: Settings** - Daily target, preset customization, notification interval, and DND window configuration
+- [x] **Phase 3: Settings** - Daily target, preset customization, notification interval, and DND window configuration (completed 2026-06-05)
 - [ ] **Phase 4: Calendar & Streaks** - Monthly history calendar with green/red days and consecutive streak counter
 - [ ] **Phase 5: Notifications** - Scheduled reminders with DND awareness, permission flow, and auto-stop on goal
 
@@ -77,10 +77,12 @@ Plans:
   3. User can configure the notification reminder interval in minutes
   4. User can define a DND window with start and end times during which no notifications will be sent
 
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 03-01-PLAN.md — Full settings screen: daily target slider, preset edit dialogs, notification interval slider, DND toggle + time pickers
+
+- [x] 03-01-PLAN.md — Full settings screen: daily target slider, preset edit dialogs, notification interval slider, DND toggle + time pickers
+
 **UI hint**: yes
 
 ### Phase 4: Calendar & Streaks
@@ -122,6 +124,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 2/2 | Complete    | 2026-06-03 |
 | 2. Core Tracking UI | 2/2 | Complete    | 2026-06-04 |
-| 3. Settings | 0/0 | Not started | - |
+| 3. Settings | 1/1 | Complete   | 2026-06-05 |
 | 4. Calendar & Streaks | 0/0 | Not started | - |
 | 5. Notifications | 0/0 | Not started | - |
