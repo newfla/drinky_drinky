@@ -23,7 +23,7 @@ All persistence is through the existing `SettingsRepository` (`updateSettings`, 
 
 ### Screen Layout (D-01 – D-04)
 - **D-01:** The Settings screen uses **3 elevated Cards** in a scrollable Column:
-  1. **Daily Goal** card — daily target stepper row
+  1. **Daily Goal** card — daily target slider
   2. **Quick-Add Presets** card — 4 preset rows
   3. **Notifications** card — interval slider + DND toggle + DND start/end time rows
 - **D-02:** Each card has a **visible section title above it** in uppercase (e.g., `DAILY GOAL`), styled as a small caps label — Material 3 settings convention.
@@ -41,7 +41,7 @@ All persistence is through the existing `SettingsRepository` (`updateSettings`, 
 - **D-10:** Valid range in the dialog: **50 ml – 2000 ml**. Values outside this range show an inline error message inside the dialog; the Confirm button is disabled until the value is valid.
 
 ### Notification Interval (D-11)
-- **D-11:** The reminder interval is set via a **`Slider`** widget (snapped to 5-minute steps). Range: **5 min – 240 min (4 h)**. A label **above** the slider shows the current value in decimal-hours format (e.g., `"1.0 h"`, `"0.5 h"`, `"4.0 h"`). Conversion: `(minutes / 60).toStringAsFixed(1) + ' h'`. On slider release (`onChangeEnd`), calls `SettingsRepository.updateSettings()`.
+- **D-11:** The reminder interval is set via a **`Slider`** widget (snapped to 5-minute steps). Range: **5 min – 240 min (4 h)**. A label **above** the slider shows the current value in always-minutes format (e.g., `"30 min"`, `"60 min"`, `"240 min"`). Conversion: `"${value.toInt()} min"`. On slider release (`onChangeEnd`), calls `SettingsRepository.updateSettings()`.
 
 ### DND Window (D-12 – D-13)
 - **D-12:** A **`SwitchListTile`** at the top of the Notifications card controls `dndEnabled`. Toggling live-saves. When `dndEnabled = false`, the Start time and End time rows are greyed (opacity ≈ 0.38) and non-tappable.
@@ -111,7 +111,7 @@ All persistence is through the existing `SettingsRepository` (`updateSettings`, 
 
 - Both sliders (daily target and notification interval) use the same pattern: label above, `Slider` below, `onChangeEnd` to save.
 - Daily target slider: `divisions = (10000 - 1000) / 250 = 36`. Label format: `"${value.toInt()} ml"`.
-- Notification interval slider: `divisions = (240 - 5) / 5 = 47`. Label format: `"${(value / 60).toStringAsFixed(1)} h"`. Store as integer minutes in DB.
+- Notification interval slider: `divisions = (240 - 5) / 5 = 47`. Label format: `"${value.toInt()} min"`. Store as integer minutes in DB.
 - Preset dialog: disable the Confirm button while the text field value is outside 50–2000 ml range and show an error message under the field.
 - DND time rows use `showTimePicker(context: context, initialTime: TimeOfDay(hour: ..., minute: ...))`. Match 24h/12h to device system setting via `MediaQuery.alwaysUse24HourFormat`.
 - When DND is disabled (`dndEnabled = false`), wrap Start/End rows in an `IgnorePointer` with `Opacity(opacity: 0.38, ...)` — standard Material disabled state.
