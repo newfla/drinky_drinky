@@ -97,7 +97,12 @@ Plans:
   2. User can navigate between months to review historical hydration data
   3. User can see their current streak of consecutive days with the daily goal reached
 
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+
+- [ ] 04-01-PLAN.md -- Data layer + providers + HistoryScreen (calendar, streak, day summary)
+
 **UI hint**: yes
 
 ### Phase 5: Notifications
@@ -125,5 +130,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Data Foundation | 2/2 | Complete    | 2026-06-03 |
 | 2. Core Tracking UI | 2/2 | Complete    | 2026-06-04 |
 | 3. Settings | 1/1 | Complete    | 2026-06-05 |
-| 4. Calendar & Streaks | 0/0 | Not started | - |
+| 4. Calendar & Streaks | 0/1 | Not started | - |
 | 5. Notifications | 0/0 | Not started | - |
