@@ -53,12 +53,12 @@ Uses existing M3 `theme.textTheme` roles. No custom fonts or sizes beyond what M
 |------|-----------------|-------------------|--------|-------------|---------------------|
 | Body | bodyLarge | 16px | 400 (regular) | 1.5 | Streak description text, empty state body |
 | Label | labelSmall | 11px | 500 (medium) | 1.45 | Calendar day-of-week headers (via table_calendar) |
-| Heading | titleLarge | 22px | 400 (regular) | 1.27 | Streak counter number |
+| Heading | titleLarge | 22px | 600 (semibold) | 1.27 | Streak counter number (intentionally promoted to w600 for visual emphasis in the StreakCard focal point) |
 | Section | labelSmall | 11px | 500 (medium) | 1.45 | Section labels (pattern from settings_screen.dart) |
 | Calendar Day | bodyMedium | 14px | 400 (regular) | 1.43 | Day numbers inside calendar cells |
 | Calendar Header | titleMedium | 16px | 500 (medium) | 1.5 | Month/year display in calendar header |
 
-Weights used: 400 (regular) and 500 (medium) -- consistent with existing screens.
+Weights used: 400 (regular), 500 (medium), and 600 (semibold). The 600 weight is used exclusively for the streak counter number to establish visual hierarchy in the StreakCard focal point. All other text uses 400 or 500, consistent with existing screens.
 
 ---
 
@@ -111,13 +111,15 @@ Scaffold
 
 ### Streak Card
 
+The Streak Card is the primary visual focal point on this screen, anchoring the user's attention on their current streak before they explore the calendar below.
+
 | Property | Value |
 |----------|-------|
 | Widget | `Card` with `margin: EdgeInsets.symmetric(horizontal: 16)` |
 | Internal padding | `EdgeInsets.all(16)` |
 | Layout | `Row` with `crossAxisAlignment: CrossAxisAlignment.center` |
 | Icon | `Icons.local_fire_department` at 32px, color `Colors.orange.shade700` |
-| Gap after icon | 12px (`SizedBox(width: 12)`) |
+| Gap after icon | 8px (`SizedBox(width: 8)`) |
 | Streak number | `theme.textTheme.titleLarge`, `fontWeight: FontWeight.w600` |
 | Streak label | `theme.textTheme.bodyLarge`, `color: colorScheme.onSurfaceVariant` |
 | Content pattern | `"7"` + `" day streak"` (or `"0 day streak"` when no streak) |
