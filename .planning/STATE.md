@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 4 planned — 04-01-PLAN.md verified
-last_updated: "2026-06-05T13:36:31.642Z"
+stopped_at: Phase 4 Plan 01 complete — HistoryScreen with calendar & streaks implemented
+last_updated: "2026-06-05T14:10:00.000Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 6
-  completed_plans: 5
-  percent: 60
+  completed_plans: 6
+  percent: 80
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 4
-Plan: Not started
-Status: Executing Phase 03
+Plan: 01 complete
+Status: Phase 04 Plan 01 complete
 Last activity: 2026-06-05
 
-Progress: [████░░░░░░] 40%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -74,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [02-01]: Router migrated to StatefulShellRoute.indexedStack with NavigationBar; branch screens retain own Scaffold (shell provides NavigationBar only); percent_indicator 4.2.5 added
 - [02-02]: valueOrNull does not exist in Riverpod 3.2.1 -- use .value (nullable T?) instead; withValues(alpha: 0.3) replaces deprecated withOpacity in Flutter 3.44.1
 - [02-02]: HomeScreen uses ConsumerStatefulWidget with AppLifecycleListener + Timer.periodic for midnight reset; capturedKey pattern prevents date-key race condition in SnackBar UNDO closure
+- [04-01]: collection must be explicit dep (depend_on_referenced_packages lint); @riverpod function with (int year, int month) params generates family provider via code-gen
+- [04-01]: streakProvider uses async* yield* to forward a mapped stream; FocusedMonth @Riverpod(keepAlive: true) class Notifier persists tab state
 
 ### Pending Todos
 
@@ -94,6 +96,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-05T13:36:31.637Z
-Stopped at: Phase 4 planned — 04-01-PLAN.md verified
-Resume file: .planning/phases/04-calendar-streaks/04-01-PLAN.md
+Last session: 2026-06-05T14:10:00.000Z
+Stopped at: Phase 4 Plan 01 complete — HistoryScreen with calendar & streaks implemented (HIST-01, HIST-02)
+Resume file: None (Phase 4 has 1 plan; Phase 5 notifications is next)

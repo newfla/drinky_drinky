@@ -23,8 +23,8 @@ Requirements for initial release. Each maps to a roadmap phase.
 
 ### History
 
-- [ ] **HIST-01**: User can view a monthly calendar where each past day is colored green (daily goal met) or red (daily goal not met)
-- [ ] **HIST-02**: User can see their current streak of consecutive days with the daily goal reached
+- [x] **HIST-01**: User can view a monthly calendar where each past day is colored green (daily goal met) or red (daily goal not met)
+- [x] **HIST-02**: User can see their current streak of consecutive days with the daily goal reached
 
 ### Notifications
 
@@ -81,8 +81,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SETT-02 | Phase 3 | Complete |
 | SETT-03 | Phase 3 | Complete |
 | SETT-04 | Phase 3 | Complete |
-| HIST-01 | Phase 4 | Pending |
-| HIST-02 | Phase 4 | Pending |
+| HIST-01 | Phase 4 | Complete |
+| HIST-02 | Phase 4 | Complete |
 | NOTF-01 | Phase 5 | Pending |
 | NOTF-02 | Phase 5 | Pending |
 | NOTF-03 | Phase 5 | Pending |
