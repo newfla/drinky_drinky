@@ -58,7 +58,7 @@ blocked: 0
 ## Gaps
 
 - truth: "Notification text renders cleanly with no garbled or unrecognized characters at the end"
-  status: failed
+  status: fixed
   reason: "User reported: si funziona ma l'ultimo carattere della notific appare come simblo non riconosciuto"
   severity: cosmetic
   test: 8
