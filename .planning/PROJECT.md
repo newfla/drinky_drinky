@@ -8,6 +8,17 @@ A Flutter mobile app that helps users track their daily water intake and stay hy
 
 The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
 
+## Current Milestone: v1.1 Polish & UX
+
+**Goal:** Refine the interaction model, fix known bugs, adopt Material You theming on Android, and give the app a proper icon.
+
+**Target features:**
+- L-display: home screen progress ring shows liters with 2 decimal places
+- SnackBar bug: undo notification does not dismiss — fix auto-clear after 5 s
+- Material You: Android 12+ uses dynamic color; iOS retains static palette; Android <12 falls back to static seed
+- Add-intake bottom sheet: FAB replaces home-screen quick-add buttons; sheet has 3 configurable presets + custom ml input
+- App icon: water glass motif generated via flutter_launcher_icons for all iOS/Android sizes
+
 ## Requirements
 
 ### Validated
@@ -28,12 +39,17 @@ The user always knows how close they are to their daily hydration goal and gets 
 
 ### Active
 
-- [ ] Daily target displayed in liters as well as ml (SETT-01 L-display, deferred from Phase 3 per D-15)
+- [ ] Home screen displays goal and current intake in liters with 2 decimal places (L-DISP-01) — v1.1
+- [ ] SnackBar undo notification auto-dismisses after the 5-second timer (BUG-01) — v1.1
+- [ ] App uses Material You dynamic color on Android 12+; static seed palette on Android <12; iOS unaffected (THEME-01) — v1.1
+- [ ] Home screen FAB opens add-intake modal bottom sheet; quick-add buttons removed from home (INTAKE-01) — v1.1
+- [ ] Add-intake sheet shows 3 configurable presets and a custom ml text field (INTAKE-02) — v1.1
+- [ ] App icon uses a water glass motif across all iOS/Android sizes (ICON-01) — v1.1
 
 ### Out of Scope
 
 - Variable per-day targets — single global target for simplicity
-- Manual custom input field per drink — presets cover this
+- Manual custom input field per drink — moved to v1.1 scope as part of add-intake sheet (INTAKE-02)
 - Detailed log editing (delete arbitrary past entries) — undo last is sufficient for v1
 - Social / sharing features — focus on personal tracking
 - Apple Health / Google Fit integration — defer to v2
@@ -77,5 +93,22 @@ The user always knows how close they are to their daily hydration goal and gets 
 | Notifications built last (Phase 5) | Highest pitfall density and platform complexity | ✓ Good — core app worked without notifications during development |
 | Flutter 3.44.1 (upgraded from 3.38.1) | analyzer version conflict between drift_dev and riverpod_generator required upgrade | ✓ Necessary — resolved the conflict cleanly |
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-06-08 after v1.0 MVP milestone — all 13 v1 requirements delivered across 5 phases in 5 days.*
+*Last updated: 2026-06-08 — v1.1 Polish & UX milestone started.*
