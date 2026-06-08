@@ -47,21 +47,27 @@ Exceptions: none. Phase 6 adds no new layout elements.
 
 Material 3 TextTheme roles already used in codebase. Phase 6 changes NO typography roles; the only text content change is the ring center string format.
 
-| Role | M3 Token | Weight | Usage in Phase 6 |
-|------|----------|--------|-------------------|
-| Body | bodyLarge (16px) | 400 (regular) | Timeline entries, day summary text |
-| Body secondary | bodyMedium (14px) | 400 (regular) | Empty state body, subtitle text |
-| Label | labelLarge (14px) | 500 (medium) | Timeline time stamps |
-| Section label | labelSmall (11px) | 500 (medium) | Settings section headers |
-| Heading | headlineMedium (28px) | 400 (regular) | Progress ring center text (L-display lives here) |
-| Title | titleLarge (22px) | 400 (regular) + 600 (semibold) for streak | Streak count, empty state heading |
-| Title secondary | titleMedium (16px) | 500 (medium) | Settings card values |
+Declared sizes: 4 (11px, 14px, 16px, 28px). Declared weights: 2 (400 regular, 600 semibold).
+
+| Role | M3 Token | Size | Weight | Usage in Phase 6 |
+|------|----------|------|--------|-------------------|
+| Body | bodyLarge | 16px | 400 (regular) | Timeline entries, day summary text |
+| Body secondary | bodyMedium | 14px | 400 (regular) | Empty state body, subtitle text, timeline timestamps, settings section headers |
+| Heading | headlineMedium | 28px | 400 (regular) | Progress ring center text (L-display lives here), streak count, empty state heading |
+| Label | labelSmall | 11px | 400 (regular) | Small captions, auxiliary labels |
 
 Phase 6 ring text change: the `headlineMedium` role remains at 28px/400. Only the string content changes from `'$totalMl / $target ml'` to `'{currentL} / {goalL} L'`.
+
+Elements previously at titleLarge (22px) now use headlineMedium (28px): streak count display, empty state heading.
+Elements previously at weight 500 (medium) now use weight 400 (regular): timeline timestamps, settings section headers, settings card values.
 
 ---
 
 ## Color
+
+### Visual Hierarchy
+
+60% surface/background (`colorScheme.surface` as Scaffold background across all screens), 30% container variants and surface variants (`surfaceContainerLow`, `surfaceContainerHighest` for cards, ListTiles, ring track), 10% primary/semantic accent (ring fill, buttons, highlights, navigation active indicator).
 
 ### Theme Architecture (Phase 6 change)
 
@@ -121,6 +127,12 @@ Theme.of(context).brightness == Brightness.dark
 
 ---
 
+## Visual Hierarchy
+
+Primary focal point: progress ring (center of Home screen).
+
+---
+
 ## Copywriting Contract
 
 Phase 6 changes exactly ONE piece of user-facing text (the progress ring center). All other copy is unchanged.
@@ -135,7 +147,7 @@ Phase 6 changes exactly ONE piece of user-facing text (the progress ring center)
 | Settings daily goal | `'$currentTarget ml'` | UNCHANGED -- stays in ml per D-11 |
 | Empty state heading | `'No drinks logged yet'` | UNCHANGED |
 | Empty state body | `'Tap a button above to log your first drink today.'` | UNCHANGED |
-| Error state | `'Something went wrong loading your data.'` | UNCHANGED |
+| Error state | `'Something went wrong loading your data. Restart the app if this persists.'` | UNCHANGED (recovery path added) |
 
 ### L-Display Formatting Rules
 
