@@ -61,6 +61,8 @@ Declared sizes: 4 (11px, 14px, 16px, 28px). Declared weights: 2 (400 regular, 60
 
 Note: `titleMedium` (16px/600) is already used in the settings screen for card values. No new font size introduced.
 
+Note: The 2px gap between `bodyMedium` (14px) and `bodyLarge` (16px) is intentional -- these are standard Material 3 type scale tokens. They serve distinct semantic roles: `bodyLarge` is primary content text, `bodyMedium` is secondary/supporting text. The visual difference is subtle but consistent with M3 guidelines.
+
 ---
 
 ## Color
@@ -73,10 +75,12 @@ Unchanged from Phase 6. 60/30/10 split:
 |------|-------|-------|
 | Dominant (60%) | `colorScheme.surface` | Scaffold background, sheet background (inherits surface via `showModalBottomSheet`) |
 | Secondary (30%) | `colorScheme.surfaceContainerLow`, `surfaceContainerHighest` | Cards, ListTiles, ring track, sheet surface variant |
-| Accent (10%) | `colorScheme.primary` | FAB background, preset FilledButton fills, custom submit FilledButton fill, progress ring (non-goal-met) |
+| Accent (10%) | `colorScheme.primary` | Preset FilledButton fills, custom submit FilledButton fill, progress ring (non-goal-met) |
 | Destructive | `colorScheme.error` / `errorContainer` | Not used in Phase 7 (no destructive actions) |
 
-Accent reserved for: FAB icon/background, preset FilledButtons in sheet, custom submit FilledButton in sheet, progress ring fill (when goal not met).
+Accent reserved for: preset FilledButtons in sheet, custom submit FilledButton in sheet, progress ring fill (when goal not met).
+
+Note: The FAB uses `colorScheme.primaryContainer` (not `primary`) per Material 3 defaults -- `primaryContainer` background with `onPrimaryContainer` icon. This is outside the accent 10% budget as it is a container-emphasis surface, not a high-emphasis accent.
 
 ### Theme Architecture
 
@@ -300,7 +304,7 @@ No visual change to each ListTile. Only the count changes from up-to-4 to exactl
 | Ring progress (goal met) | `'Goal reached!'` | UNCHANGED | UNCHANGED |
 | Empty state heading | `'No drinks logged yet'` | UNCHANGED | UNCHANGED |
 | Empty state body | `'Tap the + button to log your first drink today.'` | UPDATED: references FAB instead of "a button above" | UPDATED |
-| Error state | `'Something went wrong loading your data.'` | UNCHANGED | UNCHANGED |
+| Error state | `'Something went wrong loading your data. Please restart the app.'` | UPDATED: added recovery instruction | UPDATED |
 | Settings section label | `'QUICK-ADD PRESETS'` | UNCHANGED | UNCHANGED |
 | Settings preset title | `'Preset {n}'` (n = 1, 2, 3) | UNCHANGED format, now only 3 items | COUNT REDUCED |
 | Settings preset subtitle | `'{amountMl} ml'` | UNCHANGED | UNCHANGED |
