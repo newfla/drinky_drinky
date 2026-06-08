@@ -8,14 +8,14 @@
 
 ### Home Screen Polish
 
-- [ ] **HOME-01**: User sees goal and current intake on the home screen expressed in liters with locale-aware decimal formatting (e.g. "1,75 L / 2,00 L" on Italian devices)
-- [ ] **HOME-02**: SnackBar undo notification auto-dismisses after 5 seconds and does not persist indefinitely
+- [x] **HOME-01**: User sees goal and current intake on the home screen expressed in liters with locale-aware decimal formatting (e.g. "1,75 L / 2,00 L" on Italian devices)
+- [x] **HOME-02**: SnackBar undo notification auto-dismisses after 5 seconds and does not persist indefinitely
 
 ### Theming
 
-- [ ] **THEME-01**: App uses Material You dynamic color on Android 12+, derived from the device wallpaper
-- [ ] **THEME-02**: App falls back to a static blue seed palette on Android <12; iOS retains the existing static palette unchanged
-- [ ] **THEME-03**: App supports system dark mode; all screens adapt correctly, including semantic colors (goal-met green, goal-missed red, partial orange)
+- [x] **THEME-01**: App uses Material You dynamic color on Android 12+, derived from the device wallpaper
+- [x] **THEME-02**: App falls back to a static blue seed palette on Android <12; iOS retains the existing static palette unchanged
+- [x] **THEME-03**: App supports system dark mode; all screens adapt correctly, including semantic colors (goal-met green, goal-missed red, partial orange)
 
 ### Intake Redesign
 

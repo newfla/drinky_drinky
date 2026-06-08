@@ -89,6 +89,6 @@ Phases execute in numeric order: 6 -> 7 -> 8
 | 3. Settings | v1.0 | 1/1 | Complete | 2026-06-05 |
 | 4. Calendar & Streaks | v1.0 | 1/1 | Complete | 2026-06-05 |
 | 5. Notifications | v1.0 | 1/1 | Complete | 2026-06-05 |
-| 6. Bug Fix + Theme + L-Display | v1.1 | 2/2 | Complete   | 2026-06-08 |
+| 6. Bug Fix + Theme + L-Display | v1.1 | 2/2 | Complete    | 2026-06-08 |
 | 7. Intake Redesign | v1.1 | 0/0 | Not started | - |
 | 8. App Icon | v1.1 | 0/0 | Not started | - |
