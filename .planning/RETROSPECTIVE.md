@@ -57,6 +57,60 @@
 
 ---
 
+## Milestone: v1.1 — Polish & UX
+
+**Shipped:** 2026-06-08
+**Phases:** 3 (6-8) | **Plans:** 4 | **Duration:** 1 day (2026-06-08)
+**Files changed:** 134 | **Insertions:** ~7,462 | **Deletions:** ~1,634 | **Commits:** 29
+
+### What Was Built
+
+- Material You dynamic theming via DynamicColorBuilder with dual light/dark ThemeData and static blue seed fallback
+- SnackBar auto-dismiss fix (persist: false) and locale-aware liter display (intl.NumberFormat.decimalPatternDigits)
+- Brightness-adaptive semantic colors across home and history screens for correct dark mode contrast
+- FAB replaces inline quick-add row; modal bottom sheet with 3 configurable presets and custom ml input (1-9999)
+- Water glass launcher icon generated via pure-Dart CLI script and flutter_launcher_icons; Android adaptive + iOS opaque
+
+### What Worked
+
+- **Narrow, focused phases:** Three independent concerns (theming, UX, icon) executed cleanly in sequence — no cross-phase conflicts.
+- **Pure-Dart build script pattern:** `tool/generate_icon.dart` runs without Flutter engine, making icon regeneration fast and CI-friendly. No need for Figma or a design tool.
+- **DynamicColorBuilder null-coalesce pattern:** Wrapping MaterialApp.router once meant zero screen-level changes for platform-adaptive theming. The pattern paid off immediately.
+- **Presentation-layer .take(3) for preset reduction:** Zero-migration approach for reducing 4 presets to 3 was the right call — existing users' DB untouched, new seed data applies to fresh installs.
+- **Human UAT at milestone close (not per-phase):** Phase 6 opened UAT; resolving it at milestone close (rather than during phase) was acceptable because all three phases shared the same test device.
+
+### What Was Inefficient
+
+- **Phase 6 UAT left open until milestone close:** The `human_needed` verification status created a stray artifact that triggered the pre-close audit. If human tests are done the same day as execution, close them in-phase rather than leaving them to be resolved at milestone close.
+- **Stray SUMMARY.md written to main before merge:** The executor wrote SUMMARY.md to the main branch checkout (not just the worktree) before committing it to the worktree. Required manual cleanup (rm -f + FF merge). This is the same pattern as Phase 7 — a recurring executor behavior worth noting for the next milestone.
+- **worktree_dirty blocking cleanup:** An untracked `.claude/settings.local.json` file in the worktree prevented `worktree.cleanup-wave` from running. The fix (stash + manual FF merge) took more steps than ideal.
+- **image ^4.9.0 → ^4.8.0 downgrade:** The version conflict with flutter_local_notifications was predictable from the shared xml dependency. RESEARCH.md caught it but the plan still specified 4.9.0, requiring an auto-fix during execution.
+
+### Patterns Established
+
+- `DynamicColorBuilder` wrap of `MaterialApp.router` with `lightDynamic ?? ColorScheme.fromSeed(seedColor: ...)` for zero-overhead platform adaptation
+- `_formatLiters(BuildContext context, int ml)` — locale-aware helper using `NumberFormat.decimalPatternDigits(locale: Localizations.localeOf(context).toString(), decimalDigits: 2)`
+- Brightness-conditional semantic color: `theme.brightness == Brightness.dark ? Colors.X.shade400 : Colors.X.shade600`
+- Bottom sheet callback pattern: parent widget owns DB writes, sheet receives `List<DrinkPreset> presets` + `void Function(int ml) onAdd` — no direct provider access inside the sheet
+- `Navigator.pop` before `onAdd` callback so sheet closes before SnackBar appears
+- `tool/` directory for build-time Dart scripts: pure Dart, no Flutter imports, `import 'package:image/image.dart' as img`
+- Source PNGs in `assets/icon/` NOT added to `flutter: assets:` section — they are input to flutter_launcher_icons, not app runtime assets
+
+### Key Lessons
+
+1. **Close UAT in-phase, not at milestone.** Leaving human_needed status open creates a cleanup step at milestone close. If you can test same-day, do it before marking the phase complete.
+2. **Pin dev dependency versions that share transitive deps.** image 4.9.x and flutter_local_notifications 21.x share the xml package. Checking transitive compatibility at RESEARCH.md time would have avoided the auto-fix downgrade.
+3. **Worktree artifacts bleed to main.** Executor agents writing planning docs to the main checkout (before merging the worktree) is a known pattern across multiple phases. Resolve by checking `git status` on main before any merge.
+4. **DynamicColorBuilder is essentially free.** Three screens inherited dark mode and Material You automatically from the single main.dart change — no per-widget changes needed.
+
+### Cost Observations
+
+- Model: Claude Sonnet 4.6 (orchestrator); gsd-executor subagents via worktrees
+- Sessions: single day, 3 phases
+- Notable: Phase 7 (3 min execution) and Phase 8 (6 min execution) were the fastest in the project. Narrow, well-researched plans with clear patterns dramatically reduce execution time.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -64,14 +118,18 @@
 | Milestone | Duration | Phases | Key Change |
 |-----------|----------|--------|------------|
 | v1.0 | 5 days | 5 | Baseline — first milestone |
+| v1.1 | 1 day | 3 | Narrow polish phases; worktree executor; icon via pure-Dart CLI |
 
 ### Cumulative Quality
 
 | Milestone | Unit Tests | flutter analyze | UAT Issues Found |
 |-----------|------------|-----------------|------------------|
 | v1.0 | 11 passing | 0 issues | 2 (1 major fixed, 1 cosmetic fixed) |
+| v1.1 | 12 passing | 0 issues | 0 (UAT passed; Material You skipped/N/A on test device) |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. Verify actual package API shapes at planning time — docs lag behind releases
 2. Build the data layer first; everything downstream becomes simpler when streams just work
+3. Close human UAT in-phase; open human_needed status creates mandatory cleanup at milestone close
+4. Worktree artifacts may bleed to main — check `git status` on main before any merge

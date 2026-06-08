@@ -1,5 +1,18 @@
 # Milestones
 
+## v1.1 Polish & UX (Shipped: 2026-06-08)
+
+**Phases completed:** 3 phases, 4 plans, 10 tasks
+
+**Key accomplishments:**
+
+- Material You dynamic theming with DynamicColorBuilder, dual light/dark themes, and static blue seed fallback
+- SnackBar persist fix, locale-aware liter display in progress ring, and brightness-adaptive green/red/orange across home and history screens
+- FAB replaces inline quick-add buttons; modal bottom sheet provides 3 configurable presets and custom ml input with 1-9999 validation
+- Water glass motif launcher icon generated via pure-Dart CLI script and flutter_launcher_icons for all iOS/Android sizes with #1565C0 background and adaptive icon support
+
+---
+
 ## v1.0 MVP (Shipped: 2026-06-08)
 
 **Phases completed:** 5 phases, 7 plans, 17 tasks
