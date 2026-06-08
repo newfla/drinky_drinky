@@ -50,13 +50,13 @@
 
 | REQ-ID | Phase | Notes |
 |--------|-------|-------|
-| HOME-01 | TBD | |
-| HOME-02 | TBD | |
-| THEME-01 | TBD | |
-| THEME-02 | TBD | |
-| THEME-03 | TBD | |
-| INTAKE-01 | TBD | |
-| INTAKE-02 | TBD | |
-| INTAKE-03 | TBD | |
-| INTAKE-04 | TBD | |
-| ICON-01 | TBD | |
+| HOME-01 | Phase 6 | L-display with intl.NumberFormat locale-aware formatting |
+| HOME-02 | Phase 6 | SnackBar persist: false fix (Flutter 3.38+ breaking change) |
+| THEME-01 | Phase 6 | DynamicColorBuilder wraps MaterialApp.router; dynamic_color ^1.8.1 |
+| THEME-02 | Phase 6 | Static blue seed fallback via ColorScheme.fromSeed when dynamic is null |
+| THEME-03 | Phase 6 | darkTheme from dynamic/seed; audit hardcoded semantic colors for contrast |
+| INTAKE-01 | Phase 7 | FAB on inner HomeScreen Scaffold; remove inline quick-add Row |
+| INTAKE-02 | Phase 7 | Modal bottom sheet with 3 presets from DrinkPresets table (take 3) |
+| INTAKE-03 | Phase 7 | Custom ml TextField in sheet; numeric keyboard; submit logs + closes |
+| INTAKE-04 | Phase 7 | Settings preset editing reduced to 3 slots; 4th slot retired at UI layer |
+| ICON-01 | Phase 8 | flutter_launcher_icons config; opaque PNG for iOS; adaptive for Android 8+ |
