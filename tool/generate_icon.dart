@@ -30,7 +30,7 @@ Future<void> main() async {
   await img.encodePngFile('assets/icon/app_icon.png', flat);
   await img.encodePngFile('assets/icon/app_icon_foreground.png', fg);
 
-  print('Icons generated in assets/icon/');
+  stderr.writeln('Icons generated in assets/icon/');
 }
 
 /// Draws a white water glass silhouette onto [image].
