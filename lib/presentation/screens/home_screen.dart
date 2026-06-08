@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
 import '../../core/providers/repository_providers.dart';
@@ -117,6 +118,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isGoalMet = totalMl >= target;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final goalMetColor = theme.brightness == Brightness.dark
+        ? Colors.green.shade400
+        : Colors.green.shade600;
 
     return Column(
       children: [
@@ -131,14 +135,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           animateFromLastPercent: true,
           circularStrokeCap: CircularStrokeCap.round,
           progressColor: isGoalMet
-              ? Colors.green.shade600
+              ? goalMetColor
               : colorScheme.primary,
           backgroundColor:
               colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           center: Text(
-            isGoalMet && totalMl == target ? 'Goal reached!' : '$totalMl / $target ml',
+            isGoalMet ? 'Goal reached!' : '${_formatLiters(context, totalMl)} / ${_formatLiters(context, target)} L',
             style: theme.textTheme.headlineMedium?.copyWith(
-              color: isGoalMet ? Colors.green.shade600 : null,
+              color: isGoalMet ? goalMetColor : null,
             ),
           ),
         ),
@@ -231,6 +235,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  String _formatLiters(BuildContext context, int ml) {
+    final locale = Localizations.localeOf(context).toString();
+    final formatter = NumberFormat.decimalPatternDigits(
+      locale: locale,
+      decimalDigits: 2,
+    );
+    return formatter.format(ml / 1000);
+  }
+
   // HOME-02, HOME-03, D-03, D-05
   void _onQuickAdd(int amountMl) async {
     // Capture date key before async gap (Pitfall 3 / T-02-03)
@@ -247,6 +260,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       SnackBar(
         content: Text('+$amountMl ml added'),
         duration: const Duration(seconds: 5),
+        persist: false,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(8),
         action: SnackBarAction(
