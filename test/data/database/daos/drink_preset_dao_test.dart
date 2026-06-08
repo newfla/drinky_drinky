@@ -24,17 +24,15 @@ void main() {
         () async {
       final presets = await db.drinkPresetDao.watchAllPresets().first;
 
-      expect(presets, hasLength(4));
-      expect(presets[0].amountMl, 200);
-      expect(presets[1].amountMl, 300);
-      expect(presets[2].amountMl, 400);
-      expect(presets[3].amountMl, 500);
+      expect(presets, hasLength(3));
+      expect(presets[0].amountMl, 150);
+      expect(presets[1].amountMl, 250);
+      expect(presets[2].amountMl, 500);
 
       // Verify sort order values.
       expect(presets[0].sortOrder, 0);
       expect(presets[1].sortOrder, 1);
       expect(presets[2].sortOrder, 2);
-      expect(presets[3].sortOrder, 3);
     });
 
     test('updatePreset changes amountMl and watchAllPresets reflects it',
@@ -42,12 +40,12 @@ void main() {
       final presets = await db.drinkPresetDao.watchAllPresets().first;
       final firstPresetId = presets.first.id;
 
-      await db.drinkPresetDao.updatePreset(firstPresetId, 150);
+      await db.drinkPresetDao.updatePreset(firstPresetId, 200);
 
       final updatedPresets = await db.drinkPresetDao.watchAllPresets().first;
       final updatedFirst =
           updatedPresets.firstWhere((p) => p.id == firstPresetId);
-      expect(updatedFirst.amountMl, 150);
+      expect(updatedFirst.amountMl, 200);
     });
   });
 }
