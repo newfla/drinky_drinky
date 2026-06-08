@@ -41,13 +41,12 @@ class AppDatabase extends _$AppDatabase {
         await into(userSettings).insert(
           UserSettingsCompanion.insert(),
         );
-        // Seed default drink presets (200/300/400/500ml).
+        // Seed default drink presets (150/250/500ml).
         await batch((batch) {
           batch.insertAll(drinkPresets, [
-            DrinkPresetsCompanion.insert(amountMl: 200, sortOrder: 0),
-            DrinkPresetsCompanion.insert(amountMl: 300, sortOrder: 1),
-            DrinkPresetsCompanion.insert(amountMl: 400, sortOrder: 2),
-            DrinkPresetsCompanion.insert(amountMl: 500, sortOrder: 3),
+            DrinkPresetsCompanion.insert(amountMl: 150, sortOrder: 0),
+            DrinkPresetsCompanion.insert(amountMl: 250, sortOrder: 1),
+            DrinkPresetsCompanion.insert(amountMl: 500, sortOrder: 2),
           ]);
         });
       },

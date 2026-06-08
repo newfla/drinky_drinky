@@ -126,7 +126,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
-        children: presets.map((preset) {
+        children: presets.take(3).map((preset) {
           return ListTile(
             title: Text('Preset ${preset.sortOrder + 1}'),
             subtitle: Text('${preset.amountMl} ml'),
