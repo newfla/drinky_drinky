@@ -25,7 +25,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 **Milestone Goal:** Refine the interaction model, fix known bugs, adopt Material You theming with dark mode, and give the app a proper icon.
 
 - [x] **Phase 6: Bug Fix + Theme + L-Display** -- Fix SnackBar persistence bug, show liters with locale formatting, and adopt Material You dynamic color with dark mode support (completed 2026-06-08)
-- [ ] **Phase 7: Intake Redesign** -- Replace home-screen quick-add buttons with a FAB-triggered modal bottom sheet featuring 3 presets and custom ml input
+- [x] **Phase 7: Intake Redesign** -- Replace home-screen quick-add buttons with a FAB-triggered modal bottom sheet featuring 3 presets and custom ml input (completed 2026-06-08)
 - [ ] **Phase 8: App Icon** -- Generate a water glass motif launcher icon for all iOS and Android sizes
 
 ## Phase Details
@@ -64,7 +64,8 @@ Plans:
 
 **Plans**: 1 plan
 Plans:
-- [ ] 07-01-PLAN.md -- FAB + modal bottom sheet with 3 presets and custom ml input; settings .take(3); seed reduction
+
+- [x] 07-01-PLAN.md -- FAB + modal bottom sheet with 3 presets and custom ml input; settings .take(3); seed reduction
 
 **UI hint**: yes
 
@@ -93,5 +94,5 @@ Phases execute in numeric order: 6 -> 7 -> 8
 | 4. Calendar & Streaks | v1.0 | 1/1 | Complete | 2026-06-05 |
 | 5. Notifications | v1.0 | 1/1 | Complete | 2026-06-05 |
 | 6. Bug Fix + Theme + L-Display | v1.1 | 2/2 | Complete    | 2026-06-08 |
-| 7. Intake Redesign | v1.1 | 0/1 | Not started | - |
+| 7. Intake Redesign | v1.1 | 1/1 | Complete   | 2026-06-08 |
 | 8. App Icon | v1.1 | 0/0 | Not started | - |
