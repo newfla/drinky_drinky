@@ -1,3 +1,4 @@
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -32,13 +33,27 @@ class DrinkyDrinkyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
-    return MaterialApp.router(
-      title: 'Drinky Drinky',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.blue,
-        useMaterial3: true,
-      ),
-      routerConfig: router,
+    return DynamicColorBuilder(
+      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        return MaterialApp.router(
+          title: 'Drinky Drinky',
+          theme: ThemeData(
+            colorScheme: lightDynamic ??
+                ColorScheme.fromSeed(seedColor: Colors.blue),
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            colorScheme: darkDynamic ??
+                ColorScheme.fromSeed(
+                  seedColor: Colors.blue,
+                  brightness: Brightness.dark,
+                ),
+            useMaterial3: true,
+          ),
+          themeMode: ThemeMode.system,
+          routerConfig: router,
+        );
+      },
     );
   }
 }

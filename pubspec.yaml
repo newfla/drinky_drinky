@@ -30,6 +30,10 @@ dependencies:
   # Utilities
   collection: ^1.19.0
   shared_preferences: ^2.5.5
+  intl: ^0.20.2
+
+  # Theming
+  dynamic_color: ^1.8.1
 
   # Notifications
   flutter_local_notifications: ^21.0.0
