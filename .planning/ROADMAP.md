@@ -62,7 +62,10 @@ Plans:
   3. The bottom sheet includes a text field with numeric keyboard where the user can type a custom ml amount, submit it, and have the entry logged and the sheet closed
   4. Settings screen shows exactly 3 preset slots for editing (the former 4th slot is retired)
 
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 07-01-PLAN.md -- FAB + modal bottom sheet with 3 presets and custom ml input; settings .take(3); seed reduction
+
 **UI hint**: yes
 
 ### Phase 8: App Icon
@@ -90,5 +93,5 @@ Phases execute in numeric order: 6 -> 7 -> 8
 | 4. Calendar & Streaks | v1.0 | 1/1 | Complete | 2026-06-05 |
 | 5. Notifications | v1.0 | 1/1 | Complete | 2026-06-05 |
 | 6. Bug Fix + Theme + L-Display | v1.1 | 2/2 | Complete    | 2026-06-08 |
-| 7. Intake Redesign | v1.1 | 0/0 | Not started | - |
+| 7. Intake Redesign | v1.1 | 0/1 | Not started | - |
 | 8. App Icon | v1.1 | 0/0 | Not started | - |
