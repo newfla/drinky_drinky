@@ -52,3 +52,6 @@ app.*.map.json
 
 # Note: .g.dart and .freezed.dart files are checked in so the project
 # compiles without running build_runner first.
+
+
+.claude
