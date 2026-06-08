@@ -1,232 +1,191 @@
-# Technology Stack
+# Technology Stack -- v1.1 Polish & UX Update
 
 **Project:** Drinky Drinky (Hydration Tracker)
-**Researched:** 2026-06-03
+**Researched:** 2026-06-08
+**Scope:** Stack additions/changes for v1.1 features only. Base stack is validated and unchanged.
 
-## Recommended Stack
+## New Package Additions
 
-### Core Framework
+Only **one** new package is needed for all five v1.1 features.
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Flutter SDK | >= 3.38.1 | App framework | Required by flutter_local_notifications 21.x; Material 3 is mature and default |
-| Dart SDK | >= 3.10.0 | Language | Required by current Flutter SDK; pattern matching and sealed classes available |
+| Package | Version | Purpose | Why |
+|---------|---------|---------|-----|
+| dynamic_color | ^1.8.1 | Material You wallpaper-based theming on Android 12+ | Published by `material.io` (Google's Material team). Provides `DynamicColorBuilder` widget that extracts the device's wallpaper-derived `ColorScheme` on Android S+. Returns `null` on unsupported platforms (iOS, Android <12), enabling clean fallback to `ColorScheme.fromSeed()`. Apache-2.0 license. |
 
-### State Management
+## No Package Needed -- Feature-by-Feature Analysis
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| flutter_riverpod | ^3.3.1 | Widget-level state management | Stable 3.x release; reactive caching fits an offline app with streams from Drift. Use `flutter_riverpod`, not `hooks_riverpod` -- hooks add complexity this app does not need |
-| riverpod_annotation | ^4.0.2 | Code-gen annotations for providers | Eliminates guesswork on provider type selection; `@riverpod` annotation is now the recommended way to declare providers |
-| riverpod_generator | ^4.0.3 | Provider code generation | Generates correct provider types from annotated functions/classes; required companion to riverpod_annotation |
-| riverpod_lint | ^3.1.3 | Static analysis for Riverpod | Catches common mistakes (missing ProviderScope, unsafe ref in dispose); includes refactoring assists |
+| v1.1 Feature | Package Needed? | Approach |
+|--------------|-----------------|----------|
+| Material You dynamic color | YES: `dynamic_color ^1.8.1` | Wrap `MaterialApp.router` in `DynamicColorBuilder`; use dynamic `ColorScheme` when available, `ColorScheme.fromSeed(seedColor: Colors.blue)` as fallback |
+| Modal bottom sheet (FAB + presets) | NO | `showModalBottomSheet()` is built into Flutter's `material` library. No third-party package required |
+| Liter display formatting (2 decimals) | NO | Dart's built-in `toStringAsFixed(2)` on `(totalMl / 1000)` -- e.g., "1.75 L / 2.00 L" |
+| SnackBar auto-dismiss fix | NO | One-line fix: add `persist: false` to SnackBar (Flutter 3.38+ breaking change) |
+| App icon generation | NO (already approved) | `flutter_launcher_icons ^0.14.4` needs to be added to dev_dependencies and configured |
 
-### Database (Local Persistence)
+## pubspec.yaml Changes
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| drift | ^2.33.0 | Type-safe SQLite ORM | Structured queries for daily aggregates, calendar views, and historical data; compile-time SQL verification; auto-updating streams integrate naturally with Riverpod |
-| drift_flutter | ^0.3.0 | Flutter-specific database setup | **Replaces the old sqlite3_flutter_libs** (which is now EOL). Provides `driftDatabase()` helper that handles platform-specific SQLite setup automatically |
-| drift_dev | ^2.33.0 | Code generator for Drift | Dev dependency; generates type-safe table code from Dart class definitions |
-
-### Notifications
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| flutter_local_notifications | ^21.0.0 | Local notification display and scheduling | De facto standard for local notifications on Flutter; supports `zonedSchedule()` with timezone awareness, periodic notifications, and Android notification channels |
-| timezone | ^0.11.0 | Timezone-aware DateTime | Required by flutter_local_notifications for `zonedSchedule()`; handles DST transitions correctly |
-| flutter_timezone | ^5.1.0 | Device timezone detection | Retrieves the device's local timezone name to initialize the timezone database; recently maintained (updated 6 days ago) |
-| permission_handler | ^12.0.3 | Runtime permission requests | Needed for notification permission on Android 13+ and iOS; also handles exact alarm permission on Android 14+ |
-
-### UI Components
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| table_calendar | ^3.2.0 | Calendar view for historical data | Best-maintained Flutter calendar widget; supports month/week/two-week formats, event markers, custom day builders (for green/red color-coding), and locale support |
-| percent_indicator | ^4.2.5 | Circular progress indicator | Provides `CircularPercentIndicator` with animation, gradient support, customizable stroke caps, and child widgets (for showing ml/target text inside the ring). More flexible than Flutter's built-in `CircularProgressIndicator` |
-| fl_chart | ^1.2.0 | Charts for trends (optional, Phase 2+) | If you later want weekly/monthly trend charts; pie and bar charts available. Not needed for MVP but worth knowing about |
-
-### Build Tooling
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| build_runner | ^2.15.0 | Code generation orchestrator | Required by drift_dev and riverpod_generator; runs `dart run build_runner build` |
-| freezed | ^3.2.5 | Immutable data classes with copyWith | Use for settings models and any complex state objects; generates `==`, `hashCode`, `toString`, `copyWith`; integrates with Riverpod code-gen |
-| freezed_annotation | ^3.1.0 | Annotations for freezed | Runtime dependency paired with freezed |
-| json_annotation | ^4.12.0 | JSON serialization annotations | Needed if you ever serialize settings to JSON; freezed can generate `fromJson`/`toJson` |
-
-### Utility
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| path_provider | ^2.1.5 | App directory paths | Required by drift_flutter for database file location |
-| intl | ^0.20.2 | Date/time formatting | Format dates for calendar view, notification messages; locale-aware formatting |
-| shared_preferences | ^2.5.5 | Simple key-value storage | For lightweight settings (daily target, DND window times, quick-add amounts) that do not need relational queries. Simpler than putting everything in Drift |
-| google_fonts | ^8.1.0 | Typography | Clean font selection without bundling font files; optional but improves visual polish |
-
-### Dev/Quality
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| flutter_lints | ^6.0.0 | Lint rules | Official Flutter lint set; baseline code quality |
-| custom_lint | ^0.8.1 | Custom lint runner | Required by riverpod_lint to function |
-| flutter_launcher_icons | ^0.14.4 | App icon generation | Generate iOS and Android launcher icons from a single source image |
-
-## DND Window Handling -- Architecture Note
-
-**No package handles DND time windows natively for app-level scheduling.** This is an app-logic concern, not a notification-system concern. The recommended approach:
-
-1. **Store DND window** (start time, end time) in `shared_preferences`.
-2. **When scheduling notifications**, calculate the next valid notification time that falls outside the DND window. Use `zonedSchedule()` from flutter_local_notifications with a computed `TZDateTime`.
-3. **When user changes DND settings**, cancel all pending notifications (`cancelAll()`) and reschedule them with the new DND constraints.
-4. **flutter_local_notifications `bypassDnd`** on Android notification channels is for system-level DND (the phone's Do Not Disturb mode), NOT for app-level quiet hours. Do NOT use it for this feature -- it would ring through even when the user's phone is in system DND, which is hostile UX.
-
-This is straightforward to implement: a helper function that takes "next desired time" and "DND window" and returns the next valid time (either the same time if outside DND, or the DND end time if inside DND).
-
-## Alternatives Considered
-
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| State management | flutter_riverpod 3.x | BLoC / flutter_bloc | BLoC has more boilerplate (events, states, blocs) for a focused utility app; Riverpod's functional style with code-gen is simpler for this scope |
-| State management | flutter_riverpod | hooks_riverpod | Hooks add a paradigm unfamiliar to most Flutter devs; no material benefit for this app's complexity level |
-| Database | Drift | Hive | Hive is key-value, not relational; daily aggregates and calendar queries would require manual indexing and iteration instead of SQL |
-| Database | Drift | SharedPreferences (for everything) | SharedPreferences cannot do queries like "sum of intake grouped by date" efficiently; Drift was specifically chosen for structured data |
-| Database setup | drift_flutter | sqlite3_flutter_libs | sqlite3_flutter_libs is now EOL (marked obsolete on pub.dev). drift_flutter is the official replacement |
-| Notifications | flutter_local_notifications | awesome_notifications | awesome_notifications is explicitly incompatible with flutter_local_notifications; flutter_local_notifications is more established and lighter; awesome_notifications adds complexity we do not need |
-| Calendar | table_calendar | syncfusion_flutter_calendar | Syncfusion requires a license for commercial use; table_calendar is MIT-licensed and covers the needed functionality |
-| Calendar | table_calendar | flutter_calendar_carousel | flutter_calendar_carousel has not been updated in over 2 years; table_calendar is actively maintained |
-| Circular progress | percent_indicator | sleek_circular_slider | sleek_circular_slider is from an unverified publisher with no updates in 12+ months; percent_indicator is well-maintained with 4.2.5 released ~14 months ago but stable API |
-| Circular progress | percent_indicator | liquid_progress_indicator | liquid_progress_indicator is unmaintained (last updated 4 years ago); would be a fun visual but too risky to depend on |
-| Circular progress | percent_indicator | Custom paint (built-in) | CustomPainter works but requires significant boilerplate for animation, gradient, and child layout that percent_indicator provides out of the box |
-| Data classes | freezed | manual implementation | Freezed eliminates ~50 lines of boilerplate per model class; `copyWith` is essential for immutable state updates in Riverpod |
-| Settings storage | shared_preferences | Drift table | Simple key-value settings (target, DND times) do not justify a database table; shared_preferences is simpler and faster for this use case |
-
-## Packages to NOT Use
-
-| Package | Why Not |
-|---------|---------|
-| sqlite3_flutter_libs | EOL/obsolete. Use drift_flutter instead |
-| awesome_notifications | Incompatible with flutter_local_notifications (cannot coexist) |
-| get / GetX | Anti-pattern for testable architecture; Riverpod is the chosen approach |
-| provider (standalone) | Riverpod supersedes provider; mixing both causes confusion |
-| hive / isar | Drift already chosen; adding a second persistence layer creates maintenance burden |
-| flutter_native_timezone | Unmaintained predecessor of flutter_timezone |
-
-## Installation
+### Add to `dependencies`:
 
 ```yaml
-# pubspec.yaml
-
 dependencies:
-  flutter:
-    sdk: flutter
+  # ... existing deps unchanged ...
 
-  # State Management
-  flutter_riverpod: ^3.3.1
-  riverpod_annotation: ^4.0.2
+  # Dynamic Theming (v1.1)
+  dynamic_color: ^1.8.1
+```
 
-  # Database
-  drift: ^2.33.0
-  drift_flutter: ^0.3.0
-  path_provider: ^2.1.5
+### Add to `dev_dependencies`:
 
-  # Notifications
-  flutter_local_notifications: ^21.0.0
-  timezone: ^0.11.0
-  flutter_timezone: ^5.1.0
-  permission_handler: ^12.0.3
-
-  # UI
-  table_calendar: ^3.2.0
-  percent_indicator: ^4.2.5
-  google_fonts: ^8.1.0
-
-  # Data / Utility
-  freezed_annotation: ^3.1.0
-  json_annotation: ^4.12.0
-  shared_preferences: ^2.5.5
-  intl: ^0.20.2
-
+```yaml
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^6.0.0
+  # ... existing deps unchanged ...
 
-  # Code Generation
-  build_runner: ^2.15.0
-  drift_dev: ^2.33.0
-  riverpod_generator: ^4.0.3
-  freezed: ^3.2.5
-
-  # Lint
-  riverpod_lint: ^3.1.3
-  custom_lint: ^0.8.1
-
-  # Build
+  # App Icon Generation (v1.1)
   flutter_launcher_icons: ^0.14.4
 ```
 
-```bash
-# After adding dependencies:
-flutter pub get
+### New configuration block (root level of pubspec.yaml):
 
-# Run code generation (drift tables, riverpod providers, freezed models):
-dart run build_runner build --delete-conflicting-outputs
-
-# Or watch for changes during development:
-dart run build_runner watch --delete-conflicting-outputs
+```yaml
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 24
+  # Adaptive icon for Android 8+ (API 26+)
+  adaptive_icon_background: "#E3F2FD"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
 ```
 
-## Platform Configuration Notes
+Requires a 1024x1024 PNG source icon at `assets/icon/app_icon.png` and a foreground-only variant for Android adaptive icons.
 
-### Android
-- `compileSdk: 36` required by flutter_local_notifications 21.x
-- `minSdk: 24` (Android 7.0) required by flutter_local_notifications 21.x
-- Add exact alarm permission in AndroidManifest for Android 14+:
-  ```xml
-  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-  ```
+Run generation with:
+```bash
+dart run flutter_launcher_icons:generate
+```
 
-### iOS
-- Minimum iOS 13 required by flutter_local_notifications 21.x
-- Notification permission must be requested at runtime via permission_handler
-- Register `UNUserNotificationCenterDelegate` in AppDelegate per flutter_local_notifications docs
+## Integration Notes
+
+### dynamic_color Integration Pattern
+
+Current `main.dart` theme setup:
+```dart
+// BEFORE (v1.0)
+theme: ThemeData(
+  colorSchemeSeed: Colors.blue,
+  useMaterial3: true,
+),
+```
+
+Required change:
+```dart
+// AFTER (v1.1)
+DynamicColorBuilder(
+  builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+    return MaterialApp.router(
+      title: 'Drinky Drinky',
+      theme: ThemeData(
+        colorScheme: lightDynamic ?? ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: darkDynamic ?? ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      themeMode: ThemeMode.system,
+      routerConfig: router,
+    );
+  },
+)
+```
+
+**Critical:** `colorSchemeSeed` and `colorScheme` cannot be used simultaneously -- ThemeData asserts. Replace `colorSchemeSeed: Colors.blue` with `colorScheme: lightDynamic ?? ColorScheme.fromSeed(seedColor: Colors.blue)`.
+
+Platform behavior:
+- **Android 12+ (API 31+):** `lightDynamic` is a full `ColorScheme` derived from wallpaper colors. App adopts user's wallpaper palette automatically.
+- **Android <12:** `lightDynamic` is `null`. Falls back to `ColorScheme.fromSeed(seedColor: Colors.blue)` -- same as current behavior.
+- **iOS:** `lightDynamic` is `null`. Falls back identically. iOS has no wallpaper-based color API.
+
+### SnackBar Auto-Dismiss Fix (Flutter 3.38 Breaking Change)
+
+**Root cause identified:** Since Flutter 3.38, SnackBars with an `action` property no longer auto-dismiss. The `duration` parameter is ignored when an action is present. This is an intentional Material 3 accessibility change.
+
+Source: https://docs.flutter.dev/release/breaking-changes/snackbar-with-action-behavior-update
+
+**Fix:** Add `persist: false` to the SnackBar to restore the 5-second auto-dismiss:
+
+```dart
+SnackBar(
+  content: Text('+$amountMl ml added'),
+  duration: const Duration(seconds: 5),
+  persist: false,  // <-- restores auto-dismiss with action
+  behavior: SnackBarBehavior.floating,
+  margin: const EdgeInsets.all(8),
+  action: SnackBarAction(label: 'UNDO', onPressed: () { ... }),
+)
+```
+
+The `persist` property was introduced in Flutter 3.37.0-0.0.pre (stable in 3.38). The app uses Flutter 3.44.1 via FVM, so this property is available.
+
+### Liter Display Formatting
+
+Current progress ring center text:
+```dart
+'$totalMl / $target ml'
+```
+
+Change to show liters with 2 decimal places:
+```dart
+'${(totalMl / 1000).toStringAsFixed(2)} L / ${(target / 1000).toStringAsFixed(2)} L'
+// e.g., "1.75 L / 2.00 L" instead of "1750 / 2000 ml"
+```
+
+No package needed. Dart's `toStringAsFixed(2)` handles this natively. The `2` gives enough precision for hydration tracking without unnecessary digits.
+
+### Modal Bottom Sheet
+
+Flutter's built-in `showModalBottomSheet()` provides everything needed:
+- `isScrollControlled: true` for custom height and keyboard avoidance with TextField
+- `showDragHandle: true` for Material 3 drag indicator
+- `useSafeArea: true` to respect system UI
+- Material 3 styling is automatic when `useMaterial3: true` is set in the theme
+- No third-party bottom sheet package is warranted
+
+## Packages to NOT Add for v1.1
+
+| Package | Why Not |
+|---------|---------|
+| intl | Overkill for a single `toStringAsFixed(2)` call. Add later only if locale-aware number formatting is needed across multiple surfaces |
+| modal_bottom_sheet | Flutter's built-in `showModalBottomSheet` covers all v1.1 needs. The `modal_bottom_sheet` package adds iOS-style sheets and nested navigation, neither of which is needed |
+| flex_color_scheme | Adds an opinionated theme layer on top of Material 3. `dynamic_color` + `ColorScheme.fromSeed` is the official Google approach and sufficient for this app |
+| google_fonts | Already in CLAUDE.md recommendations but not in pubspec. Not needed for v1.1 |
+
+## Dependency Compatibility
+
+| Concern | Status |
+|---------|--------|
+| dynamic_color + Flutter 3.44.1 | Compatible (tested with 3.44.0 per pub.dev) |
+| dynamic_color + Dart >=3.10.0 | Compatible (tested with 3.12.0 per pub.dev) |
+| dynamic_color + material_color_utilities | Requires >=0.2.0 <=0.13.0; Flutter SDK bundles a compatible version |
+| dynamic_color + Riverpod | No interaction; `DynamicColorBuilder` wraps `MaterialApp`, sits below `ProviderScope` in the widget tree |
+| flutter_launcher_icons 0.14.4 | Approved in CLAUDE.md; supports adaptive icons, iOS 18+ dark mode icons |
 
 ## Version Confidence Assessment
 
 | Package | Version | Confidence | Verified Via |
 |---------|---------|------------|--------------|
-| flutter_riverpod | 3.3.1 | HIGH | pub.dev direct fetch |
-| riverpod_annotation | 4.0.2 | HIGH | pub.dev direct fetch |
-| riverpod_generator | 4.0.3 | HIGH | pub.dev direct fetch |
-| riverpod_lint | 3.1.3 | HIGH | pub.dev direct fetch |
-| drift | 2.33.0 | HIGH | pub.dev direct fetch |
-| drift_flutter | 0.3.0 | HIGH | pub.dev direct fetch + official drift docs |
-| drift_dev | 2.33.0 | HIGH | pub.dev direct fetch |
-| flutter_local_notifications | 21.0.0 | HIGH | pub.dev direct fetch + changelog |
-| timezone | 0.11.0 | HIGH | pub.dev direct fetch |
-| flutter_timezone | 5.1.0 | HIGH | pub.dev direct fetch |
-| permission_handler | 12.0.3 | HIGH | pub.dev direct fetch |
-| table_calendar | 3.2.0 | HIGH | pub.dev direct fetch |
-| percent_indicator | 4.2.5 | HIGH | pub.dev direct fetch |
-| fl_chart | 1.2.0 | HIGH | pub.dev direct fetch |
-| build_runner | 2.15.0 | HIGH | pub.dev direct fetch |
-| freezed | 3.2.5 | HIGH | pub.dev direct fetch |
-| freezed_annotation | 3.1.0 | HIGH | pub.dev direct fetch |
-| json_annotation | 4.12.0 | HIGH | pub.dev direct fetch |
-| path_provider | 2.1.5 | HIGH | pub.dev direct fetch |
-| shared_preferences | 2.5.5 | HIGH | pub.dev direct fetch |
-| intl | 0.20.2 | HIGH | pub.dev direct fetch |
-| google_fonts | 8.1.0 | HIGH | pub.dev direct fetch |
-| flutter_lints | 6.0.0 | HIGH | pub.dev direct fetch |
-| custom_lint | 0.8.1 | HIGH | pub.dev direct fetch |
-| flutter_launcher_icons | 0.14.4 | HIGH | pub.dev direct fetch |
+| dynamic_color | 1.8.1 | HIGH | pub.dev direct fetch (published Aug 2025, latest as of June 2026), changelog verified, publisher verified as material.io |
+| flutter_launcher_icons | 0.14.4 | HIGH | Approved in CLAUDE.md; pub.dev confirms latest (published June 2025) |
 
 ## Sources
 
-- pub.dev package pages (direct fetch, June 2026)
-- Drift official documentation: https://drift.simonbinder.eu/setup/
-- flutter_local_notifications API documentation: https://pub.dev/documentation/flutter_local_notifications/latest/
-- Riverpod changelog: https://pub.dev/packages/riverpod/changelog
-- flutter_local_notifications changelog: https://pub.dev/packages/flutter_local_notifications/changelog
+- pub.dev/packages/dynamic_color (direct fetch, June 2026) -- version 1.8.1 confirmed
+- pub.dev/packages/dynamic_color/changelog (direct fetch) -- version history verified
+- GitHub material-foundation/flutter-packages/packages/dynamic_color -- README and complete_example.dart
+- pub.dev/packages/flutter_launcher_icons (direct fetch) -- version 0.14.4 confirmed
+- Flutter breaking changes: https://docs.flutter.dev/release/breaking-changes/snackbar-with-action-behavior-update
+- Flutter API docs: ScaffoldMessenger, SnackBar, showModalBottomSheet (direct fetch)
+- Dart core library docs: toStringAsFixed -- https://dart.dev/libraries/dart-core

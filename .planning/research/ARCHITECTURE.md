@@ -1,669 +1,487 @@
-# Architecture Patterns
+# Architecture: v1.1 Feature Integration
 
-**Domain:** Offline hydration tracker (Flutter mobile)
-**Researched:** 2026-06-03
+**Project:** Drinky Drinky
+**Researched:** 2026-06-08
+**Overall confidence:** HIGH
+**Flutter SDK:** 3.44.1 (via FVM)
 
-## Recommended Architecture
+## Correction: Presets Are in Drift, Not SharedPreferences
 
-Feature-first folder layout with a four-layer architecture adapted from the official Flutter architecture guide and the Riverpod application architecture pattern. The four layers are **Presentation**, **Application**, **Domain**, and **Data**. Dependencies flow strictly downward: Presentation -> Application -> Domain <- Data. Riverpod providers wire the layers together.
+The milestone context states "SharedPreferences: stores daily target, DND settings, 4 preset amounts (preset0..preset3)." This is incorrect based on the actual codebase. Presets are stored in the Drift `DrinkPresets` table (rows with `id`, `amountMl`, `sortOrder`), not SharedPreferences. Settings (daily target, DND, interval) are also in the Drift `UserSettings` table. SharedPreferences is used only for the `drinky_permissionScreenShown` flag.
 
-### High-Level Diagram
-
-```
-+------------------------------------------------------------------+
-|                      PRESENTATION LAYER                          |
-|  Widgets (ConsumerWidget / ConsumerStatefulWidget)               |
-|  Controllers (Notifier / AsyncNotifier via Riverpod)             |
-+------------------------------------------------------------------+
-          |  ref.watch / ref.read            ^  AsyncValue<T>
-          v                                  |
-+------------------------------------------------------------------+
-|                      APPLICATION LAYER                           |
-|  Services (business logic spanning multiple repos)               |
-|  NotificationScheduler, HydrationService                         |
-+------------------------------------------------------------------+
-          |                                  ^
-          v                                  |
-+------------------------------------------------------------------+
-|                         DOMAIN LAYER                             |
-|  Models: WaterEntry, DailyProgress, UserSettings, DrinkPreset    |
-|  Pure Dart classes, no framework imports                         |
-+------------------------------------------------------------------+
-          ^                                  ^
-          |                                  |
-+------------------------------------------------------------------+
-|                          DATA LAYER                              |
-|  Drift Database (AppDatabase, DAOs)                              |
-|  Repositories (WaterRepository, SettingsRepository)              |
-|  Platform Services (NotificationPlugin wrapper)                  |
-+------------------------------------------------------------------+
-```
-
-### Folder Structure
-
-```
-lib/
-  src/
-    common_widgets/           # Shared UI components (progress ring, etc.)
-    constants/                # App-wide constants, theme, sizing
-    routing/                  # GoRouter config
-    utils/                    # Date helpers, formatters
-
-    features/
-      hydration/
-        presentation/
-          home_screen.dart            # Main screen with progress ring
-          home_controller.dart        # Notifier managing today's state
-          widgets/
-            progress_ring.dart
-            quick_add_buttons.dart
-        application/
-          hydration_service.dart      # Orchestrates add/undo logic
-        domain/
-          water_entry.dart            # Immutable model
-          daily_progress.dart         # Aggregate model
-        data/
-          water_repository.dart       # Wraps Drift DAO, exposes streams
-          water_dao.dart              # Drift DAO with @DriftAccessor
-
-      calendar/
-        presentation/
-          calendar_screen.dart
-          calendar_controller.dart
-        domain/
-          day_summary.dart
-        data/
-          calendar_repository.dart    # Reads from same DB, aggregate queries
-
-      settings/
-        presentation/
-          settings_screen.dart
-          settings_controller.dart
-        domain/
-          user_settings.dart
-          drink_preset.dart
-        data/
-          settings_repository.dart
-          settings_dao.dart
-
-      notifications/
-        application/
-          notification_scheduler.dart   # Computes times, reschedules on change
-        data/
-          notification_service.dart     # Wraps flutter_local_notifications
-
-    database/
-      app_database.dart               # Single Drift @DriftDatabase class
-      tables/
-        water_entries.dart
-        user_settings.dart
-        drink_presets.dart
-```
-
-**Rationale for feature-first over layer-first:** All files for a feature (hydration tracking, calendar view, settings) are colocated. Adding or removing a feature does not scatter files across the project. The `database/` folder is shared because Drift requires a single database class that references all tables, so table definitions live centrally while DAOs live within their feature's data layer.
+This correction matters for the 4-to-3 preset migration strategy below.
 
 ---
 
-## Component Boundaries
+## Feature 1: Material You (DynamicColorBuilder)
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| **AppDatabase** (Drift) | Single SQLite database instance; schema definition; migration strategy | DAOs (provides table access) |
-| **DAOs** (Drift) | Type-safe queries for a single feature domain | AppDatabase (reads/writes), Repositories (called by) |
-| **Repositories** | Abstract data access; transform DB rows to domain models; expose Streams for reactivity | DAOs (reads/writes), Services and Controllers (called by) |
-| **Services** | Cross-cutting business logic spanning multiple repositories | Repositories (reads), NotificationService (calls) |
-| **Controllers** (Riverpod Notifiers) | Hold UI state for a single screen; expose command methods for user actions | Services/Repositories (reads), Widgets (watched by) |
-| **Widgets** | Render UI from controller state; dispatch user actions to controllers | Controllers (watches via ref.watch) |
-| **NotificationService** | Wraps flutter_local_notifications; handles platform setup, permission requests, scheduling calls | Called by NotificationScheduler; interacts with OS notification APIs |
-| **NotificationScheduler** | Computes next notification times from settings; calls NotificationService to schedule/cancel | SettingsRepository (reads DND/interval), NotificationService (calls) |
+### The Problem
 
-### Boundary Rules
-
-1. **Widgets never import DAOs or AppDatabase** -- they only see Controllers.
-2. **Controllers never import Drift classes** -- they receive domain models from Repositories.
-3. **Repositories own the Stream contract** -- Drift's `.watch()` streams bubble up through repositories, wrapped in Riverpod StreamProviders.
-4. **Services exist only when logic spans multiple repositories** -- Controllers call repositories directly for simple single-repository reads/writes. Do not create services for trivial pass-through.
-5. **NotificationService is the only component touching flutter_local_notifications** -- isolating all platform-specific notification code.
-6. **Domain models are plain Dart** -- no Drift, no Flutter, no Riverpod imports. Pure data classes.
-
----
-
-## Data Flow
-
-### Primary Flow: User Adds Water
-
-```
-1. User taps Quick-Add button (250ml)
-   |
-2. Widget calls controller.addWater(250)
-   |
-3. Controller (HomeController / Notifier) calls waterRepository.insertEntry(250)
-   |
-4. WaterRepository -> WaterDAO.insertEntry() -> SQLite INSERT
-   |
-5. Drift's stream infrastructure detects table change
-   -> active .watch() queries on water_entries re-execute automatically
-   |
-6. StreamProvider<DailyProgress> emits new DailyProgress
-   |
-7. Controller's ref.watch picks up new value -> state updates
-   |
-8. Widget rebuilds -> progress ring animates to new percentage
+`lib/main.dart` line 37 hardcodes the theme:
+```dart
+theme: ThemeData(
+  colorSchemeSeed: Colors.blue,
+  useMaterial3: true,
+),
 ```
 
-### Reactive Data Pipeline: Drift -> Riverpod
+This ignores the device's wallpaper-derived color scheme on Android 12+ and accent color on other platforms.
+
+### Integration Point
+
+`DynamicColorBuilder` from the `dynamic_color` package (v1.8.1) wraps `MaterialApp`. It does NOT replace `ThemeData` -- it provides platform-derived `ColorScheme` values that feed INTO `ThemeData`.
+
+### Where It Goes in the Widget Tree
+
+DynamicColorBuilder wraps `MaterialApp.router` inside the `DrinkyDrinkyApp.build()` method. The ProviderScope stays outside (above) it because ProviderScope has no rendering concern.
+
+**Before:**
+```
+ProviderScope
+  DrinkyDrinkyApp (ConsumerWidget)
+    MaterialApp.router(theme: hardcoded)
+```
+
+**After:**
+```
+ProviderScope
+  DrinkyDrinkyApp (ConsumerWidget)
+    DynamicColorBuilder(builder: (lightDynamic, darkDynamic) =>
+      MaterialApp.router(
+        theme: ThemeData(colorScheme: lightDynamic ?? fallback),
+        darkTheme: ThemeData(colorScheme: darkDynamic ?? darkFallback),
+      )
+    )
+```
+
+### Exact Code Change
 
 ```dart
-// Database singleton provider
-final appDatabaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase();
-  ref.onDispose(() => db.close());
-  return db;
-});
-
-// Repository provider
-final waterRepositoryProvider = Provider<WaterRepository>((ref) {
-  return WaterRepository(ref.watch(appDatabaseProvider));
-});
-
-// Stream provider wrapping Drift's reactive query
-final dailyProgressProvider = StreamProvider<DailyProgress>((ref) {
-  final repo = ref.watch(waterRepositoryProvider);
-  return repo.watchTodayProgress();
-});
-```
-
-```dart
-// In WaterRepository
-class WaterRepository {
-  final AppDatabase _db;
-  WaterRepository(this._db);
-
-  Stream<DailyProgress> watchTodayProgress() {
-    final today = DateTime.now().dateOnly;
-    return _db.waterDao.watchEntriesForDate(today).map((entries) {
-      final totalMl = entries.fold(0, (sum, e) => sum + e.amountMl);
-      return DailyProgress(totalMl: totalMl, entries: entries);
-    });
-  }
-
-  Future<void> insertEntry(int amountMl) async {
-    await _db.waterDao.insertEntry(
-      WaterEntriesCompanion.insert(
-        amountMl: amountMl,
-        timestamp: DateTime.now(),
-        dateKey: DateTime.now().toDateKey(), // 'YYYY-MM-DD'
-      ),
-    );
-  }
+// lib/main.dart - DrinkyDrinkyApp.build()
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  final router = ref.watch(appRouterProvider);
+  return DynamicColorBuilder(
+    builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+      return MaterialApp.router(
+        title: 'Drinky Drinky',
+        theme: ThemeData(
+          colorScheme: lightDynamic ?? ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+          ),
+          useMaterial3: true,
+        ),
+        darkTheme: ThemeData(
+          colorScheme: darkDynamic ?? ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
+        ),
+        routerConfig: router,
+      );
+    },
+  );
 }
 ```
 
-This pattern is the core data flow mechanism. Drift's `.watch()` returns a `Stream<List<Row>>` that auto-emits whenever the underlying table changes. Wrapping it in a Riverpod `StreamProvider` gives the UI reactive access with zero manual refresh calls. Drift emits an initial value on listen, so the UI always has data immediately.
+### Key Details
 
-### Calendar View Flow
+- `lightDynamic` and `darkDynamic` are nullable. On devices without dynamic color (older Android, iOS without accent), they are null. The fallback uses `ColorScheme.fromSeed(seedColor: Colors.blue)` to match the current hardcoded behavior.
+- `useMaterial3: true` is already set. Keep it.
+- `colorSchemeSeed: Colors.blue` must be replaced with `colorScheme:` -- you cannot use both `colorScheme` and `colorSchemeSeed` simultaneously (ThemeData asserts against it).
+- Adding `darkTheme` enables automatic light/dark switching based on platform brightness. If the user does not want dark mode, omit `darkTheme` and only use `theme`.
 
-```
-1. User navigates to Calendar screen
-   |
-2. CalendarController.build() watches calendarRepository.watchMonthSummaries(month)
-   |
-3. CalendarRepository queries Drift:
-   SELECT date_key, SUM(amount_ml) as total
-   FROM water_entries
-   WHERE date_key BETWEEN ? AND ?
-   GROUP BY date_key
-   |
-4. Repository maps results + user's daily target -> List<DaySummary>
-   each DaySummary has: date, totalMl, targetMl, goalMet (bool)
-   |
-5. Calendar widget renders green/red color coding per day
-```
+### Files Changed
 
-### Notification Scheduling Flow
+| File | Change |
+|------|--------|
+| `pubspec.yaml` | Add `dynamic_color: ^1.8.1` to dependencies |
+| `lib/main.dart` | Wrap MaterialApp.router in DynamicColorBuilder; replace `colorSchemeSeed` with `colorScheme` |
 
-```
-1. App starts OR user changes reminder settings (interval, DND window)
-   |
-2. NotificationScheduler.reschedule() is called
-   |
-3. Scheduler reads current settings from SettingsRepository:
-   - reminderIntervalMin (e.g., 60)
-   - dndStartTime (e.g., "22:00")
-   - dndEndTime (e.g., "07:00")
-   - remindersEnabled (bool)
-   |
-4. Scheduler calls notificationService.cancelAll()
-   |
-5. Scheduler computes next N notification times:
-   - Start from current time (or dndEndTime if currently in DND)
-   - Add interval repeatedly
-   - Skip any time falling in DND window
-   - Cap at ~50 notifications (iOS keeps max 64)
-   |
-6. For each computed time:
-   notificationService.scheduleNotification(id, time, title, body)
-   -> flutterLocalNotificationsPlugin.zonedSchedule(...)
-   |
-7. OS handles delivery even when app is killed/terminated
-```
+### No Other Files Affected
 
-**Why zonedSchedule over periodicallyShow:** `periodicallyShow` only supports fixed enum intervals (every minute, hourly, daily) and cannot respect a DND window. `zonedSchedule` allows scheduling specific times, enabling skip-logic for DND. The tradeoff is manually computing and scheduling a batch of ~50 notifications, then rescheduling when settings change or on app launch. This is the correct approach for this use case.
+All screens already use `Theme.of(context).colorScheme` and `Theme.of(context).textTheme` to read colors. The existing code in HomeScreen (line 119: `final colorScheme = theme.colorScheme;`), HistoryScreen, and SettingsScreen will automatically pick up the new dynamic colors without any changes. This is the benefit of M3 tokenized theming.
+
+The two hardcoded color references that will NOT change (intentionally):
+- `Colors.green.shade600` in home_screen.dart (goal-met ring and text) -- semantic, not theme-derived
+- `Colors.orange.shade700` in history_screen.dart (streak fire icon) -- semantic, not theme-derived
+- `Colors.red.shade600` in history_screen.dart (missed-goal day) -- semantic, not theme-derived
+
+### Confidence: HIGH
+
+Source: pub.dev/packages/dynamic_color (v1.8.1 confirmed), GitHub example `complete_example.dart` confirms the fallback pattern.
 
 ---
 
-## Patterns to Follow
+## Feature 2: FAB + Bottom Sheet (Quick-Add Redesign)
 
-### Pattern 1: AsyncNotifier for Screen Controllers
+### The Problem
 
-**What:** Each screen gets a Riverpod `AsyncNotifier` (or `Notifier` for sync state) that initializes from repository data and exposes mutation methods.
+HomeScreen currently has 4 `FilledButton` widgets in a horizontal `Row` (lines 147-162). The v1.1 redesign replaces this with a FloatingActionButton that opens a modal bottom sheet containing 3 preset buttons plus a custom amount text field.
 
-**When:** Any screen that loads data and supports user actions.
+### Integration Points
+
+**A. Remove the quick-add Row**
+
+Delete lines 146-162 (the `Padding` wrapping the `Row` of `FilledButton` widgets and the `SizedBox(height: 24)` spacer above it).
+
+**B. Add FAB to the Scaffold**
+
+The FAB goes on the `Scaffold` in `_HomeScreenState.build()` (line 89). The Scaffold is already returned directly from the `build` method, so adding `floatingActionButton:` is straightforward.
+
+However, there is a subtlety: the HomeScreen's `Scaffold` is INSIDE the router's outer `Scaffold` (which holds the NavigationBar). The FAB belongs on the inner HomeScreen Scaffold because it should only appear on the Home tab, not on History or Settings.
 
 ```dart
-@riverpod
-class HomeController extends _$HomeController {
-  @override
-  Stream<DailyProgress> build() {
-    return ref.watch(dailyProgressProvider.stream);
-  }
+return Scaffold(
+  appBar: AppBar(title: const Text('Drinky Drinky')),
+  floatingActionButton: FloatingActionButton(
+    onPressed: () => _showAddDrinkSheet(context, presets),
+    child: const Icon(Icons.add),
+  ),
+  body: settingsAsync.when(/* ... */),
+);
+```
 
-  Future<void> addWater(int amountMl) async {
-    final repo = ref.read(waterRepositoryProvider);
-    await repo.insertEntry(amountMl);
-    // No manual refresh needed -- Drift stream triggers rebuild
-  }
+**C. Bottom Sheet Widget**
 
-  Future<void> undoLast() async {
-    final repo = ref.read(waterRepositoryProvider);
-    await repo.deleteLastEntry();
-  }
+Create a new file `lib/presentation/widgets/add_drink_sheet.dart`. The sheet is a `StatefulWidget` (not Consumer -- it receives data via constructor parameters and a callback for submission). Alternatively, it can be a `ConsumerWidget` if it needs to call providers directly.
+
+Recommended approach: pass the 3 presets and a callback `onAdd(int amountMl)` as parameters. The HomeScreen calls `_onQuickAdd(amountMl)` from the callback. This keeps the sheet pure and testable.
+
+```dart
+void _showAddDrinkSheet(BuildContext context, List<DrinkPresetEntity> presets) {
+  showModalBottomSheet(
+    context: context,
+    builder: (sheetContext) => AddDrinkSheet(
+      presets: presets.take(3).toList(), // first 3 only
+      onAdd: (amountMl) {
+        Navigator.of(sheetContext).pop();
+        _onQuickAdd(amountMl);
+      },
+    ),
+  );
 }
 ```
 
-**Key insight:** Using `ref.watch` on a StreamProvider inside `build()` makes the controller automatically reactive to Drift changes. No invalidation or manual state mutation is needed.
+**D. Sheet Layout**
 
-### Pattern 2: Single Database Instance via Provider
-
-**What:** One `AppDatabase` instance provided at app root; all DAOs and repositories access it.
-
-**When:** Always. Drift databases must be singletons.
-
-```dart
-final appDatabaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase();
-  ref.onDispose(() => db.close());
-  return db;
-});
+```
+[Preset 1: +200 ml]  [Preset 2: +300 ml]  [Preset 3: +400 ml]
+[TextField: Enter custom amount (ml)]  [Add button]
 ```
 
-**Why critical:** SQLite file locking prevents multiple database instances. Drift's stream notification system only works within a single instance -- if you create two, changes from one will not trigger streams in the other.
+The custom TextField validates input (same rules as preset edit: 50-2000 ml) and calls the same `onAdd` callback.
 
-### Pattern 3: Repository as Stream Gateway
+**E. Data Flow**
 
-**What:** Repositories wrap Drift DAO streams and transform raw rows into domain models. The UI layer never sees Drift-generated row types.
+The data flow does NOT change. The sheet submits to `_onQuickAdd(amountMl)` which calls `repo.insertEntry(amountMl, DateTime.now(), capturedKey)` exactly as before. The Riverpod provider graph (`waterRepositoryProvider` -> `totalMlForDateProvider` -> UI) is untouched.
 
-**When:** Every data access path.
+### FAB Visibility Concern
+
+The FAB must NOT show while `settingsAsync` is loading or errored. Move the FAB inside the `settingsAsync.when(data:)` branch, or conditionally set `floatingActionButton` to null when data is not available. Recommended:
 
 ```dart
-class WaterRepository {
-  final AppDatabase _db;
-  WaterRepository(this._db);
+floatingActionButton: settingsAsync.hasValue
+    ? FloatingActionButton(
+        onPressed: () => _showAddDrinkSheet(context, presets),
+        child: const Icon(Icons.add),
+      )
+    : null,
+```
 
-  Stream<DailyProgress> watchTodayProgress() {
-    return _db.waterDao
-      .watchEntriesForDate(DateTime.now().dateOnly)
-      .map(_toDailyProgress);
-  }
+But `presets` is not in scope at the Scaffold level -- it is computed inside `settingsAsync.when(data:)`. The cleanest solution: keep the FAB on the Scaffold and check `presetsAsync.hasValue` separately, since `presetsAsync` is already watched at line 69.
 
-  DailyProgress _toDailyProgress(List<WaterEntryRow> rows) {
-    final entries = rows.map((r) => WaterEntry(
-      id: r.id,
-      amountMl: r.amountMl,
-      timestamp: r.timestamp,
-    )).toList();
-    final total = entries.fold(0, (sum, e) => sum + e.amountMl);
-    return DailyProgress(totalMl: total, entries: entries);
-  }
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `lib/presentation/screens/home_screen.dart` | Remove quick-add Row, add FAB, add `_showAddDrinkSheet` method |
+| `lib/presentation/widgets/add_drink_sheet.dart` | **NEW** -- bottom sheet with 3 presets + custom field |
+
+### Files NOT Changed
+
+- No provider changes
+- No repository changes
+- No database changes
+- No router changes
+
+### Confidence: HIGH
+
+Standard Flutter pattern; no external dependencies needed.
+
+---
+
+## Feature 3: 4-to-3 Presets
+
+### The Problem
+
+The database seeds 4 presets (200/300/400/500 ml, sortOrder 0-3). The v1.1 design uses only 3 in the bottom sheet. The question is whether to delete preset 4 from the database or simply stop displaying it.
+
+### Recommended Approach: Display-Only Change, No Database Migration
+
+Do NOT delete the 4th preset row from the database. Reasons:
+1. Deleting requires a Drift schema migration (schemaVersion 1 -> 2), adding complexity for no user-facing benefit.
+2. Existing users may have customized all 4 presets. Deleting one loses their data.
+3. The preset row costs negligible storage.
+
+Instead, the UI layer simply takes the first 3 presets:
+- `AddDrinkSheet` receives `presets.take(3).toList()` (already shown above).
+- `SettingsScreen._presetsCard` filters to `presets.take(3).toList()` to only show 3 editable presets.
+
+### SettingsRepository
+
+No new method needed. The existing `watchPresets()` returns all presets ordered by `sortOrder`. The UI truncates to 3. The existing `updatePreset(id, amountMl)` works for any preset by ID.
+
+### Settings UI
+
+No new screen needed. The existing `_presetsCard` method in `settings_screen.dart` just needs its `presets` parameter filtered:
+
+```dart
+// settings_screen.dart, line 51 -- change from:
+final presets = presetsAsync.value ?? <DrinkPresetEntity>[];
+// to:
+final presets = (presetsAsync.value ?? <DrinkPresetEntity>[]).take(3).toList();
+```
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `lib/presentation/screens/home_screen.dart` | Pass `presets.take(3)` to the sheet |
+| `lib/presentation/screens/settings_screen.dart` | Filter to `presets.take(3)` in the presets card |
+
+### Files NOT Changed
+
+- No Drift migration
+- No DAO changes
+- No repository changes
+- No entity changes
+
+### Confidence: HIGH
+
+Pure UI-layer filtering. No risk.
+
+---
+
+## Feature 4: L-Display (Liter Formatting)
+
+### The Problem
+
+The CircularPercentIndicator center text (line 139) currently shows `$totalMl / $target ml` (e.g., "1500 / 2000 ml"). The v1.1 design wants to show liters with a decimal (e.g., "1.5 / 2.0 L").
+
+### Integration Point
+
+This is a pure formatting change in `_buildContent` in `home_screen.dart`. No provider, repository, or database changes.
+
+### Implementation
+
+Add a formatting helper:
+```dart
+String _formatMl(int ml) {
+  final liters = ml / 1000.0;
+  return '${liters.toStringAsFixed(1)} L';
 }
 ```
 
-### Pattern 4: Notification Permission Request at First Use
+Replace line 139:
+```dart
+// Before:
+isGoalMet && totalMl == target ? 'Goal reached!' : '$totalMl / $target ml'
+// After:
+isGoalMet && totalMl == target ? 'Goal reached!' : '${_formatMl(totalMl)} / ${_formatMl(target)}'
+```
 
-**What:** Request notification permissions lazily when the user first enables reminders in settings, not at app launch.
+Also consider:
+- The SnackBar text (line 248): `'+$amountMl ml added'` -- keep ml since individual drink amounts (200-500 ml) read more naturally in ml.
+- The timeline trailing text (line 202): `'+${entry.amountMl} ml'` -- keep ml for individual entries.
+- The history day summary (history_screen.dart line 380): `'$total of $dailyTarget ml'` -- could convert to L for consistency with home, but this is a separate screen and can be deferred.
 
-**When:** First time user toggles "Enable reminders" on.
+### Files Changed
 
-**Why:** Both iOS and Android present a one-shot permission dialog. Requesting at launch before the user understands why leads to denials that cannot be reversed without going to system Settings.
+| File | Change |
+|------|--------|
+| `lib/presentation/screens/home_screen.dart` | Add `_formatMl` helper; change center text format |
 
-### Pattern 5: Cancel-Then-Reschedule for Notifications
+### Files NOT Changed
 
-**What:** Every time notification settings change, cancel ALL pending notifications and reschedule from scratch.
+Everything else. This is purely cosmetic.
 
-**When:** On settings change, app startup, and midnight rollover.
+### Confidence: HIGH
 
-**Why:** The OS owns notification state, not the app. Trying to track "which notifications are currently pending" in the database is fragile and leads to duplicate or missed notifications. Stateless rescheduling is simpler and more reliable.
-
----
-
-## Anti-Patterns to Avoid
-
-### Anti-Pattern 1: Watching Drift Streams Directly in Widgets via StreamBuilder
-
-**What:** Using Flutter's `StreamBuilder` with a Drift `.watch()` stream inside a widget build method.
-
-**Why bad:** Bypasses Riverpod's caching and lifecycle management. Multiple widgets watching the same query create duplicate database listeners. No automatic disposal or sharing.
-
-**Instead:** Wrap Drift streams in Riverpod `StreamProvider`, watch those from widgets via `ref.watch`. Riverpod handles caching, sharing, and disposal.
-
-### Anti-Pattern 2: God Database Class
-
-**What:** Putting all queries in the `AppDatabase` class itself instead of using DAOs.
-
-**Why bad:** The class grows to hundreds of methods. Drift's DAO system exists specifically to modularize queries by domain.
-
-**Instead:** Use `@DriftAccessor` DAOs grouped by feature. `AppDatabase` references tables and DAOs but contains zero query methods.
-
-### Anti-Pattern 3: Storing Notification State in the Database
-
-**What:** Tracking pending notification IDs or scheduled times in SQLite.
-
-**Why bad:** The OS owns notification state. It will desync from the database when users swipe away notifications, clear app data, reboot, or force-stop the app.
-
-**Instead:** Treat notifications as fire-and-forget. On every relevant trigger (app launch, settings change), cancel all and reschedule from scratch using current settings. The database stores configuration (interval, DND window), not notification IDs.
-
-### Anti-Pattern 4: Business Logic in Widgets
-
-**What:** Calculating progress percentages, determining DND overlap, formatting dates, or computing daily totals inside widget build methods.
-
-**Why bad:** Untestable, duplicated across screens, mixes presentation with logic.
-
-**Instead:** Controllers compute derived state. Domain models carry computed properties (e.g., `DailyProgress.percentComplete`). Widgets only render.
-
-### Anti-Pattern 5: Multiple Database Instances
-
-**What:** Creating `AppDatabase()` in multiple places (e.g., in each DAO or repository constructor).
-
-**Why bad:** SQLite file locking causes crashes. Drift's stream notification only works within a single instance.
-
-**Instead:** Single instance via `appDatabaseProvider` at the root ProviderScope.
+No external dependency. String formatting only.
 
 ---
 
-## Drift Database Schema Design
+## Feature 5: SnackBar Non-Dismiss Fix
 
-### Tables
+### Root Cause
+
+**This is a Flutter 3.38+ breaking change, not an app bug.**
+
+Since Flutter 3.38, `SnackBar` widgets that have an `action` property set now persist indefinitely by default (they do NOT auto-dismiss after the `duration`). This is intentional for Material 3 accessibility -- action SnackBars should persist so users have time to interact.
+
+The app is on Flutter 3.44.1 (via FVM) and has `SnackBar` with a `SnackBarAction(label: 'UNDO')` at line 247-259 of `home_screen.dart`. The `duration: const Duration(seconds: 5)` is being IGNORED because of the new default behavior.
+
+Source: https://docs.flutter.dev/release/breaking-changes/snackbar-with-action-behavior-update
+
+### The Fix
+
+Add `persist: false` to the SnackBar to restore auto-dismiss behavior:
 
 ```dart
-class WaterEntries extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  IntColumn get amountMl => integer()();
-  DateTimeColumn get timestamp => dateTime()();
-  // Denormalized date key for efficient daily GROUP BY queries
-  TextColumn get dateKey => text()(); // 'YYYY-MM-DD'
-}
-
-class UserSettings extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  IntColumn get dailyTargetMl =>
-      integer().withDefault(const Constant(2000))();
-  IntColumn get reminderIntervalMin =>
-      integer().withDefault(const Constant(60))();
-  TextColumn get dndStartTime =>
-      text().withDefault(const Constant('22:00'))();
-  TextColumn get dndEndTime =>
-      text().withDefault(const Constant('07:00'))();
-  BoolColumn get remindersEnabled =>
-      boolean().withDefault(const Constant(false))();
-}
-
-class DrinkPresets extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  IntColumn get amountMl => integer()();
-  TextColumn get label => text()();
-  IntColumn get sortOrder => integer()();
-}
+messenger.showSnackBar(
+  SnackBar(
+    content: Text('+$amountMl ml added'),
+    duration: const Duration(seconds: 5),
+    persist: false,  // <-- THIS IS THE FIX
+    behavior: SnackBarBehavior.floating,
+    margin: const EdgeInsets.all(8),
+    action: SnackBarAction(
+      label: 'UNDO',
+      onPressed: () async {
+        await repo.deleteLastEntry(capturedKey);
+      },
+    ),
+  ),
+);
 ```
 
-### Key Schema Decisions
+### What the Fix Is NOT
 
-- **`dateKey` as denormalized text column:** Enables indexed GROUP BY queries for the calendar view without runtime date extraction from timestamps. Index on `dateKey` makes "all daily totals for a month" queries fast.
-- **`UserSettings` is a single-row table (singleton):** The app reads/updates row id=1. Seed it in `MigrationStrategy.onCreate`. This keeps all persistent state in Drift (no SharedPreferences dependency), which is simpler for a Drift-centric app.
-- **`DrinkPresets` with `sortOrder`:** Supports user-customizable button ordering on the home screen.
-- **Store DateTimes as ISO-8601 text:** Enable `store_date_time_values_as_text: true` in `build.yaml` for better debugging, human readability, and timezone awareness.
-- **`amountMl` as integer (not double):** Milliliters are always whole numbers for water tracking. Avoids floating-point comparison issues in aggregates.
+- It is NOT a `mounted` check issue (the existing `if (!mounted) return;` guard at line 241 is correct and should stay).
+- It is NOT a `ScaffoldMessenger` lifecycle issue (the `messenger.clearSnackBars()` call at line 245 is correct and should stay).
+- It is NOT a timer or `_onQuickAdd` issue.
+- It is NOT related to the `capturedKey` pattern (that pattern is correct for preventing stale date keys across async gaps).
 
-### Index
+### Other SnackBars to Check
 
-```dart
-@TableIndex(name: 'idx_water_entries_date_key', columns: {#dateKey})
-class WaterEntries extends Table { ... }
-```
+The `PermissionScreen` (line 92-99) also shows a SnackBar but WITHOUT an action, so it auto-dismisses correctly and does not need `persist: false`.
 
-The `dateKey` index is critical for calendar view performance. Without it, monthly aggregate queries require a full table scan.
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `lib/presentation/screens/home_screen.dart` | Add `persist: false` to SnackBar (1 line) |
+
+### Confidence: HIGH
+
+Source: official Flutter breaking change documentation at docs.flutter.dev. Verified that app targets Flutter >= 3.38 (3.44.1 via FVM). The `persist` property was introduced in 3.37.0-0.0.pre, stable in 3.38.
 
 ---
 
-## Platform-Specific Architecture: Notifications
+## Feature 6: App Icon (flutter_launcher_icons)
 
-### iOS Specifics
+### Integration Point
 
-| Concern | Detail |
-|---------|--------|
-| **Notification limit** | iOS keeps only the 64 most recently scheduled local notifications. For a 60-min interval across 16 waking hours, that is ~16/day. Schedule 2-3 days ahead max. |
-| **Permission timing** | Request via `IOSFlutterLocalNotificationsPlugin.requestPermissions()`. No second chance if denied -- user must go to system Settings manually. |
-| **AppDelegate setup** | Must set `UNUserNotificationCenter.current().delegate = self` in `didFinishLaunchingWithOptions`. |
-| **Background delivery** | iOS delivers scheduled local notifications even when the app is terminated. No background execution mode needed. |
+`flutter_launcher_icons` (v0.14.4) is already listed in CLAUDE.md as an approved dev dependency but is NOT in `pubspec.yaml` yet. It is a dev-only tool that runs as a code generator to produce platform-specific icon assets.
 
-### Android Specifics
+### Setup
 
-| Concern | Detail |
-|---------|--------|
-| **Notification channels** | Required on Android 8.0+. Create a "Hydration Reminders" channel at initialization. Sound and vibration settings are locked at channel creation time. |
-| **Exact alarms (Android 12+)** | Requires `SCHEDULE_EXACT_ALARM` permission. Android 14+ requires explicit user grant. Handle the revocation case gracefully. |
-| **Boot receiver** | Register `ScheduledNotificationBootReceiver` in AndroidManifest.xml. Requires `RECEIVE_BOOT_COMPLETED` permission. Ensures notifications survive device reboot. |
-| **Battery optimization** | Some OEMs (Xiaomi, Huawei, Samsung, Oppo) aggressively kill background apps and prevent alarm delivery. This is a known, unsolvable problem at the app level. Show a guidance screen linking to dontkillmyapp.com for affected devices. |
-| **compileSdk** | Must be 35+ (or 36 for flutter_local_notifications 21.x). |
-| **Java desugaring** | Required in build.gradle for scheduled notification features. |
-
-### NotificationService Skeleton
-
-```dart
-class NotificationService {
-  final FlutterLocalNotificationsPlugin _plugin;
-
-  Future<void> initialize() async {
-    const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
-    );
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: false,  // Request later, at first use
-      requestBadgePermission: false,
-      requestSoundPermission: false,
-    );
-    await _plugin.initialize(
-      const InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      ),
-      onDidReceiveNotificationResponse: _onNotificationTapped,
-    );
-  }
-
-  Future<bool> requestPermissions() async {
-    if (Platform.isIOS) {
-      return await _plugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(alert: true, badge: true, sound: true) ?? false;
-    }
-    if (Platform.isAndroid) {
-      return await _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission() ?? false;
-    }
-    return false;
-  }
-
-  Future<void> scheduleNotification({
-    required int id,
-    required TZDateTime scheduledTime,
-    required String title,
-    required String body,
-  }) async {
-    await _plugin.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: scheduledTime,
-      notificationDetails: _notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
-  }
-
-  Future<void> cancelAll() => _plugin.cancelAll();
-
-  static void _onNotificationTapped(NotificationResponse response) {
-    // Navigate to home screen or handle action
-  }
-}
+**Step 1: Add to pubspec.yaml dev_dependencies**
+```yaml
+dev_dependencies:
+  flutter_launcher_icons: ^0.14.4
 ```
+
+**Step 2: Add configuration block to pubspec.yaml**
+```yaml
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  # Optional: adaptive icon for Android 8+
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+```
+
+**Step 3: Place source image**
+- Create `assets/icon/` directory
+- Place a 1024x1024 PNG source image at `assets/icon/app_icon.png`
+- For Android adaptive icons, also place a foreground-only image at `assets/icon/app_icon_foreground.png` (should have transparent background with the icon centered in the safe zone -- inner 66% of the canvas)
+
+**Step 4: Run generator**
+```bash
+dart run flutter_launcher_icons
+```
+
+This generates:
+- Android: `android/app/src/main/res/mipmap-*` directories with all density variants
+- iOS: `ios/Runner/Assets.xcassets/AppIcon.appiconset/` with all required sizes
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `pubspec.yaml` | Add `flutter_launcher_icons: ^0.14.4` to dev_dependencies; add config block |
+| `assets/icon/app_icon.png` | **NEW** -- 1024x1024 source image |
+| `assets/icon/app_icon_foreground.png` | **NEW** (optional) -- adaptive icon foreground |
+| `android/app/src/main/res/mipmap-*/` | **GENERATED** -- all density variants |
+| `ios/Runner/Assets.xcassets/AppIcon.appiconset/` | **GENERATED** -- all sizes |
+
+### Files NOT Changed
+
+- No Dart source code changes
+- No runtime behavior changes
+
+### Confidence: HIGH
+
+flutter_launcher_icons 0.14.4 verified on pub.dev. Standard tooling.
 
 ---
 
-## App Lifecycle Integration
+## Build Order (Phase Sequencing Recommendation)
 
-### Startup Sequence
+### Rationale for Ordering
 
-```
-1. main() {
-     WidgetsFlutterBinding.ensureInitialized();
-     tz.initializeTimeZones();    // timezone package for zonedSchedule
-   }
-   |
-2. ProviderScope wraps MaterialApp
-   |
-3. appDatabaseProvider lazily creates AppDatabase (Drift)
-   |
-4. NotificationService.initialize() called early via a startup provider
-   |
-5. On first frame: Home screen watches dailyProgressProvider
-   -> triggers Drift query -> stream emits initial state
-   |
-6. NotificationScheduler checks if reminders are enabled
-   -> if yes, reschedules from current settings (handles reboot / app update)
-```
+Features have almost no cross-dependencies -- they touch different parts of the codebase with minimal overlap. The primary ordering factors are:
 
-### App Resume (from background)
+1. **Risk:** Fix the bug first (SnackBar), then do infrastructure (theme), then UI redesign.
+2. **File overlap:** FAB/sheet and L-display both touch `home_screen.dart`. Do them in the same phase or sequentially to avoid merge conflicts.
+3. **Independence:** App icon is fully independent and can be done at any point.
 
-```
-1. WidgetsBindingObserver.didChangeAppLifecycleState(resumed)
-   |
-2. Invalidate dailyProgressProvider to refresh "today" boundary
-   (if app was backgrounded past midnight, "today" changed)
-   |
-3. Optionally re-check notification permissions
-   (user may have revoked in system Settings while app was backgrounded)
-```
+### Recommended Phases
 
-### Settings Change -> Notification Reschedule
+**Phase 1: Bug Fix + Theme Infrastructure**
+- SnackBar `persist: false` fix (1 line, home_screen.dart)
+- DynamicColorBuilder + `dynamic_color` package (main.dart + pubspec.yaml)
+- L-display formatting (home_screen.dart)
 
-```
-1. User changes reminder interval or DND window in Settings
-   |
-2. SettingsController saves new values to SettingsRepository -> Drift
-   |
-3. SettingsRepository stream emits new UserSettings
-   |
-4. NotificationScheduler watches settings stream
-   -> on new emission: cancelAll() then reschedule with new parameters
-```
+Rationale: All three are small, low-risk, and independent of each other. The SnackBar fix is a one-liner. DynamicColorBuilder touches only main.dart. L-display is formatting-only. Bundling them avoids churning home_screen.dart across multiple phases.
 
----
+**Phase 2: Quick-Add Redesign**
+- Remove the 4-button quick-add Row
+- Add FAB to HomeScreen Scaffold
+- Create AddDrinkSheet widget (new file)
+- Filter presets to 3 in HomeScreen and SettingsScreen
 
-## Suggested Build Order (Dependency-Driven)
+Rationale: This is the largest change (new widget, UI restructure) and should be isolated so it can be tested independently. The preset filtering (4 -> 3) is coupled to this -- the sheet shows 3 presets, so the settings screen should match.
 
-Build in this order because each phase depends on the one before it.
+**Phase 3: App Icon**
+- Add flutter_launcher_icons config
+- Place source image(s)
+- Run generator
 
-### Phase 1: Data Foundation
+Rationale: Fully independent. No Dart code changes. Can be done at any point but placed last because it requires a design asset (the icon image) which may not be ready.
 
-Build first because every other component depends on data access.
+### Alternative: 2-Phase Approach
 
-1. **Domain models** (pure Dart classes -- WaterEntry, DailyProgress, UserSettings, DrinkPreset)
-2. **Drift tables + AppDatabase** (schema, code generation)
-3. **DAOs** (WaterDao, SettingsDao)
-4. **Repositories** (WaterRepository, SettingsRepository wrapping DAOs)
-5. **Core Riverpod providers** (appDatabaseProvider, repository providers, stream providers)
-6. **Unit tests** with in-memory Drift database
+If speed is preferred over granularity:
 
-### Phase 2: Core Tracking UI
+**Phase 1:** SnackBar fix + DynamicColorBuilder + L-display + 3-preset filter + app icon config
+**Phase 2:** FAB + bottom sheet (the only substantial new code)
 
-The central value proposition -- add water, see progress. Depends on Phase 1 data layer.
+### File Change Summary Across All Features
 
-1. **Home screen scaffold** (app bar, layout)
-2. **Progress ring widget** (watches dailyProgressProvider)
-3. **Quick-add buttons** (reads DrinkPresets provider, calls controller.addWater)
-4. **Undo functionality** (controller.undoLast)
-5. **Navigation / routing** (GoRouter with 3 routes: home, calendar, settings)
+| File | Features Touching It |
+|------|---------------------|
+| `pubspec.yaml` | Dynamic Color, App Icon |
+| `lib/main.dart` | Dynamic Color |
+| `lib/presentation/screens/home_screen.dart` | FAB/Sheet, L-Display, SnackBar Fix, Preset Filter |
+| `lib/presentation/screens/settings_screen.dart` | Preset Filter |
+| `lib/presentation/widgets/add_drink_sheet.dart` | FAB/Sheet (NEW) |
+| `assets/icon/app_icon.png` | App Icon (NEW) |
 
-### Phase 3: Settings
+### Critical Observation
 
-Depends on Phase 1 data layer. Enables customization of target, presets, and notification config.
-
-1. **Settings screen UI** (daily target input, preset editor, reminder toggle)
-2. **Settings controller** (reads/writes via SettingsRepository)
-3. **Seed default settings** in database migration onCreate
-
-### Phase 4: Calendar
-
-Read-only view over existing water_entries data. Depends on Phase 1 (data) and Phase 3 (daily target from settings).
-
-1. **Calendar screen** (month view with green/red day markers)
-2. **CalendarRepository** (aggregate query: GROUP BY dateKey)
-3. **Calendar controller** (watches month summaries + daily target)
-
-### Phase 5: Notifications
-
-Most platform-specific feature with the most edge cases. Build last so the core app works without it and notification bugs do not block tracking.
-
-1. **NotificationService** (platform initialization, permission flow)
-2. **NotificationScheduler** (compute DND-aware times, schedule batch)
-3. **Wire to settings** (watch remindersEnabled / interval / DND changes -> reschedule)
-4. **Android manifest + iOS plist setup** (permissions, boot receiver, channels)
-5. **Battery optimization guidance** (detect OEM, show dontkillmyapp.com link)
-
-### Phase Ordering Rationale
-
-- Phase 1 before everything: all features read/write data
-- Phase 2 before Phase 3: the core loop must work with default values before customization exists
-- Phase 3 before Phase 5: notification scheduling reads settings -- settings must exist first
-- Phase 4 is independent of Phase 3/5 but needs daily target from settings, so after Phase 3
-- Phase 5 last: most complex, most platform-specific, least critical to core value proposition
-
----
-
-## Scalability Considerations
-
-| Concern | v1 (current) | v2 (future) |
-|---------|-------------|-------------|
-| Data volume | ~10-20 entries/day, single device | Add data export/import (JSON/CSV) for backup |
-| Schema changes | Drift step-by-step migrations | Use `drift_dev schema` tooling for verified migrations |
-| State management | ~10-15 Riverpod providers | Code-gen with `@riverpod` annotation keeps it manageable |
-| Notifications | zonedSchedule batch of ~50 | Push notifications if cloud sync is added |
-| Platform code | flutter_local_notifications | Health kit / Google Fit would need method channels or plugins |
-| Testing | Unit test repos with in-memory Drift DB | Widget tests with ProviderScope overrides |
-
-A user logging 10 drinks/day for 10 years produces ~36,500 rows. SQLite handles this trivially with indexed queries.
-
----
-
-## Sources
-
-- Flutter official architecture guide: https://docs.flutter.dev/app-architecture/guide (HIGH confidence)
-- Riverpod 3.3.0 documentation via Context7: pub.dev/documentation/flutter_riverpod/3.3.0 (HIGH confidence)
-- Drift documentation via Context7: drift.simonbinder.eu (HIGH confidence)
-- flutter_local_notifications pub.dev: https://pub.dev/packages/flutter_local_notifications (HIGH confidence)
-- flutter_local_notifications v21.0.0 changelog: https://pub.dev/packages/flutter_local_notifications/changelog (HIGH confidence)
-- Andrea Bizzotto, Flutter project structure: https://codewithandrea.com/articles/flutter-project-structure/ (MEDIUM confidence -- well-regarded community source)
-- Andrea Bizzotto, Riverpod app architecture: https://codewithandrea.com/articles/flutter-app-architecture-riverpod-introduction/ (MEDIUM confidence -- community source)
+`home_screen.dart` is touched by 4 of 6 features. Plan carefully to avoid merge conflicts if phases execute in parallel. The recommended 3-phase approach puts the small home_screen.dart changes (SnackBar fix + L-display) into Phase 1 and the structural change (FAB + sheet + remove Row) into Phase 2, so Phase 2 starts with a clean baseline.
