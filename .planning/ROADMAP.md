@@ -79,7 +79,12 @@ Plans:
   1. App appears on the home screen / app drawer with a water glass motif icon at the correct resolution for the device
   2. iOS icon has an opaque background with no alpha transparency (App Store requirement)
 
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+
+- [ ] 08-01-PLAN.md -- Add dev dependencies, create icon generator script, generate all platform launcher icons
+
+**UI hint**: no
 
 ## Progress
 
@@ -95,4 +100,4 @@ Phases execute in numeric order: 6 -> 7 -> 8
 | 5. Notifications | v1.0 | 1/1 | Complete | 2026-06-05 |
 | 6. Bug Fix + Theme + L-Display | v1.1 | 2/2 | Complete    | 2026-06-08 |
 | 7. Intake Redesign | v1.1 | 1/1 | Complete    | 2026-06-08 |
-| 8. App Icon | v1.1 | 0/0 | Not started | - |
+| 8. App Icon | v1.1 | 0/1 | Not started | - |
