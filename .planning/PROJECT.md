@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Flutter mobile app that helps users track their daily water intake and stay hydrated. Users set a daily water goal, log drinks via customizable quick-add buttons, and receive configurable reminder notifications. Runs on iOS and Android.
+A Flutter mobile app that helps users track their daily water intake and stay hydrated. Users set a daily water goal, log drinks via customizable quick-add buttons, review their history on a monthly calendar, and receive configurable reminder notifications. Runs on iOS and Android. Fully offline — no backend, no user accounts.
 
 ## Core Value
 
@@ -12,18 +12,23 @@ The user always knows how close they are to their daily hydration goal and gets 
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ Home screen shows daily progress with an animated circular progress bar — v1.0
+- ✓ User can log water intake via preset quick-add buttons (customizable amounts) — v1.0
+- ✓ User can undo the last water entry — v1.0
+- ✓ User can see a chronological timeline of today's individual intakes — v1.0
+- ✓ User can set a global daily water target in ml — v1.0 (L display deferred to v1.1)
+- ✓ User can customize the amount for each quick-add preset button — v1.0
+- ✓ User can configure the notification reminder interval — v1.0
+- ✓ User can define a DND window to suppress notifications — v1.0
+- ✓ Calendar view shows past days color-coded green (goal met) or red (goal missed) — v1.0
+- ✓ User can see consecutive-day streak count — v1.0
+- ✓ App sends reminder notifications at a configurable interval, respecting DND — v1.0
+- ✓ App shows a first-launch permission explanation screen before the system prompt — v1.0
+- ✓ Notifications stop automatically when the daily goal is reached — v1.0
 
 ### Active
 
-- [ ] User can set a global daily water target in liters
-- [ ] Home screen shows daily progress with a circular progress bar
-- [ ] User can log water intake via preset quick-add buttons (customizable amounts)
-- [ ] User can undo the last water entry
-- [ ] Calendar view shows past days color-coded green (goal met) or red (goal missed)
-- [ ] App sends reminder notifications at a configurable interval
-- [ ] User can define a DND window (start/end time) to suppress notifications
-- [ ] Quick-add button amounts are user-configurable
+- [ ] Daily target displayed in liters as well as ml (SETT-01 L-display, deferred from Phase 3 per D-15)
 
 ### Out of Scope
 
@@ -32,13 +37,25 @@ The user always knows how close they are to their daily hydration goal and gets 
 - Detailed log editing (delete arbitrary past entries) — undo last is sufficient for v1
 - Social / sharing features — focus on personal tracking
 - Apple Health / Google Fit integration — defer to v2
+- fl oz unit support — ml/L for v1; European market focus
+- Backend / cloud sync — fully offline for v1
+- Smart/adaptive reminder timing — requires usage pattern learning; v2
 
 ## Context
 
-- Stack: Flutter, Riverpod (state management), Drift (local SQLite), flutter_local_notifications
+**Current state (v1.0):**
+- Stack: Flutter 3.44.1, Riverpod 3.x (code-gen), Drift 2.33.0 (SQLite), flutter_local_notifications 21.0.0
 - Target platforms: iOS and Android
-- Fully offline app — no backend, no user accounts
-- Data stored locally via Drift; no sync needed for v1
+- Fully offline — no backend, no user accounts, no sync
+- ~5,576 lines of Dart across 166 files changed
+- 11 DAO unit tests passing; flutter analyze clean
+
+**Known issues / tech debt:**
+- `deleteLastEntry` in WaterEntryDao has no date filter (cross-day undo risk) — fix in v1.1
+- `_todayDateKey()` captured once at provider construction — wrong after midnight without app resume — fix in v1.1
+- `dateKey` validation is regex-only (allows semantically invalid dates) — low risk, fix in v1.1
+- Android OEM background killing (Samsung/Xiaomi) may silently suppress notifications — requires physical device testing
+- Timeline sort order is oldest-first (ASC) in code; UI-SPEC specified newest-first — accepted as-is
 
 ## Constraints
 
@@ -50,27 +67,15 @@ The user always knows how close they are to their daily hydration goal and gets 
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Drift over Hive/SharedPreferences | Structured queries needed for daily aggregates and calendar view | — Pending |
-| Riverpod over BLoC | Lighter boilerplate, good fit for a focused utility app | — Pending |
-| Single global daily target | Simplifies the data model and UX; per-day targets deferred | — Pending |
-| Undo last (not full log) | Keeps home screen simple; covers the most common error case | — Pending |
-
-## Evolution
-
-This document evolves at phase transitions and milestone boundaries.
-
-**After each phase transition** (via `/gsd-transition`):
-1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
-
-**After each milestone** (via `/gsd-complete-milestone`):
-1. Full review of all sections
-2. Core Value check — still the right priority?
-3. Audit Out of Scope — reasons still valid?
-4. Update Context with current state
+| Drift over Hive/SharedPreferences | Structured queries needed for daily aggregates and calendar view | ✓ Good — reactive streams integrated cleanly with Riverpod |
+| Riverpod over BLoC | Lighter boilerplate, good fit for a focused utility app | ✓ Good — code-gen providers reduced guesswork significantly |
+| Single global daily target | Simplifies the data model and UX; per-day targets deferred | ✓ Good — no complexity needed for v1 |
+| Undo last (not full log) | Keeps home screen simple; covers the most common error case | ✓ Good — users confirmed via UAT |
+| NotificationService as singleton (not Riverpod) | Notifications are imperative side effects, not reactive streams | ✓ Good — avoids Riverpod lifecycle complexity for a fire-and-forget service |
+| Plugin-native permission request (not permission_handler) | Official flutter_local_notifications docs recommend resolvePlatformSpecificImplementation | ✓ Good — cleaner API, permission_handler kept for status check and openAppSettings() only |
+| Rolling 64-slot scheduling window | iOS hard limit on pending notifications | ✓ Good — 30-day safety valve prevents infinite loop |
+| Notifications built last (Phase 5) | Highest pitfall density and platform complexity | ✓ Good — core app worked without notifications during development |
+| Flutter 3.44.1 (upgraded from 3.38.1) | analyzer version conflict between drift_dev and riverpod_generator required upgrade | ✓ Necessary — resolved the conflict cleanly |
 
 ---
-*Last updated: 2026-06-03 — Phase 1 (Data Foundation) complete. Drift schema, DAOs, repositories, Riverpod providers, GoRouter wired. 11 DAO unit tests passing. App launches on device. Moving to Phase 2: Core Tracking UI.*
+*Last updated: 2026-06-08 after v1.0 MVP milestone — all 13 v1 requirements delivered across 5 phases in 5 days.*

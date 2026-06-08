@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: complete
-stopped_at: Phase 5 Plan 01 complete — NotificationService, PermissionScreen, rolling-window scheduling, goal-reached cancel
-last_updated: "2026-06-05T15:30:00.000Z"
-last_activity: 2026-06-05
+status: Awaiting next milestone
+stopped_at: Phase 5 Plan 01 complete — all v1.0 requirements delivered (NOTF-01, NOTF-02, NOTF-03)
+last_updated: "2026-06-08T10:09:53.813Z"
+last_activity: 2026-06-08 — Milestone v1.0 completed and archived
 progress:
   total_phases: 5
   completed_phases: 5
@@ -25,12 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 
 ## Current Position
 
-Phase: 5
-Plan: 01 complete
-Status: All phases complete — v1.0 milestone delivered
-Last activity: 2026-06-05
-
-Progress: [██████████] 100%
+Phase: Milestone v1.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-08 — Milestone v1.0 completed and archived
 
 ## Performance Metrics
 
@@ -99,3 +97,7 @@ Items acknowledged and carried forward from previous milestone close:
 Last session: 2026-06-05T15:30:00.000Z
 Stopped at: Phase 5 Plan 01 complete — all v1.0 requirements delivered (NOTF-01, NOTF-02, NOTF-03)
 Resume file: None — milestone complete
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
