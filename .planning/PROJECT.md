@@ -37,11 +37,14 @@ The user always knows how close they are to their daily hydration goal and gets 
 - ✓ App shows a first-launch permission explanation screen before the system prompt — v1.0
 - ✓ Notifications stop automatically when the daily goal is reached — v1.0
 
+### Validated
+
+- ✓ Home screen displays goal and current intake in liters with 2 decimal places (L-DISP-01) — Validated in Phase 6
+- ✓ SnackBar undo notification auto-dismisses after the 5-second timer (BUG-01) — Validated in Phase 6
+- ✓ App uses Material You dynamic color on Android 12+; static seed palette on Android <12; iOS unaffected (THEME-01) — Validated in Phase 6
+
 ### Active
 
-- [ ] Home screen displays goal and current intake in liters with 2 decimal places (L-DISP-01) — v1.1
-- [ ] SnackBar undo notification auto-dismisses after the 5-second timer (BUG-01) — v1.1
-- [ ] App uses Material You dynamic color on Android 12+; static seed palette on Android <12; iOS unaffected (THEME-01) — v1.1
 - [ ] Home screen FAB opens add-intake modal bottom sheet; quick-add buttons removed from home (INTAKE-01) — v1.1
 - [ ] Add-intake sheet shows 3 configurable presets and a custom ml text field (INTAKE-02) — v1.1
 - [ ] App icon uses a water glass motif across all iOS/Android sizes (ICON-01) — v1.1
@@ -111,4 +114,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-08 — v1.1 Polish & UX milestone started.*
+*Last updated: 2026-06-08 — Phase 6 complete (Bug Fix + Theme + L-Display).*
