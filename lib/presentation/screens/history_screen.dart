@@ -136,6 +136,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
           final theme = Theme.of(context);
           final colorScheme = theme.colorScheme;
+          final streakColor = theme.brightness == Brightness.dark
+              ? Colors.orange.shade400
+              : Colors.orange.shade700;
 
           // Clamp focusedDay to [firstDay, lastDay] to prevent TableCalendar
           // assertion errors (Pitfall 3).
@@ -165,7 +168,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         Icon(
                           Icons.local_fire_department,
                           size: 32,
-                          color: Colors.orange.shade700,
+                          color: streakColor,
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -320,16 +323,23 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     required bool isToday,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
+    final brightness = Theme.of(context).brightness;
 
     Color? fillColor;
     Color? textColor;
 
     if (metGoal == true) {
-      fillColor = Colors.green.shade600.withValues(alpha: 0.15);
-      textColor = Colors.green.shade600;
+      final green = brightness == Brightness.dark
+          ? Colors.green.shade400
+          : Colors.green.shade600;
+      fillColor = green.withValues(alpha: 0.15);
+      textColor = green;
     } else if (metGoal == false) {
-      fillColor = Colors.red.shade600.withValues(alpha: 0.15);
-      textColor = Colors.red.shade600;
+      final red = brightness == Brightness.dark
+          ? Colors.red.shade400
+          : Colors.red.shade600;
+      fillColor = red.withValues(alpha: 0.15);
+      textColor = red;
     }
     // metGoal == null: no fill, default text color (today ring only)
 
