@@ -26,7 +26,7 @@
 
 ### App Icon
 
-- [ ] **ICON-01**: App uses a water glass motif icon across all required iOS and Android launcher sizes; iOS variant has an opaque background (no alpha channel)
+- [x] **ICON-01**: App uses a water glass motif icon across all required iOS and Android launcher sizes; iOS variant has an opaque background (no alpha channel)
 
 ---
 

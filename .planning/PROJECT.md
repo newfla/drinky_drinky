@@ -47,7 +47,7 @@ The user always knows how close they are to their daily hydration goal and gets 
 
 - ✓ Home screen FAB opens add-intake modal bottom sheet; quick-add buttons removed from home (INTAKE-01) — Validated in Phase 7
 - ✓ Add-intake sheet shows 3 configurable presets and a custom ml text field (INTAKE-02) — Validated in Phase 7
-- [ ] App icon uses a water glass motif across all iOS/Android sizes (ICON-01) — v1.1
+- ✓ App icon uses a water glass motif across all iOS/Android sizes (ICON-01) — Validated in Phase 8
 
 ### Out of Scope
 
@@ -114,4 +114,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-08 — Phase 7 complete (Intake Redesign — FAB + modal bottom sheet).*
+*Last updated: 2026-06-08 — Phase 8 complete (App Icon — water glass launcher icon, iOS + Android adaptive). v1.1 milestone fully shipped.*
