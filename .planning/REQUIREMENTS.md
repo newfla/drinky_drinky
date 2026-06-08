@@ -19,10 +19,10 @@
 
 ### Intake Redesign
 
-- [ ] **INTAKE-01**: Home screen quick-add buttons are removed; a FAB opens the add-intake interface
-- [ ] **INTAKE-02**: Add-intake modal bottom sheet displays 3 configurable preset buttons (reduced from 4)
-- [ ] **INTAKE-03**: Add-intake sheet includes a custom ml text field with numeric keyboard; submitting adds the entry and closes the sheet
-- [ ] **INTAKE-04**: Settings screen preset editing is reduced to 3 configurable slots; the 4th preset slot is retired
+- [x] **INTAKE-01**: Home screen quick-add buttons are removed; a FAB opens the add-intake interface
+- [x] **INTAKE-02**: Add-intake modal bottom sheet displays 3 configurable preset buttons (reduced from 4)
+- [x] **INTAKE-03**: Add-intake sheet includes a custom ml text field with numeric keyboard; submitting adds the entry and closes the sheet
+- [x] **INTAKE-04**: Settings screen preset editing is reduced to 3 configurable slots; the 4th preset slot is retired
 
 ### App Icon
 
