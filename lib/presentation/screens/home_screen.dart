@@ -140,7 +140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           backgroundColor:
               colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           center: Text(
-            '${_formatLiters(context, totalMl)} / ${_formatLiters(context, target)} L',
+            isGoalMet ? 'Goal reached!' : '${_formatLiters(context, totalMl)} / ${_formatLiters(context, target)} L',
             style: theme.textTheme.headlineMedium?.copyWith(
               color: isGoalMet ? goalMetColor : null,
             ),
