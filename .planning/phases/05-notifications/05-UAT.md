@@ -1,5 +1,5 @@
 ---
-status: diagnosed
+status: complete
 phase: 05-notifications
 source: [05-01-SUMMARY.md]
 started: 2026-06-08T00:00:00Z

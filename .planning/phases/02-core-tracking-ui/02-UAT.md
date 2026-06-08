@@ -1,5 +1,5 @@
 ---
-status: diagnosed
+status: complete
 phase: 02-core-tracking-ui
 source: [02-01-SUMMARY.md, 02-02-SUMMARY.md]
 started: 2026-06-04T15:30:00Z
