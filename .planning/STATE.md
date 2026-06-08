@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & UX
-status: planning
+status: executing
 stopped_at: Phase 6 UI-SPEC approved
-last_updated: "2026-06-08T12:24:42.846Z"
-last_activity: 2026-06-08 — Roadmap created for v1.1 (Phases 6-8)
+last_updated: "2026-06-08T13:02:05.144Z"
+last_activity: 2026-06-08 -- Phase 06 execution started
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
+  total_plans: 2
   completed_plans: 0
   percent: 0
 ---
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-08)
 
 **Core value:** The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
-**Current focus:** v1.1 Polish & UX — Phase 6 (Bug Fix + Theme + L-Display)
+**Current focus:** Phase 06 — bug-fix-theme-l-display
 
 ## Current Position
 
-Phase: 6 of 8 (Bug Fix + Theme + L-Display)
-Plan: Not yet planned
-Status: Ready to plan
-Last activity: 2026-06-08 — Roadmap created for v1.1 (Phases 6-8)
+Phase: 06 (bug-fix-theme-l-display) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 06
+Last activity: 2026-06-08 -- Phase 06 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
