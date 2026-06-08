@@ -22,7 +22,7 @@ class NotificationService {
   static const String _channelId = 'hydration_reminders';
   static const String _channelName = 'Hydration Reminders';
   static const String _notifTitle = 'Drinky Drinky';
-  static const String _notifBody = 'Time to drink water! \u{1F4A7}';
+  static const String _notifBody = 'Time to drink water!';
 
   bool _initialized = false;
 
