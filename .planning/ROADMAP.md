@@ -24,7 +24,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 **Milestone Goal:** Refine the interaction model, fix known bugs, adopt Material You theming with dark mode, and give the app a proper icon.
 
-- [ ] **Phase 6: Bug Fix + Theme + L-Display** -- Fix SnackBar persistence bug, show liters with locale formatting, and adopt Material You dynamic color with dark mode support
+- [x] **Phase 6: Bug Fix + Theme + L-Display** -- Fix SnackBar persistence bug, show liters with locale formatting, and adopt Material You dynamic color with dark mode support (completed 2026-06-08)
 - [ ] **Phase 7: Intake Redesign** -- Replace home-screen quick-add buttons with a FAB-triggered modal bottom sheet featuring 3 presets and custom ml input
 - [ ] **Phase 8: App Icon** -- Generate a water glass motif launcher icon for all iOS and Android sizes
 
@@ -46,7 +46,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 Plans:
 
 - [x] 06-01-PLAN.md -- Add dynamic_color and intl dependencies; integrate DynamicColorBuilder with dual theme in main.dart
-- [ ] 06-02-PLAN.md -- SnackBar persist fix, locale-aware L-display, brightness-adaptive semantic colors across home and history screens
+- [x] 06-02-PLAN.md -- SnackBar persist fix, locale-aware L-display, brightness-adaptive semantic colors across home and history screens
 
 **UI hint**: yes
 
@@ -89,6 +89,6 @@ Phases execute in numeric order: 6 -> 7 -> 8
 | 3. Settings | v1.0 | 1/1 | Complete | 2026-06-05 |
 | 4. Calendar & Streaks | v1.0 | 1/1 | Complete | 2026-06-05 |
 | 5. Notifications | v1.0 | 1/1 | Complete | 2026-06-05 |
-| 6. Bug Fix + Theme + L-Display | v1.1 | 1/2 | In Progress|  |
+| 6. Bug Fix + Theme + L-Display | v1.1 | 2/2 | Complete   | 2026-06-08 |
 | 7. Intake Redesign | v1.1 | 0/0 | Not started | - |
 | 8. App Icon | v1.1 | 0/0 | Not started | - |
