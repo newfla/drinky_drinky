@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & UX
 status: planning
-stopped_at: Phase 6 context gathered
-last_updated: "2026-06-08T12:15:34.142Z"
+stopped_at: Phase 6 UI-SPEC approved
+last_updated: "2026-06-08T12:24:42.846Z"
 last_activity: 2026-06-08 — Roadmap created for v1.1 (Phases 6-8)
 progress:
   total_phases: 3
@@ -85,9 +85,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-08T12:15:34.136Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-bug-fix-theme-l-display/06-CONTEXT.md
+Last session: 2026-06-08T12:24:42.842Z
+Stopped at: Phase 6 UI-SPEC approved
+Resume file: .planning/phases/06-bug-fix-theme-l-display/06-UI-SPEC.md
 
 ## Operator Next Steps
 
