@@ -89,17 +89,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Drinky Drinky')),
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Add water',
+        onPressed: () {
+          final presets = presetsAsync.value ?? <DrinkPresetEntity>[];
+          showModalBottomSheet(
+            context: context,
+            showDragHandle: true,
+            useSafeArea: true,
+            builder: (_) => _IntakeBottomSheet(
+              presets: presets.take(3).toList(),
+              onAdd: _onQuickAdd,
+            ),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
       body: settingsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(
-          child: Text('Something went wrong loading your data.'),
+          child: Text('Something went wrong loading your data. Please restart the app.'),
         ),
         data: (settings) {
           final totalMl = totalAsync.value ?? 0;
           final entries = (entriesAsync.value ?? <WaterEntryEntity>[]).reversed.toList();
-          final presets = presetsAsync.value ?? <DrinkPresetEntity>[];
 
-          return _buildContent(context, settings, totalMl, entries, presets);
+          return _buildContent(context, settings, totalMl, entries);
         },
       ),
     );
@@ -110,7 +125,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     UserSettingsEntity settings,
     int totalMl,
     List<WaterEntryEntity> entries,
-    List<DrinkPresetEntity> presets,
   ) {
     final target = settings.dailyTargetMl;
     final percentage =
@@ -146,25 +160,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 24), // lg spacing
-        // Quick-Add Row (HOME-02)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: presets.map((preset) {
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: FilledButton(
-                    onPressed: () => _onQuickAdd(preset.amountMl),
-                    child: Text('+${preset.amountMl} ml'),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 32), // xl spacing
+        const SizedBox(height: 32), // xl spacing (ring to timeline)
         // Timeline Section Header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -225,7 +221,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap a button above to log your first drink today.',
+            'Tap the + button to log your first drink today.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -269,6 +265,91 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             await repo.deleteLastEntry(capturedKey);
           },
         ),
+      ),
+    );
+  }
+}
+
+class _IntakeBottomSheet extends StatefulWidget {
+  const _IntakeBottomSheet({
+    required this.presets,
+    required this.onAdd,
+  });
+
+  final List<DrinkPresetEntity> presets;
+  final void Function(int amountMl) onAdd;
+
+  @override
+  State<_IntakeBottomSheet> createState() => _IntakeBottomSheetState();
+}
+
+class _IntakeBottomSheetState extends State<_IntakeBottomSheet> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final parsed = int.tryParse(_controller.text);
+    final isValid = parsed != null && parsed >= 1 && parsed <= 9999;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 16),
+          Row(
+            children: widget.presets.map((preset) {
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      widget.onAdd(preset.amountMl);
+                    },
+                    child: Text('+${preset.amountMl} ml'),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 24),
+          TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              hintText: 'Custom amount',
+              suffixText: 'ml',
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: isValid
+                  ? () {
+                      Navigator.pop(context);
+                      widget.onAdd(parsed);
+                    }
+                  : null,
+              child: const Text('Add'),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }
