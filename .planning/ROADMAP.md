@@ -26,7 +26,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 - [x] **Phase 6: Bug Fix + Theme + L-Display** -- Fix SnackBar persistence bug, show liters with locale formatting, and adopt Material You dynamic color with dark mode support (completed 2026-06-08)
 - [x] **Phase 7: Intake Redesign** -- Replace home-screen quick-add buttons with a FAB-triggered modal bottom sheet featuring 3 presets and custom ml input (completed 2026-06-08)
-- [ ] **Phase 8: App Icon** -- Generate a water glass motif launcher icon for all iOS and Android sizes
+- [x] **Phase 8: App Icon** -- Generate a water glass motif launcher icon for all iOS and Android sizes (completed 2026-06-08)
 
 ## Phase Details
 
@@ -82,7 +82,7 @@ Plans:
 **Plans**: 1 plan
 Plans:
 
-- [ ] 08-01-PLAN.md -- Add dev dependencies, create icon generator script, generate all platform launcher icons
+- [x] 08-01-PLAN.md -- Add dev dependencies, create icon generator script, generate all platform launcher icons
 
 **UI hint**: no
 
@@ -100,4 +100,4 @@ Phases execute in numeric order: 6 -> 7 -> 8
 | 5. Notifications | v1.0 | 1/1 | Complete | 2026-06-05 |
 | 6. Bug Fix + Theme + L-Display | v1.1 | 2/2 | Complete    | 2026-06-08 |
 | 7. Intake Redesign | v1.1 | 1/1 | Complete    | 2026-06-08 |
-| 8. App Icon | v1.1 | 0/1 | Not started | - |
+| 8. App Icon | v1.1 | 1/1 | Complete   | 2026-06-08 |

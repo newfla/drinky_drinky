@@ -4,12 +4,12 @@ milestone: v1.1
 milestone_name: Polish & UX
 status: executing
 stopped_at: Phase 7 planning complete — 07-01-PLAN.md verified
-last_updated: "2026-06-08T15:15:04.468Z"
-last_activity: 2026-06-08
+last_updated: "2026-06-08T15:39:35.114Z"
+last_activity: 2026-06-08 -- Phase 8 execution started
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 3
+  total_plans: 4
   completed_plans: 3
   percent: 67
 ---
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-08)
 
 **Core value:** The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
-**Current focus:** Phase 07 — intake-redesign
+**Current focus:** Phase 8 — app-icon
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
-Status: Executing Phase 07
-Last activity: 2026-06-08
+Phase: 8 (app-icon) — EXECUTING
+Plan: 1 of 1
+Status: Executing Phase 8
+Last activity: 2026-06-08 -- Phase 8 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
