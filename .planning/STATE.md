@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & UX
 status: executing
-stopped_at: Phase 7 context gathered
-last_updated: "2026-06-08T14:18:18.060Z"
+stopped_at: Phase 7 UI-SPEC approved
+last_updated: "2026-06-08T14:28:47.431Z"
 last_activity: 2026-06-08
 progress:
   total_phases: 3
@@ -86,9 +86,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-08T14:18:18.053Z
-Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-intake-redesign/07-CONTEXT.md
+Last session: 2026-06-08T14:28:47.427Z
+Stopped at: Phase 7 UI-SPEC approved
+Resume file: .planning/phases/07-intake-redesign/07-UI-SPEC.md
 
 ## Operator Next Steps
 
