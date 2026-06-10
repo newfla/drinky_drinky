@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Bug Fixes & Feature Depth
 status: executing
-stopped_at: Phase 10 all plans complete, pending verification
-last_updated: "2026-06-10T14:00:00.000Z"
-last_activity: 2026-06-10 -- Phase 10 all plans complete, pending verification
+stopped_at: Phase 10 complete — start Phase 11 with /gsd-discuss-phase 11
+last_updated: "2026-06-10T15:00:00.000Z"
+last_activity: 2026-06-10 -- Phase 10 complete (verified PASS)
 progress:
   total_phases: 3
   completed_phases: 2
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-10)
 
 **Core value:** The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
-**Current focus:** Phase 10 verification → Phase 11 planning
+**Current focus:** Phase 11 — Hydration Calculator
 
 ## Current Position
 
-Phase: 10 (target-history-integration) — VERIFYING
-Plan: 3 of 3
-Status: All plans complete, running verification
-Last activity: 2026-06-10 -- Phase 10 all plans complete, pending verification
+Phase: 11 (hydration-calculator) — PENDING
+Plan: 0 of N
+Status: Phase 10 complete; Phase 11 awaiting discuss/plan
+Last activity: 2026-06-10 -- Phase 10 complete (verified PASS)
 
 Progress: [██████░░░░] 67%
 
@@ -95,4 +95,5 @@ Resume file: .planning/phases/10-target-history-integration/10-CONTEXT.md
 
 ## Operator Next Steps
 
-- Plan Phase 10 with /gsd-plan-phase 10
+- Discuss Phase 11 with /gsd-discuss-phase 11
+- Then plan with /gsd-plan-phase 11
