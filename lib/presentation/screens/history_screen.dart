@@ -9,7 +9,7 @@ import '../../domain/entities/target_history_entry.dart';
 /// Convert an arbitrary DateTime to a dateKey string (YYYY-MM-DD).
 /// Matches the format used by todayDateKey() in stream_providers.dart.
 String _toDateKey(DateTime d) {
-  return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  return '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 }
 
 /// Returns the full month name for the given 1-based month integer.

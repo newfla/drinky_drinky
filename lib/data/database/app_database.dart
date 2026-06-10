@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   static QueryExecutor _openConnection() {
     return driftDatabase(
@@ -55,13 +55,18 @@ class AppDatabase extends _$AppDatabase {
         // Date formatting inlined to avoid circular dependency on providers layer.
         final now = DateTime.now();
         final todayKey =
-            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+            '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
         await into(targetHistory).insert(
           TargetHistoryCompanion.insert(
             effectiveDate: todayKey,
             targetMl: 2000,
           ),
         );
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 2) {
+          await m.addColumn(userSettings, userSettings.applyFromTomorrow);
+        }
       },
       beforeOpen: (details) async {
         // Enable foreign keys.

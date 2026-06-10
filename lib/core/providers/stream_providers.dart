@@ -13,7 +13,7 @@ part 'stream_providers.g.dart';
 /// Local helper to convert an arbitrary DateTime to a dateKey string (YYYY-MM-DD).
 /// Matches the format used by [todayDateKey()].
 String _toDateKey(DateTime d) {
-  return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  return '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 }
 
 /// Watch water entries for the given [dateKey] as a reactive stream.
@@ -60,7 +60,7 @@ Stream<List<DrinkPresetEntity>> drinkPresets(Ref ref) {
 /// each time the widget rebuilds, rather than a date captured once at startup.
 String todayDateKey() {
   final now = DateTime.now();
-  return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  return '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 }
 
 /// Watch daily totals for a specific month as a reactive stream.
@@ -167,7 +167,7 @@ class TodayDateKey extends _$TodayDateKey {
 
   String _computeTodayKey() {
     final now = DateTime.now();
-    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    return '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   }
 
   void _scheduleMidnightRefresh() {
