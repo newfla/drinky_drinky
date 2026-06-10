@@ -51,7 +51,10 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
   2. Invalid dateKeys such as "2024-02-30" or "abcd-ef-gh" are rejected by the shared validator
   3. target_history table is part of the initial Drift schema (no migration needed — first real install)
   4. On first launch, target_history is seeded with the default target so downstream queries always find a row
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 09-01-PLAN.md — Tabella TargetHistory + DAO completo + seed row + code-gen
+- [ ] 09-02-PLAN.md — Test di conferma BUG-01/BUG-03 + test completi TargetHistoryDao
 
 ### Phase 10: Target History Integration
 **Goal**: Users see the correct historical target for each day across home and calendar, and can control when target changes take effect
@@ -90,6 +93,6 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 | 6. Bug Fix + Theme + L-Display | v1.1 | 2/2 | Complete | 2026-06-08 |
 | 7. Intake Redesign | v1.1 | 1/1 | Complete | 2026-06-08 |
 | 8. App Icon | v1.1 | 1/1 | Complete | 2026-06-08 |
-| 9. Data Foundation & Bug Fixes | v1.2 | 0/? | Not started | - |
+| 9. Data Foundation & Bug Fixes | v1.2 | 0/2 | Not started | - |
 | 10. Target History Integration | v1.2 | 0/? | Not started | - |
 | 11. Hydration Calculator | v1.2 | 0/? | Not started | - |
