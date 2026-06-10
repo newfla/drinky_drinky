@@ -40,6 +40,7 @@ class UserSettingsDao extends DatabaseAccessor<AppDatabase>
       dndEndHour: 7,
       dndEndMinute: 0,
       dndEnabled: true,
+      applyFromTomorrow: false,
     );
   }
 

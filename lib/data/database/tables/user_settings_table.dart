@@ -16,4 +16,6 @@ class UserSettings extends Table {
       integer().withDefault(const Constant(0))();
   BoolColumn get dndEnabled =>
       boolean().withDefault(const Constant(true))();
+  BoolColumn get applyFromTomorrow =>
+      boolean().withDefault(const Constant(false))();
 }

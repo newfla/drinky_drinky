@@ -20,6 +20,17 @@ class TargetHistoryDao extends DatabaseAccessor<AppDatabase>
     return row?.targetMl;
   }
 
+  /// Reactive stream of the targetMl for the most recent row where effectiveDate <= dateKey.
+  /// Emits null if no rows exist (defensive -- should not happen after onCreate seed).
+  Stream<int?> watchTargetForDate(String dateKey) {
+    return (select(targetHistory)
+          ..where((t) => t.effectiveDate.isSmallerOrEqualValue(dateKey))
+          ..orderBy([(t) => OrderingTerm.desc(t.effectiveDate)])
+          ..limit(1))
+        .watchSingleOrNull()
+        .map((row) => row?.targetMl);
+  }
+
   /// Reactive stream of all history rows, ordered by effectiveDate ASC.
   Stream<List<TargetHistoryData>> watchAll() {
     return (select(targetHistory)
