@@ -8,6 +8,15 @@ A Flutter mobile app that helps users track their daily water intake and stay hy
 
 The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
 
+## Current Milestone: v1.2 Bug Fixes & Feature Depth
+
+**Goal:** Correggere i tre bug noti post-v1.1 e aggiungere due feature che approfondiscono l'esperienza: storico del target giornaliero e calcolatore idratazione con onboarding tutorial.
+
+**Target features:**
+- Bug fixes: filtro data su `deleteLastEntry`, aggiornamento `_todayDateKey()` a mezzanotte, validazione semantica di `dateKey`
+- Target storico per giornata: nuovo Drift table `target_history`; setting "applica da oggi / da domani"; calendario e home usano il target della giornata corretta
+- Calcolatore idratazione / onboarding tutorial: schermata al primo avvio (richiamabile dai Settings), calcolo locale (sesso + peso + clima), disclaimer privacy, bottone "Usa come target"
+
 ## Shipped
 
 - ✅ **v1.0 MVP** — Phases 1-5 (2026-06-08)
@@ -38,18 +47,28 @@ The user always knows how close they are to their daily hydration goal and gets 
 
 ### Active
 
-*(No active requirements — next milestone not yet defined. Run `/gsd-new-milestone` to start v1.2.)*
+- [ ] **BUG-01**: `deleteLastEntry` aggiunge filtro sulla data odierna per evitare cancellazione cross-day — v1.2
+- [ ] **BUG-02**: `_todayDateKey()` si aggiorna correttamente a mezzanotte senza richiedere restart dell'app — v1.2
+- [ ] **BUG-03**: `dateKey` valida sia il formato sia la semantica della data (niente 2024-02-30) — v1.2
+- [ ] **TARGET-01**: Storico modifiche al target salvato in Drift con data effettiva — v1.2
+- [ ] **TARGET-02**: Nuovo setting "Applica target da oggi / da domani" — v1.2
+- [ ] **TARGET-03**: Home screen usa il target della giornata corrente dallo storico — v1.2
+- [ ] **TARGET-04**: Calendario usa il target della giornata appropriata per verde/rosso — v1.2
+- [ ] **CALC-01**: Schermata calcolatore idratazione con input sesso, peso, clima (5 livelli) e disclaimer privacy — v1.2
+- [ ] **CALC-02**: Calcolatore mostrato automaticamente al primo avvio (prima della home) — v1.2
+- [ ] **CALC-03**: Calcolatore richiamabile dai Settings — v1.2
+- [ ] **CALC-04**: Bottone "Usa come target" per applicare la raccomandazione direttamente — v1.2
 
 ### Out of Scope
 
-- Variable per-day targets — single global target for simplicity
+- Variable per-day targets — storico target implementato in v1.2; target diverso per ogni singolo giorno rimane fuori scope
 - Detailed log editing (delete arbitrary past entries) — undo last is sufficient for v1
 - Social / sharing features — focus on personal tracking
 - Apple Health / Google Fit integration — defer to v2
 - fl oz unit support — ml/L for v1; European market focus
 - Backend / cloud sync — fully offline for v1
 - Smart/adaptive reminder timing — requires usage pattern learning; v2
-- Full locale formatting for settings values — defer to v1.2
+- Full locale formatting for settings values — defer to v1.3
 - fl_chart trend charts — not needed for current scope
 
 ## Context
@@ -62,10 +81,8 @@ The user always knows how close they are to their daily hydration goal and gets 
 - 12 DAO/unit tests passing; flutter analyze clean
 
 **Known issues / tech debt:**
-- `deleteLastEntry` in WaterEntryDao has no date filter (cross-day undo risk) — fix in v1.2
-- `_todayDateKey()` captured once at provider construction — wrong after midnight without app resume — fix in v1.2
-- `dateKey` validation is regex-only (allows semantically invalid dates) — low risk, fix in v1.2
-- Android OEM background killing (Samsung/Xiaomi) may silently suppress notifications — requires physical device testing
+- `deleteLastEntry` date filter, `_todayDateKey()` midnight reset, `dateKey` semantic validation — **in scope v1.2** (BUG-01/02/03)
+- Android OEM background killing (Samsung/Xiaomi) may silently suppress notifications — requires physical device testing; **deferred**
 - Timeline sort order is oldest-first (ASC) in code; UI-SPEC specified newest-first — accepted as-is
 - Material You dynamic color on Android 12+ (THEME-01) verified by code; device wallpaper color extraction skipped in UAT (iOS/Android <12 device used)
 
@@ -114,4 +131,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-08 — v1.1 milestone complete (Polish & UX — theming, SnackBar fix, L-display, intake FAB, app icon).*
+*Last updated: 2026-06-10 — v1.2 milestone started (Bug Fixes & Feature Depth — target history, hydration calculator, 3 bug fixes).*
