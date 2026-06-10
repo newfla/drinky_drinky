@@ -4,6 +4,7 @@
 
 - ✅ **v1.0 MVP** — Phases 1-5 (shipped 2026-06-08)
 - ✅ **v1.1 Polish & UX** — Phases 6-8 (shipped 2026-06-08)
+- **v1.2 Bug Fixes & Feature Depth** — Phases 9-11 (in progress)
 
 ## Phases
 
@@ -31,6 +32,52 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 
 </details>
 
+### v1.2 Bug Fixes & Feature Depth (In Progress)
+
+**Milestone Goal:** Fix 3 known bugs and add target history tracking and a hydration calculator with onboarding tutorial.
+
+- [ ] **Phase 9: Data Foundation & Bug Fixes** - Drift schema v2 migration, target_history table, dateKey validation, delete-entry date filter
+- [ ] **Phase 10: Target History Integration** - Per-day target in home/calendar, today/tomorrow setting, midnight reset fix
+- [ ] **Phase 11: Hydration Calculator** - Calculator screen with onboarding redirect, Settings tile, "Use as target" button
+
+## Phase Details
+
+### Phase 9: Data Foundation & Bug Fixes
+**Goal**: Data layer correctly validates dates, safely deletes entries, and stores target history for all downstream features
+**Depends on**: Phase 8 (v1.1 complete)
+**Requirements**: BUG-01, BUG-03, TARGET-01
+**Success Criteria** (what must be TRUE):
+  1. Undo on a new day does not delete yesterday's last entry — only today's entries are candidates for deletion
+  2. Invalid dateKeys such as "2024-02-30" or "abcd-ef-gh" are rejected by the shared validator
+  3. Drift schema migration from v1 to v2 completes without data loss for existing users
+  4. The target_history table exists after migration with a sentinel row (effectiveDate='2000-01-01') seeded from the user's current dailyTargetMl
+**Plans**: TBD
+
+### Phase 10: Target History Integration
+**Goal**: Users see the correct historical target for each day across home and calendar, and can control when target changes take effect
+**Depends on**: Phase 9
+**Requirements**: BUG-02, TARGET-02, TARGET-03, TARGET-04
+**Success Criteria** (what must be TRUE):
+  1. Home screen progress ring and goal text reflect the target that was active on today's date from target_history
+  2. Calendar green/red decorations evaluate each past day against the target that was active on that specific day
+  3. User can choose "Apply from today" or "Apply from tomorrow" when changing the target in Settings
+  4. App automatically transitions to the new day at midnight without requiring restart — progress resets and dateKey updates
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 11: Hydration Calculator
+**Goal**: Users can calculate a personalized hydration recommendation and optionally apply it as their daily target
+**Depends on**: Phase 9
+**Requirements**: CALC-01, CALC-02, CALC-03, CALC-04
+**Success Criteria** (what must be TRUE):
+  1. Calculator screen accepts sex (M/F/Other), weight (kg), and climate (5 levels) and displays a recommendation in ml rounded to nearest 50
+  2. Calculator is shown automatically on first app launch after the permission screen, before the home screen
+  3. Calculator is accessible from Settings via a dedicated "Recalculate hydration recommendation" tile
+  4. "Use as target" button applies the recommendation as the daily target by writing to target_history
+  5. Calculator inputs (sex, weight, climate) are never persisted to disk or transmitted — privacy disclaimer is visible on screen
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -43,3 +90,6 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 | 6. Bug Fix + Theme + L-Display | v1.1 | 2/2 | Complete | 2026-06-08 |
 | 7. Intake Redesign | v1.1 | 1/1 | Complete | 2026-06-08 |
 | 8. App Icon | v1.1 | 1/1 | Complete | 2026-06-08 |
+| 9. Data Foundation & Bug Fixes | v1.2 | 0/? | Not started | - |
+| 10. Target History Integration | v1.2 | 0/? | Not started | - |
+| 11. Hydration Calculator | v1.2 | 0/? | Not started | - |

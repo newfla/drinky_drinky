@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Bug Fixes & Feature Depth
 status: planning
-last_updated: "2026-06-10T09:21:10.093Z"
+last_updated: "2026-06-10"
 last_activity: 2026-06-10
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,23 +17,25 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-08)
+See: .planning/PROJECT.md (updated 2026-06-10)
 
 **Core value:** The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
-**Current focus:** Phase 8 — app-icon
+**Current focus:** Phase 9 — Data Foundation & Bug Fixes
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 9 of 11 (Data Foundation & Bug Fixes)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-10 — Milestone v1.2 started
+Status: Ready to plan
+Last activity: 2026-06-10 — Roadmap created for v1.2
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 11 (from v1.0)
+- Total plans completed: 11 (from v1.0 + v1.1)
 - Average duration: 12min
 - Total execution time: 0.4 hours
 
@@ -46,9 +48,9 @@ Last activity: 2026-06-10 — Milestone v1.2 started
 | 03-settings | 1/1 | - | - |
 | 04-calendar-streaks | 1/1 | - | - |
 | 05-notifications | 1/1 | - | - |
-| 06 | 2 | - | - |
-| 07 | 1 | - | - |
-| 8 | 1 | - | - |
+| 06 | 2/2 | - | - |
+| 07 | 1/1 | - | - |
+| 08 | 1/1 | - | - |
 
 **Recent Trend:**
 
@@ -62,11 +64,11 @@ Last activity: 2026-06-10 — Milestone v1.2 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Roadmap v1.1]: Phase 6 bundles SnackBar fix, L-display, and all theming (dynamic color + static fallback + dark mode) to minimize churn on home_screen.dart
-- [Roadmap v1.1]: Phase 7 sequenced after Phase 6 so FAB/sheet implementation starts from a clean home_screen.dart baseline
-- [Roadmap v1.1]: Phase 8 (app icon) is independent but sequenced last because it requires a design asset
-- [Roadmap v1.1]: HOME-01 uses intl.NumberFormat for locale-aware liter formatting (intl already in pubspec.yaml)
-- [Roadmap v1.1]: dynamic_color ^1.8.1 is the only new runtime dependency
+- [Roadmap v1.2]: Phase 9 bundles BUG-01, BUG-03, TARGET-01 — schema migration is foundational for all target history work
+- [Roadmap v1.2]: Phase 10 includes BUG-02 (midnight reset) alongside TARGET-02/03/04 — all involve provider-layer date handling
+- [Roadmap v1.2]: Phase 11 (calculator) depends only on Phase 9 (needs target_history write), independent of Phase 10
+- [Research]: All target changes must go through a single updateTargetWithHistory() method — dual-write to settings + target_history
+- [Research]: Calculator inputs (sex/weight/climate) must NOT be persisted — privacy by design
 
 ### Pending Todos
 
@@ -75,7 +77,7 @@ None yet.
 ### Blockers/Concerns
 
 - [Phase 5]: Android OEM background killing may silently break notifications — requires physical device testing
-- [Phase 6]: Dark mode semantic colors (green/red/orange) need contrast audit on dark surfaces
+- [Research]: BUG-01 may already be fixed in current code — verify before implementing
 
 ## Deferred Items
 
@@ -85,10 +87,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-08T14:48:25.830Z
-Stopped at: Phase 7 planning complete — 07-01-PLAN.md verified
-Resume file: .planning/phases/07-intake-redesign/07-01-PLAN.md
+Last session: 2026-06-10
+Stopped at: Roadmap created for v1.2 milestone
+Resume file: None
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan Phase 9 with /gsd-plan-phase 9
