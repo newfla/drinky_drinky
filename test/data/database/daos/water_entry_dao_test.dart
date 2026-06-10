@@ -178,5 +178,39 @@ void main() {
       expect(inRange, hasLength(2));
       expect(inRange.map((e) => e.amountMl).toList(), containsAll([200, 300]));
     });
+
+    test('deleteLastEntry does not delete entries from other dates (BUG-01)',
+        () async {
+      // Insert entry for yesterday
+      await db.waterEntryDao.insertEntry(
+        WaterEntriesCompanion.insert(
+          amountMl: 500,
+          loggedAt: DateTime(2026, 6, 2, 20, 0),
+          dateKey: '2026-06-02',
+        ),
+      );
+      // Insert entry for today
+      await db.waterEntryDao.insertEntry(
+        WaterEntriesCompanion.insert(
+          amountMl: 250,
+          loggedAt: DateTime(2026, 6, 3, 8, 0),
+          dateKey: '2026-06-03',
+        ),
+      );
+
+      // Delete last entry for today
+      await db.waterEntryDao.deleteLastEntry('2026-06-03');
+
+      // Yesterday's entry must still exist
+      final yesterdayEntries =
+          await db.waterEntryDao.watchEntriesForDate('2026-06-02').first;
+      expect(yesterdayEntries, hasLength(1));
+      expect(yesterdayEntries.first.amountMl, 500);
+
+      // Today should be empty
+      final todayEntries =
+          await db.waterEntryDao.watchEntriesForDate('2026-06-03').first;
+      expect(todayEntries, isEmpty);
+    });
   });
 }
