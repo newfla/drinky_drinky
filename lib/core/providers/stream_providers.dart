@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../data/database/app_database.dart';
 import '../../domain/entities/water_entry_entity.dart';
 import '../../domain/entities/user_settings_entity.dart';
 import '../../domain/entities/drink_preset_entity.dart';
+import 'database_provider.dart';
 import 'repository_providers.dart';
 
 part 'stream_providers.g.dart';
@@ -130,4 +134,65 @@ class FocusedMonth extends _$FocusedMonth {
 
   /// Update the focused month (called from TableCalendar.onPageChanged).
   void set(DateTime month) => state = month;
+}
+
+/// Provides today's date key (YYYY-MM-DD) as a keepAlive Notifier that
+/// automatically updates state at midnight without polling (D-01, D-02,
+/// BUG-02 fix). Uses a single Timer that fires after the remaining seconds
+/// of the current day expire, then reschedules itself for the next midnight.
+@Riverpod(keepAlive: true)
+class TodayDateKey extends _$TodayDateKey {
+  Timer? _midnightTimer;
+
+  @override
+  String build() {
+    ref.onDispose(() => _midnightTimer?.cancel());
+    _scheduleMidnightRefresh();
+    return _computeTodayKey();
+  }
+
+  String _computeTodayKey() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  void _scheduleMidnightRefresh() {
+    _midnightTimer?.cancel();
+    final now = DateTime.now();
+    final nextMidnight = DateTime(now.year, now.month, now.day + 1);
+    final duration = nextMidnight.difference(now) + const Duration(seconds: 1);
+    _midnightTimer = Timer(duration, _onMidnight);
+  }
+
+  void _onMidnight() {
+    state = _computeTodayKey();
+    _scheduleMidnightRefresh();
+  }
+}
+
+/// Reactive stream of the effective target (in ml) for a given [dateKey].
+///
+/// Returns the targetMl from the most recent target_history row where
+/// effectiveDate <= dateKey. Falls back to 2000 ml if no row exists
+/// (defensive fallback -- should never be null after seed).
+///
+/// keepAlive: true so the same stream is reused across widgets on the
+/// same day (D-08).
+@Riverpod(keepAlive: true)
+Stream<int> effectiveTargetForDate(Ref ref, String dateKey) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.targetHistoryDao
+      .watchTargetForDate(dateKey)
+      .map((targetMl) => targetMl ?? 2000); // defensive fallback -- should never be null after seed
+}
+
+/// Reactive stream of all target_history rows ordered by effectiveDate ASC.
+///
+/// Used by calendar and streak providers for batch lookup of per-day targets
+/// without making one DB query per day (D-10, D-11).
+///
+/// keepAlive: true so the stream is shared and not recreated on every rebuild.
+@Riverpod(keepAlive: true)
+Stream<List<TargetHistoryData>> allTargetHistory(Ref ref) {
+  return ref.watch(appDatabaseProvider).targetHistoryDao.watchAll();
 }
