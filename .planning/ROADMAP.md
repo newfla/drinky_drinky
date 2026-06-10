@@ -72,11 +72,11 @@ Plans:
   3. User can choose "Apply from today" or "Apply from tomorrow" when changing the target in Settings
   4. App automatically transitions to the new day at midnight without requiring restart — progress resets and dateKey updates
 
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 Plans:
 
 - [x] 10-01-PLAN.md — Data layer: applyFromTomorrow column, watchTargetForDate DAO method, updateTargetWithHistory repository method
-- [ ] 10-02-PLAN.md — Provider layer: todayDateKeyProvider, effectiveTargetForDate, allTargetHistory, streak update
+- [x] 10-02-PLAN.md — Provider layer: todayDateKeyProvider, effectiveTargetForDate, allTargetHistory, streak update
 - [ ] 10-03-PLAN.md — UI wiring: HomeScreen midnight reset + per-day target, HistoryScreen per-day calendar, SettingsScreen toggle
 
 **UI hint**: yes
@@ -110,5 +110,5 @@ Plans:
 | 7. Intake Redesign | v1.1 | 1/1 | Complete | 2026-06-08 |
 | 8. App Icon | v1.1 | 1/1 | Complete | 2026-06-08 |
 | 9. Data Foundation & Bug Fixes | v1.2 | 2/2 | Complete    | 2026-06-10 |
-| 10. Target History Integration | v1.2 | 1/3 | In Progress|  |
+| 10. Target History Integration | v1.2 | 2/3 | In Progress|  |
 | 11. Hydration Calculator | v1.2 | 0/? | Not started | - |
