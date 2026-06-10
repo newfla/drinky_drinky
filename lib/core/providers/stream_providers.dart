@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../data/database/app_database.dart';
-import '../../domain/entities/water_entry_entity.dart';
-import '../../domain/entities/user_settings_entity.dart';
 import '../../domain/entities/drink_preset_entity.dart';
+import '../../domain/entities/target_history_entry.dart';
+import '../../domain/entities/user_settings_entity.dart';
+import '../../domain/entities/water_entry_entity.dart';
 import 'database_provider.dart';
 import 'repository_providers.dart';
 
@@ -83,42 +83,56 @@ Stream<Map<String, int>> calendarMonth(Ref ref, int year, int month) {
 ///
 /// Counts backwards from yesterday (today is incomplete, D-08). Queries the
 /// full history from 2020-01-01 as a safe lower bound. Returns 0 when no
-/// goal is set (target <= 0, Pitfall 6).
+/// target history rows exist. Evaluates each historical day against that
+/// day's effective target from target_history, not a single global target
+/// (D-11).
 @riverpod
-Stream<int> streak(Ref ref) async* {
+Stream<int> streak(Ref ref) {
   final repo = ref.watch(waterRepositoryProvider);
-  final settings = ref.watch(userSettingsProvider).value;
-
-  if (settings == null) {
-    yield 0;
-    return;
-  }
-
-  final dailyTarget = settings.dailyTargetMl;
-  if (dailyTarget <= 0) {
-    yield 0;
-    return;
-  }
+  final db = ref.watch(appDatabaseProvider);
 
   final yesterday = DateTime.now().subtract(const Duration(days: 1));
   final yesterdayKey = _toDateKey(yesterday);
 
-  yield* repo
-      .watchDailyTotalsInRange('2020-01-01', yesterdayKey)
-      .map((totals) {
-    int count = 0;
-    var current = yesterday;
-    while (true) {
-      final key = _toDateKey(current);
-      final total = totals[key] ?? 0;
-      if (total >= dailyTarget) {
-        count++;
-        current = current.subtract(const Duration(days: 1));
-      } else {
-        break;
-      }
+  // Use targetHistoryDao.watchAll() as the outer stream via asyncExpand (D-11).
+  // TargetHistoryData is only used inside the body (not in the function signature)
+  // so riverpod_generator resolves this correctly.
+  return db.targetHistoryDao.watchAll().asyncExpand((targets) {
+    if (targets.isEmpty) {
+      return Stream.value(0);
     }
-    return count;
+
+    return repo
+        .watchDailyTotalsInRange('2020-01-01', yesterdayKey)
+        .map((totals) {
+      int count = 0;
+      var current = yesterday;
+      while (true) {
+        final key = _toDateKey(current);
+        final total = totals[key] ?? 0;
+
+        // Find the active target for this day: last entry where effectiveDate <= key
+        // targets is sorted ASC by effectiveDate (D-11)
+        int activeTarget = targets.first.targetMl; // earliest target as fallback
+        for (final t in targets) {
+          if (t.effectiveDate.compareTo(key) <= 0) {
+            activeTarget = t.targetMl;
+          } else {
+            break;
+          }
+        }
+
+        if (activeTarget <= 0) return 0;
+
+        if (total >= activeTarget) {
+          count++;
+          current = current.subtract(const Duration(days: 1));
+        } else {
+          break;
+        }
+      }
+      return count;
+    });
   });
 }
 
@@ -186,13 +200,24 @@ Stream<int> effectiveTargetForDate(Ref ref, String dateKey) {
       .map((targetMl) => targetMl ?? 2000); // defensive fallback -- should never be null after seed
 }
 
-/// Reactive stream of all target_history rows ordered by effectiveDate ASC.
+/// Reactive stream of all target_history rows ordered by effectiveDate ASC,
+/// mapped to the domain [TargetHistoryEntry] type.
 ///
 /// Used by calendar and streak providers for batch lookup of per-day targets
 /// without making one DB query per day (D-10, D-11).
 ///
 /// keepAlive: true so the stream is shared and not recreated on every rebuild.
 @Riverpod(keepAlive: true)
-Stream<List<TargetHistoryData>> allTargetHistory(Ref ref) {
-  return ref.watch(appDatabaseProvider).targetHistoryDao.watchAll();
+Stream<List<TargetHistoryEntry>> allTargetHistory(Ref ref) {
+  return ref.watch(appDatabaseProvider).targetHistoryDao.watchAll().map(
+        (rows) => rows
+            .map(
+              (r) => TargetHistoryEntry(
+                id: r.id,
+                effectiveDate: r.effectiveDate,
+                targetMl: r.targetMl,
+              ),
+            )
+            .toList(),
+      );
 }

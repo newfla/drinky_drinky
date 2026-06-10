@@ -418,7 +418,9 @@ final class CalendarMonthFamily extends $Family
 ///
 /// Counts backwards from yesterday (today is incomplete, D-08). Queries the
 /// full history from 2020-01-01 as a safe lower bound. Returns 0 when no
-/// goal is set (target <= 0, Pitfall 6).
+/// target history rows exist. Evaluates each historical day against that
+/// day's effective target from target_history, not a single global target
+/// (D-11).
 
 @ProviderFor(streak)
 final streakProvider = StreakProvider._();
@@ -427,7 +429,9 @@ final streakProvider = StreakProvider._();
 ///
 /// Counts backwards from yesterday (today is incomplete, D-08). Queries the
 /// full history from 2020-01-01 as a safe lower bound. Returns 0 when no
-/// goal is set (target <= 0, Pitfall 6).
+/// target history rows exist. Evaluates each historical day against that
+/// day's effective target from target_history, not a single global target
+/// (D-11).
 
 final class StreakProvider
     extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
@@ -436,7 +440,9 @@ final class StreakProvider
   ///
   /// Counts backwards from yesterday (today is incomplete, D-08). Queries the
   /// full history from 2020-01-01 as a safe lower bound. Returns 0 when no
-  /// goal is set (target <= 0, Pitfall 6).
+  /// target history rows exist. Evaluates each historical day against that
+  /// day's effective target from target_history, not a single global target
+  /// (D-11).
   StreakProvider._()
     : super(
         from: null,
@@ -462,7 +468,7 @@ final class StreakProvider
   }
 }
 
-String _$streakHash() => r'84d377d912f95bb3678b67b67aef08e99e4e6f30';
+String _$streakHash() => r'a93d9c00892435ef62d1695ff95c71b68a2d1235';
 
 /// Persist the focused month in the calendar across tab switches.
 ///
@@ -537,3 +543,252 @@ abstract class _$FocusedMonth extends $Notifier<DateTime> {
     element.handleCreate(ref, build);
   }
 }
+
+/// Provides today's date key (YYYY-MM-DD) as a keepAlive Notifier that
+/// automatically updates state at midnight without polling (D-01, D-02,
+/// BUG-02 fix). Uses a single Timer that fires after the remaining seconds
+/// of the current day expire, then reschedules itself for the next midnight.
+
+@ProviderFor(TodayDateKey)
+final todayDateKeyProvider = TodayDateKeyProvider._();
+
+/// Provides today's date key (YYYY-MM-DD) as a keepAlive Notifier that
+/// automatically updates state at midnight without polling (D-01, D-02,
+/// BUG-02 fix). Uses a single Timer that fires after the remaining seconds
+/// of the current day expire, then reschedules itself for the next midnight.
+final class TodayDateKeyProvider
+    extends $NotifierProvider<TodayDateKey, String> {
+  /// Provides today's date key (YYYY-MM-DD) as a keepAlive Notifier that
+  /// automatically updates state at midnight without polling (D-01, D-02,
+  /// BUG-02 fix). Uses a single Timer that fires after the remaining seconds
+  /// of the current day expire, then reschedules itself for the next midnight.
+  TodayDateKeyProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'todayDateKeyProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$todayDateKeyHash();
+
+  @$internal
+  @override
+  TodayDateKey create() => TodayDateKey();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String>(value),
+    );
+  }
+}
+
+String _$todayDateKeyHash() => r'93852a8c2eaf7fe46432d8fcfae24e47b0ebd405';
+
+/// Provides today's date key (YYYY-MM-DD) as a keepAlive Notifier that
+/// automatically updates state at midnight without polling (D-01, D-02,
+/// BUG-02 fix). Uses a single Timer that fires after the remaining seconds
+/// of the current day expire, then reschedules itself for the next midnight.
+
+abstract class _$TodayDateKey extends $Notifier<String> {
+  String build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<String, String>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<String, String>,
+              String,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+/// Reactive stream of the effective target (in ml) for a given [dateKey].
+///
+/// Returns the targetMl from the most recent target_history row where
+/// effectiveDate <= dateKey. Falls back to 2000 ml if no row exists
+/// (defensive fallback -- should never be null after seed).
+///
+/// keepAlive: true so the same stream is reused across widgets on the
+/// same day (D-08).
+
+@ProviderFor(effectiveTargetForDate)
+final effectiveTargetForDateProvider = EffectiveTargetForDateFamily._();
+
+/// Reactive stream of the effective target (in ml) for a given [dateKey].
+///
+/// Returns the targetMl from the most recent target_history row where
+/// effectiveDate <= dateKey. Falls back to 2000 ml if no row exists
+/// (defensive fallback -- should never be null after seed).
+///
+/// keepAlive: true so the same stream is reused across widgets on the
+/// same day (D-08).
+
+final class EffectiveTargetForDateProvider
+    extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
+    with $FutureModifier<int>, $StreamProvider<int> {
+  /// Reactive stream of the effective target (in ml) for a given [dateKey].
+  ///
+  /// Returns the targetMl from the most recent target_history row where
+  /// effectiveDate <= dateKey. Falls back to 2000 ml if no row exists
+  /// (defensive fallback -- should never be null after seed).
+  ///
+  /// keepAlive: true so the same stream is reused across widgets on the
+  /// same day (D-08).
+  EffectiveTargetForDateProvider._({
+    required EffectiveTargetForDateFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'effectiveTargetForDateProvider',
+         isAutoDispose: false,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$effectiveTargetForDateHash();
+
+  @override
+  String toString() {
+    return r'effectiveTargetForDateProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<int> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<int> create(Ref ref) {
+    final argument = this.argument as String;
+    return effectiveTargetForDate(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is EffectiveTargetForDateProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$effectiveTargetForDateHash() =>
+    r'6f7d7872562db0ae9121e51672f4956e17cc09a2';
+
+/// Reactive stream of the effective target (in ml) for a given [dateKey].
+///
+/// Returns the targetMl from the most recent target_history row where
+/// effectiveDate <= dateKey. Falls back to 2000 ml if no row exists
+/// (defensive fallback -- should never be null after seed).
+///
+/// keepAlive: true so the same stream is reused across widgets on the
+/// same day (D-08).
+
+final class EffectiveTargetForDateFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<int>, String> {
+  EffectiveTargetForDateFamily._()
+    : super(
+        retry: null,
+        name: r'effectiveTargetForDateProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: false,
+      );
+
+  /// Reactive stream of the effective target (in ml) for a given [dateKey].
+  ///
+  /// Returns the targetMl from the most recent target_history row where
+  /// effectiveDate <= dateKey. Falls back to 2000 ml if no row exists
+  /// (defensive fallback -- should never be null after seed).
+  ///
+  /// keepAlive: true so the same stream is reused across widgets on the
+  /// same day (D-08).
+
+  EffectiveTargetForDateProvider call(String dateKey) =>
+      EffectiveTargetForDateProvider._(argument: dateKey, from: this);
+
+  @override
+  String toString() => r'effectiveTargetForDateProvider';
+}
+
+/// Reactive stream of all target_history rows ordered by effectiveDate ASC,
+/// mapped to the domain [TargetHistoryEntry] type.
+///
+/// Used by calendar and streak providers for batch lookup of per-day targets
+/// without making one DB query per day (D-10, D-11).
+///
+/// keepAlive: true so the stream is shared and not recreated on every rebuild.
+
+@ProviderFor(allTargetHistory)
+final allTargetHistoryProvider = AllTargetHistoryProvider._();
+
+/// Reactive stream of all target_history rows ordered by effectiveDate ASC,
+/// mapped to the domain [TargetHistoryEntry] type.
+///
+/// Used by calendar and streak providers for batch lookup of per-day targets
+/// without making one DB query per day (D-10, D-11).
+///
+/// keepAlive: true so the stream is shared and not recreated on every rebuild.
+
+final class AllTargetHistoryProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<TargetHistoryEntry>>,
+          List<TargetHistoryEntry>,
+          Stream<List<TargetHistoryEntry>>
+        >
+    with
+        $FutureModifier<List<TargetHistoryEntry>>,
+        $StreamProvider<List<TargetHistoryEntry>> {
+  /// Reactive stream of all target_history rows ordered by effectiveDate ASC,
+  /// mapped to the domain [TargetHistoryEntry] type.
+  ///
+  /// Used by calendar and streak providers for batch lookup of per-day targets
+  /// without making one DB query per day (D-10, D-11).
+  ///
+  /// keepAlive: true so the stream is shared and not recreated on every rebuild.
+  AllTargetHistoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'allTargetHistoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$allTargetHistoryHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<TargetHistoryEntry>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<TargetHistoryEntry>> create(Ref ref) {
+    return allTargetHistory(ref);
+  }
+}
+
+String _$allTargetHistoryHash() => r'f4f644a84a37edc093adf48902ba6d5c85dd32b7';
