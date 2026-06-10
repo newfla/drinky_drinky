@@ -37,7 +37,7 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 **Milestone Goal:** Fix 3 known bugs and add target history tracking and a hydration calculator with onboarding tutorial.
 
 - [x] **Phase 9: Data Foundation & Bug Fixes** - Drift schema v2 migration, target_history table, dateKey validation, delete-entry date filter (completed 2026-06-10)
-- [ ] **Phase 10: Target History Integration** - Per-day target in home/calendar, today/tomorrow setting, midnight reset fix
+- [x] **Phase 10: Target History Integration** - Per-day target in home/calendar, today/tomorrow setting, midnight reset fix (completed 2026-06-10)
 - [ ] **Phase 11: Hydration Calculator** - Calculator screen with onboarding redirect, Settings tile, "Use as target" button
 
 ## Phase Details
@@ -72,12 +72,12 @@ Plans:
   3. User can choose "Apply from today" or "Apply from tomorrow" when changing the target in Settings
   4. App automatically transitions to the new day at midnight without requiring restart — progress resets and dateKey updates
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 
 - [x] 10-01-PLAN.md — Data layer: applyFromTomorrow column, watchTargetForDate DAO method, updateTargetWithHistory repository method
 - [x] 10-02-PLAN.md — Provider layer: todayDateKeyProvider, effectiveTargetForDate, allTargetHistory, streak update
-- [ ] 10-03-PLAN.md — UI wiring: HomeScreen midnight reset + per-day target, HistoryScreen per-day calendar, SettingsScreen toggle
+- [x] 10-03-PLAN.md — UI wiring: HomeScreen midnight reset + per-day target, HistoryScreen per-day calendar, SettingsScreen toggle
 
 **UI hint**: yes
 
@@ -110,5 +110,5 @@ Plans:
 | 7. Intake Redesign | v1.1 | 1/1 | Complete | 2026-06-08 |
 | 8. App Icon | v1.1 | 1/1 | Complete | 2026-06-08 |
 | 9. Data Foundation & Bug Fixes | v1.2 | 2/2 | Complete    | 2026-06-10 |
-| 10. Target History Integration | v1.2 | 2/3 | In Progress|  |
+| 10. Target History Integration | v1.2 | 3/3 | Complete   | 2026-06-10 |
 | 11. Hydration Calculator | v1.2 | 0/? | Not started | - |
