@@ -111,8 +111,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
               onChangeEnd: (val) {
                 setState(() => _dailyTargetDrag = null);
+                ref.read(settingsRepositoryProvider).updateTargetWithHistory(val.toInt());
+              },
+            ),
+            const Divider(),
+            SwitchListTile(
+              title: const Text('Applica da domani'),
+              subtitle: Text(
+                settings.applyFromTomorrow
+                    ? 'Le modifiche al target entrano in vigore domani'
+                    : 'Le modifiche al target entrano in vigore oggi',
+              ),
+              value: settings.applyFromTomorrow,
+              onChanged: (val) {
                 ref.read(settingsRepositoryProvider).updateSettings(
-                      settings.copyWith(dailyTargetMl: val.toInt()),
+                      settings.copyWith(applyFromTomorrow: val),
                     );
               },
             ),

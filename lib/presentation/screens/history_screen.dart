@@ -4,6 +4,7 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../../core/providers/repository_providers.dart';
 import '../../core/providers/stream_providers.dart';
+import '../../domain/entities/target_history_entry.dart';
 
 /// Convert an arbitrary DateTime to a dateKey string (YYYY-MM-DD).
 /// Matches the format used by todayDateKey() in stream_providers.dart.
@@ -29,6 +30,23 @@ String _monthName(int month) {
     'December',
   ];
   return names[month];
+}
+
+/// Finds the effective target for a date by scanning sorted target history.
+/// Returns 2000 as fallback if no targets exist.
+///
+/// [targets] must be sorted ASC by effectiveDate. Iterates through entries
+/// and picks the last one where effectiveDate <= dateKey.
+int _findActiveTarget(List<TargetHistoryEntry> targets, String dateKey) {
+  int result = 2000;
+  for (final t in targets) {
+    if (t.effectiveDate.compareTo(dateKey) <= 0) {
+      result = t.targetMl;
+    } else {
+      break;
+    }
+  }
+  return result;
 }
 
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -113,19 +131,17 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     // Watch the focused month from the keepAlive provider (D-09).
     final focused = ref.watch(focusedMonthProvider);
-    // Watch settings for dailyTargetMl.
-    final settingsAsync = ref.watch(userSettingsProvider);
+    // Watch all target history for per-day target evaluation (D-10).
+    final targetsAsync = ref.watch(allTargetHistoryProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('History')),
-      body: settingsAsync.when(
+      body: targetsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(
           child: Text('Something went wrong loading your data.'),
         ),
-        data: (settings) {
-          final dailyTarget = settings.dailyTargetMl;
-
+        data: (targets) {
           // Watch per-month totals for the focused month (D-06, D-07).
           final monthTotals =
               ref.watch(calendarMonthProvider(focused.year, focused.month)).value ??
@@ -229,6 +245,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       final total = monthTotals[dateKey];
                       // No data = no decoration (UI-SPEC rule 4).
                       if (total == null) return null;
+                      final dailyTarget = _findActiveTarget(targets, dateKey);
                       if (total >= dailyTarget && dailyTarget > 0) {
                         return _buildDayCell(
                           context,
@@ -260,6 +277,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           isToday: true,
                         );
                       }
+                      final dailyTarget = _findActiveTarget(targets, dateKey);
                       if (total >= dailyTarget && dailyTarget > 0) {
                         return _buildDayCell(
                           context,
@@ -299,7 +317,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           context,
                           _selectedDay!,
                           monthTotals,
-                          dailyTarget,
+                          targets,
                         ),
                 ),
 
@@ -380,10 +398,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     BuildContext context,
     DateTime day,
     Map<String, int> monthTotals,
-    int dailyTarget,
+    List<TargetHistoryEntry> targets,
   ) {
     final dateKey = _toDateKey(day);
     final total = monthTotals[dateKey];
+    final dailyTarget = _findActiveTarget(targets, dateKey);
     final dateLabel = '${_monthName(day.month)} ${day.day}, ${day.year}';
     final String contentLabel;
     if (total != null && total > 0) {
