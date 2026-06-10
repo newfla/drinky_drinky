@@ -1,191 +1,286 @@
-# Technology Stack -- v1.1 Polish & UX Update
+# Stack Research: Drinky Drinky v1.2 (Bug Fixes & Feature Depth)
 
 **Project:** Drinky Drinky (Hydration Tracker)
-**Researched:** 2026-06-08
-**Scope:** Stack additions/changes for v1.1 features only. Base stack is validated and unchanged.
+**Researched:** 2026-06-10
+**Scope:** Stack additions, Drift migration API, and integration patterns for v1.2.
+**Overall confidence:** HIGH
 
-## New Package Additions
+## New Packages Required
 
-Only **one** new package is needed for all five v1.1 features.
+**None required.** All v1.2 features are achievable with the existing dependency set:
 
-| Package | Version | Purpose | Why |
-|---------|---------|---------|-----|
-| dynamic_color | ^1.8.1 | Material You wallpaper-based theming on Android 12+ | Published by `material.io` (Google's Material team). Provides `DynamicColorBuilder` widget that extracts the device's wallpaper-derived `ColorScheme` on Android S+. Returns `null` on unsupported platforms (iOS, Android <12), enabling clean fallback to `ColorScheme.fromSeed()`. Apache-2.0 license. |
+| v1.2 Feature Area | New Package? | Approach |
+|-------------------|--------------|----------|
+| Bug fixes (BUG-01/02/03) | NO | Pure Dart logic fixes in existing DAO and utility code |
+| Target history (TARGET-01/02/03/04) | NO | New Drift table + DAO using existing drift ^2.33.0; migration from schema v1 to v2 |
+| Hydration calculator (CALC-01/04) | NO | Stateless screen with pure arithmetic (sex + weight + climate factors) |
+| First-launch onboarding (CALC-02/03) | NO | Extends existing SharedPreferences + GoRouter redirect pattern already used for PermissionScreen |
 
-## No Package Needed -- Feature-by-Feature Analysis
+The existing `pubspec.yaml` already includes every dependency needed: `drift`, `drift_flutter`, `shared_preferences`, `go_router`, `freezed_annotation`, and `intl`.
 
-| v1.1 Feature | Package Needed? | Approach |
-|--------------|-----------------|----------|
-| Material You dynamic color | YES: `dynamic_color ^1.8.1` | Wrap `MaterialApp.router` in `DynamicColorBuilder`; use dynamic `ColorScheme` when available, `ColorScheme.fromSeed(seedColor: Colors.blue)` as fallback |
-| Modal bottom sheet (FAB + presets) | NO | `showModalBottomSheet()` is built into Flutter's `material` library. No third-party package required |
-| Liter display formatting (2 decimals) | NO | Dart's built-in `toStringAsFixed(2)` on `(totalMl / 1000)` -- e.g., "1.75 L / 2.00 L" |
-| SnackBar auto-dismiss fix | NO | One-line fix: add `persist: false` to SnackBar (Flutter 3.38+ breaking change) |
-| App icon generation | NO (already approved) | `flutter_launcher_icons ^0.14.4` needs to be added to dev_dependencies and configured |
+## Drift Migration API (v2.33.0)
 
-## pubspec.yaml Changes
+### Current State
 
-### Add to `dependencies`:
+The app is at `schemaVersion => 1` with three tables: `WaterEntries`, `UserSettings`, `DrinkPresets`. The `MigrationStrategy` currently only defines `onCreate` (which seeds default settings and presets) and `beforeOpen` (which enables foreign keys).
 
-```yaml
-dependencies:
-  # ... existing deps unchanged ...
+### Adding the `target_history` Table: Schema v1 -> v2
 
-  # Dynamic Theming (v1.1)
-  dynamic_color: ^1.8.1
-```
+**Confidence: HIGH** -- verified via Context7 (drift.simonbinder.eu official docs).
 
-### Add to `dev_dependencies`:
+Drift provides two migration approaches. For this project, the **simple `onUpgrade` callback** is the right choice because:
 
-```yaml
-dev_dependencies:
-  # ... existing deps unchanged ...
+1. This is the first-ever migration (v1 -> v2), so there is no multi-step history to manage.
+2. The step-by-step generated migration tooling (`drift_dev schema dump` + `drift_dev schema steps`) adds build complexity that is not justified for a single table addition.
+3. The simple approach is well-documented and sufficient.
 
-  # App Icon Generation (v1.1)
-  flutter_launcher_icons: ^0.14.4
-```
+#### Required Code Changes
 
-### New configuration block (root level of pubspec.yaml):
+**Step 1: Define the new table class.**
 
-```yaml
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/icon/app_icon.png"
-  min_sdk_android: 24
-  # Adaptive icon for Android 8+ (API 26+)
-  adaptive_icon_background: "#E3F2FD"
-  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
-```
+Create `lib/data/database/tables/target_history_table.dart`:
 
-Requires a 1024x1024 PNG source icon at `assets/icon/app_icon.png` and a foreground-only variant for Android adaptive icons.
-
-Run generation with:
-```bash
-dart run flutter_launcher_icons:generate
-```
-
-## Integration Notes
-
-### dynamic_color Integration Pattern
-
-Current `main.dart` theme setup:
 ```dart
-// BEFORE (v1.0)
-theme: ThemeData(
-  colorSchemeSeed: Colors.blue,
-  useMaterial3: true,
+import 'package:drift/drift.dart';
+
+@TableIndex(name: 'idx_target_history_date', columns: {#effectiveDate})
+class TargetHistory extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get effectiveDate => text()();  // 'YYYY-MM-DD' format, like dateKey
+  IntColumn get targetMl => integer()();
+}
+```
+
+**Step 2: Register the table in `@DriftDatabase`.**
+
+```dart
+@DriftDatabase(
+  tables: [WaterEntries, UserSettings, DrinkPresets, TargetHistory],
+  daos: [WaterEntryDao, UserSettingsDao, DrinkPresetDao, TargetHistoryDao],
+)
+```
+
+**Step 3: Bump schema version and add `onUpgrade`.**
+
+```dart
+@override
+int get schemaVersion => 2;
+
+@override
+MigrationStrategy get migration {
+  return MigrationStrategy(
+    onCreate: (Migrator m) async {
+      await m.createAll();
+      // Seed defaults (same as before)
+      await into(userSettings).insert(UserSettingsCompanion.insert());
+      await batch((batch) {
+        batch.insertAll(drinkPresets, [
+          DrinkPresetsCompanion.insert(amountMl: 150, sortOrder: 0),
+          DrinkPresetsCompanion.insert(amountMl: 250, sortOrder: 1),
+          DrinkPresetsCompanion.insert(amountMl: 500, sortOrder: 2),
+        ]);
+      });
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        // v1 -> v2: Add target_history table
+        await m.createTable(targetHistory);
+      }
+    },
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+
+      // Seed initial target_history row for upgrading users.
+      // New installs get this via onCreate -> createAll().
+      // Existing v1 users need their current dailyTargetMl captured.
+      if (details.hadUpgrade) {
+        final existingTarget = await (select(userSettings)..limit(1))
+            .getSingle();
+        final today = DateTime.now();
+        final dateKey = '${today.year}-'
+            '${today.month.toString().padLeft(2, '0')}-'
+            '${today.day.toString().padLeft(2, '0')}';
+        // Only seed if no history exists yet (idempotent).
+        final count = await (selectOnly(targetHistory)
+              ..addColumns([targetHistory.id.count()])
+            ).getSingle();
+        if ((count.read(targetHistory.id.count()) ?? 0) == 0) {
+          await into(targetHistory).insert(
+            TargetHistoryCompanion.insert(
+              effectiveDate: dateKey,
+              targetMl: existingTarget.dailyTargetMl,
+            ),
+          );
+        }
+      }
+    },
+  );
+}
+```
+
+### Key API Details (Verified)
+
+| Migrator Method | Purpose | Used For |
+|-----------------|---------|----------|
+| `m.createAll()` | Creates all tables registered in `@DriftDatabase` | Fresh installs (onCreate) |
+| `m.createTable(tableInstance)` | Creates a single new table | Adding `targetHistory` in onUpgrade |
+| `m.addColumn(table, column)` | Adds a column to existing table | Not needed for v1.2 |
+| `m.deleteTable('name')` | Drops a table | Not needed for v1.2 |
+
+**Important:** `m.createTable(targetHistory)` uses the table instance from the database class (the generated `$TargetHistoryTable` accessor), NOT the `TargetHistory` class definition directly. Drift generates this accessor when you add the table to `@DriftDatabase.tables`.
+
+### Migration Testing
+
+Drift provides `SchemaVerifier` from `drift_dev/api/migrations_native.dart` for testing migrations. For v1.2, a simple test should:
+
+1. Start a database at schema v1
+2. Insert some water entries and settings
+3. Run migration to v2
+4. Verify `target_history` table exists
+5. Verify existing data is preserved
+
+This requires exporting schema snapshots:
+
+```bash
+# Export v1 schema (do this BEFORE changing schemaVersion)
+dart run drift_dev schema dump lib/data/database/app_database.dart drift_schemas/
+
+# After implementing v2, export v2
+dart run drift_dev schema dump lib/data/database/app_database.dart drift_schemas/
+
+# Generate test helper
+dart run drift_dev schema generate drift_schemas/ test/generated_migrations/
+```
+
+**Recommendation:** Migration testing is valuable but optional for v1.2 because the migration is a simple `createTable` (no data transformation). If the team wants to skip the schema dump tooling, a manual integration test that opens an in-memory v1 database and verifies upgrade is sufficient.
+
+## First-Launch Onboarding Detection Pattern
+
+### Current Pattern (Already Established)
+
+The app already has a first-launch gate using SharedPreferences + GoRouter redirect. This pattern is in `app_router.dart`:
+
+```dart
+redirect: (BuildContext context, GoRouterState state) async {
+  if (state.matchedLocation == '/permission') return null;
+  final prefs = await SharedPreferences.getInstance();
+  final shown = prefs.getBool('drinky_permissionScreenShown') ?? false;
+  if (!shown) return '/permission';
+  return null;
+},
+```
+
+### Recommended Approach for Onboarding Calculator
+
+**Use the same pattern.** Add a second SharedPreferences key and extend the redirect chain:
+
+```dart
+redirect: (BuildContext context, GoRouterState state) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  // Gate 1: Permission screen (existing)
+  if (state.matchedLocation == '/permission') return null;
+  final permShown = prefs.getBool('drinky_permissionScreenShown') ?? false;
+  if (!permShown) return '/permission';
+
+  // Gate 2: Onboarding calculator (new for v1.2)
+  if (state.matchedLocation == '/onboarding-calculator') return null;
+  final calcShown = prefs.getBool('drinky_onboardingCalculatorShown') ?? false;
+  if (!calcShown) return '/onboarding-calculator';
+
+  return null;
+},
+```
+
+**Order matters:** Permission screen comes first (user needs to decide on notifications), then the hydration calculator (user sees recommended target). This mirrors the UX flow: permission is a system concern, calculator is a personalization concern.
+
+### Why SharedPreferences Over Alternatives
+
+| Alternative | Why Not |
+|-------------|---------|
+| Drift table | Over-engineered for a boolean flag; adds a migration for no benefit |
+| `isFirstInstall` from package_info | Detects first install but not "has the user completed onboarding" -- what if they kill the app mid-onboarding? |
+| Riverpod state | Not persisted; would reset on app restart |
+
+SharedPreferences is the correct choice because:
+- Already in the dependency graph
+- Already proven in the same pattern (PermissionScreen)
+- Persists across app restarts
+- Simple boolean read; fast (cached after first access)
+- Key-value semantics match the use case exactly
+
+### Onboarding Route Registration
+
+Add `/onboarding-calculator` as a top-level GoRoute (like `/permission`), outside the `StatefulShellRoute.indexedStack` so it renders without the bottom NavigationBar:
+
+```dart
+GoRoute(
+  path: '/onboarding-calculator',
+  builder: (context, state) => const HydrationCalculatorScreen(isOnboarding: true),
 ),
 ```
 
-Required change:
-```dart
-// AFTER (v1.1)
-DynamicColorBuilder(
-  builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-    return MaterialApp.router(
-      title: 'Drinky Drinky',
-      theme: ThemeData(
-        colorScheme: lightDynamic ?? ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: darkDynamic ?? ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
-      themeMode: ThemeMode.system,
-      routerConfig: router,
-    );
-  },
-)
+The same `HydrationCalculatorScreen` should be reusable from Settings (CALC-03) via a different route or by navigating to `/calculator` within the Settings branch. Pass an `isOnboarding` flag to control whether the screen shows "Skip" / navigation behavior vs. a simple back button.
+
+## Hydration Calculator -- No Package Needed
+
+The calculator is pure arithmetic. A common hydration formula:
+
+```
+Base (ml) = weight_kg * 30
+Climate adjustment:
+  - Sedentary/Cool: 0%
+  - Temperate: +10%
+  - Warm: +20%
+  - Hot: +30%
+  - Very Hot/Active: +40%
+Sex adjustment (optional):
+  - Male: +0 ml (base is calibrated for males)
+  - Female: -200 ml (or use weight_kg * 28)
 ```
 
-**Critical:** `colorSchemeSeed` and `colorScheme` cannot be used simultaneously -- ThemeData asserts. Replace `colorSchemeSeed: Colors.blue` with `colorScheme: lightDynamic ?? ColorScheme.fromSeed(seedColor: Colors.blue)`.
+This is a stateless computation. No external API, no package, no persistence (the result is passed to the existing `updateSettings` flow via the "Use as target" button).
 
-Platform behavior:
-- **Android 12+ (API 31+):** `lightDynamic` is a full `ColorScheme` derived from wallpaper colors. App adopts user's wallpaper palette automatically.
-- **Android <12:** `lightDynamic` is `null`. Falls back to `ColorScheme.fromSeed(seedColor: Colors.blue)` -- same as current behavior.
-- **iOS:** `lightDynamic` is `null`. Falls back identically. iOS has no wallpaper-based color API.
+## Version Conflicts to Watch
 
-### SnackBar Auto-Dismiss Fix (Flutter 3.38 Breaking Change)
+**None identified for v1.2.**
 
-**Root cause identified:** Since Flutter 3.38, SnackBars with an `action` property no longer auto-dismiss. The `duration` parameter is ignored when an action is present. This is an intentional Material 3 accessibility change.
-
-Source: https://docs.flutter.dev/release/breaking-changes/snackbar-with-action-behavior-update
-
-**Fix:** Add `persist: false` to the SnackBar to restore the 5-second auto-dismiss:
-
-```dart
-SnackBar(
-  content: Text('+$amountMl ml added'),
-  duration: const Duration(seconds: 5),
-  persist: false,  // <-- restores auto-dismiss with action
-  behavior: SnackBarBehavior.floating,
-  margin: const EdgeInsets.all(8),
-  action: SnackBarAction(label: 'UNDO', onPressed: () { ... }),
-)
-```
-
-The `persist` property was introduced in Flutter 3.37.0-0.0.pre (stable in 3.38). The app uses Flutter 3.44.1 via FVM, so this property is available.
-
-### Liter Display Formatting
-
-Current progress ring center text:
-```dart
-'$totalMl / $target ml'
-```
-
-Change to show liters with 2 decimal places:
-```dart
-'${(totalMl / 1000).toStringAsFixed(2)} L / ${(target / 1000).toStringAsFixed(2)} L'
-// e.g., "1.75 L / 2.00 L" instead of "1750 / 2000 ml"
-```
-
-No package needed. Dart's `toStringAsFixed(2)` handles this natively. The `2` gives enough precision for hydration tracking without unnecessary digits.
-
-### Modal Bottom Sheet
-
-Flutter's built-in `showModalBottomSheet()` provides everything needed:
-- `isScrollControlled: true` for custom height and keyboard avoidance with TextField
-- `showDragHandle: true` for Material 3 drag indicator
-- `useSafeArea: true` to respect system UI
-- Material 3 styling is automatic when `useMaterial3: true` is set in the theme
-- No third-party bottom sheet package is warranted
-
-## Packages to NOT Add for v1.1
-
-| Package | Why Not |
-|---------|---------|
-| intl | Overkill for a single `toStringAsFixed(2)` call. Add later only if locale-aware number formatting is needed across multiple surfaces |
-| modal_bottom_sheet | Flutter's built-in `showModalBottomSheet` covers all v1.1 needs. The `modal_bottom_sheet` package adds iOS-style sheets and nested navigation, neither of which is needed |
-| flex_color_scheme | Adds an opinionated theme layer on top of Material 3. `dynamic_color` + `ColorScheme.fromSeed` is the official Google approach and sufficient for this app |
-| google_fonts | Already in CLAUDE.md recommendations but not in pubspec. Not needed for v1.1 |
-
-## Dependency Compatibility
+The only operation is adding a Drift table and a new screen. All existing dependencies remain unchanged. Specific considerations:
 
 | Concern | Status |
 |---------|--------|
-| dynamic_color + Flutter 3.44.1 | Compatible (tested with 3.44.0 per pub.dev) |
-| dynamic_color + Dart >=3.10.0 | Compatible (tested with 3.12.0 per pub.dev) |
-| dynamic_color + material_color_utilities | Requires >=0.2.0 <=0.13.0; Flutter SDK bundles a compatible version |
-| dynamic_color + Riverpod | No interaction; `DynamicColorBuilder` wraps `MaterialApp`, sits below `ProviderScope` in the widget tree |
-| flutter_launcher_icons 0.14.4 | Approved in CLAUDE.md; supports adaptive icons, iOS 18+ dark mode icons |
+| drift ^2.33.0 + drift_dev ^2.33.0 | No change; createTable API is stable since drift 2.x |
+| drift_flutter ^0.3.0 | No change; database setup unchanged |
+| shared_preferences ^2.5.5 | No change; adding a new key does not affect compatibility |
+| go_router ^17.3.0 | No change; redirect pattern unchanged |
+| build_runner ^2.15.0 | No change; required for code-gen after adding new table |
+| freezed ^3.2.5 | Optional: could use for a TargetHistoryEntity domain class |
+| riverpod_lint + custom_lint | Still excluded due to analyzer conflict (noted in pubspec.yaml). No change for v1.2 |
 
-## Version Confidence Assessment
+**Build step reminder:** After adding `TargetHistory` table and its DAO, run:
 
-| Package | Version | Confidence | Verified Via |
-|---------|---------|------------|--------------|
-| dynamic_color | 1.8.1 | HIGH | pub.dev direct fetch (published Aug 2025, latest as of June 2026), changelog verified, publisher verified as material.io |
-| flutter_launcher_icons | 0.14.4 | HIGH | Approved in CLAUDE.md; pub.dev confirms latest (published June 2025) |
+```bash
+dart run build_runner build --delete-conflicting-outputs
+```
+
+This regenerates `app_database.g.dart` to include the new table accessors.
+
+## Integration Points Summary
+
+| Component | Touches | Details |
+|-----------|---------|---------|
+| `app_database.dart` | `@DriftDatabase.tables`, `schemaVersion`, `migration` | Add TargetHistory table, bump to v2, add onUpgrade |
+| `target_history_table.dart` | New file | Table definition with effectiveDate + targetMl |
+| `target_history_dao.dart` | New file | CRUD operations: insert, watchForDate, getTargetForDate |
+| `app_router.dart` | `redirect`, `routes` | Add onboarding gate + /onboarding-calculator route |
+| `settings_repository.dart` | Possibly extend | Add method to update target + insert target_history row |
+| `home_screen.dart` | Provider usage | Use target from target_history instead of userSettings.dailyTargetMl |
+| `history_screen.dart` | Provider usage | Calendar green/red uses per-day target from target_history |
+| `water_entry_dao.dart` | Bug fix only | Fix deleteLastEntry date filter, dateKey validation |
 
 ## Sources
 
-- pub.dev/packages/dynamic_color (direct fetch, June 2026) -- version 1.8.1 confirmed
-- pub.dev/packages/dynamic_color/changelog (direct fetch) -- version history verified
-- GitHub material-foundation/flutter-packages/packages/dynamic_color -- README and complete_example.dart
-- pub.dev/packages/flutter_launcher_icons (direct fetch) -- version 0.14.4 confirmed
-- Flutter breaking changes: https://docs.flutter.dev/release/breaking-changes/snackbar-with-action-behavior-update
-- Flutter API docs: ScaffoldMessenger, SnackBar, showModalBottomSheet (direct fetch)
-- Dart core library docs: toStringAsFixed -- https://dart.dev/libraries/dart-core
+- Drift official documentation (Context7, drift.simonbinder.eu): Migration API, `createTable`, `addColumn`, `MigrationStrategy.onUpgrade`, schema versioning -- HIGH confidence
+- Drift official documentation (Context7, drift.simonbinder.eu): Migration testing with `SchemaVerifier`, `drift_dev schema dump` -- HIGH confidence
+- Existing codebase: `app_database.dart` (schema v1), `app_router.dart` (GoRouter redirect pattern), `permission_screen.dart` (SharedPreferences pattern), `pubspec.yaml` and `pubspec.lock` (dependency versions) -- HIGH confidence
+- pub.dev package pages for drift, shared_preferences, go_router (verified via lock file) -- HIGH confidence
