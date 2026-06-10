@@ -409,6 +409,21 @@ class $UserSettingsTable extends UserSettings
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _applyFromTomorrowMeta = const VerificationMeta(
+    'applyFromTomorrow',
+  );
+  @override
+  late final GeneratedColumn<bool> applyFromTomorrow = GeneratedColumn<bool>(
+    'apply_from_tomorrow',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("apply_from_tomorrow" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -419,6 +434,7 @@ class $UserSettingsTable extends UserSettings
     dndEndHour,
     dndEndMinute,
     dndEnabled,
+    applyFromTomorrow,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -495,6 +511,15 @@ class $UserSettingsTable extends UserSettings
         dndEnabled.isAcceptableOrUnknown(data['dnd_enabled']!, _dndEnabledMeta),
       );
     }
+    if (data.containsKey('apply_from_tomorrow')) {
+      context.handle(
+        _applyFromTomorrowMeta,
+        applyFromTomorrow.isAcceptableOrUnknown(
+          data['apply_from_tomorrow']!,
+          _applyFromTomorrowMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -536,6 +561,10 @@ class $UserSettingsTable extends UserSettings
         DriftSqlType.bool,
         data['${effectivePrefix}dnd_enabled'],
       )!,
+      applyFromTomorrow: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}apply_from_tomorrow'],
+      )!,
     );
   }
 
@@ -554,6 +583,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
   final int dndEndHour;
   final int dndEndMinute;
   final bool dndEnabled;
+  final bool applyFromTomorrow;
   const UserSetting({
     required this.id,
     required this.dailyTargetMl,
@@ -563,6 +593,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     required this.dndEndHour,
     required this.dndEndMinute,
     required this.dndEnabled,
+    required this.applyFromTomorrow,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -577,6 +608,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     map['dnd_end_hour'] = Variable<int>(dndEndHour);
     map['dnd_end_minute'] = Variable<int>(dndEndMinute);
     map['dnd_enabled'] = Variable<bool>(dndEnabled);
+    map['apply_from_tomorrow'] = Variable<bool>(applyFromTomorrow);
     return map;
   }
 
@@ -590,6 +622,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       dndEndHour: Value(dndEndHour),
       dndEndMinute: Value(dndEndMinute),
       dndEnabled: Value(dndEnabled),
+      applyFromTomorrow: Value(applyFromTomorrow),
     );
   }
 
@@ -609,6 +642,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       dndEndHour: serializer.fromJson<int>(json['dndEndHour']),
       dndEndMinute: serializer.fromJson<int>(json['dndEndMinute']),
       dndEnabled: serializer.fromJson<bool>(json['dndEnabled']),
+      applyFromTomorrow: serializer.fromJson<bool>(json['applyFromTomorrow']),
     );
   }
   @override
@@ -625,6 +659,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       'dndEndHour': serializer.toJson<int>(dndEndHour),
       'dndEndMinute': serializer.toJson<int>(dndEndMinute),
       'dndEnabled': serializer.toJson<bool>(dndEnabled),
+      'applyFromTomorrow': serializer.toJson<bool>(applyFromTomorrow),
     };
   }
 
@@ -637,6 +672,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     int? dndEndHour,
     int? dndEndMinute,
     bool? dndEnabled,
+    bool? applyFromTomorrow,
   }) => UserSetting(
     id: id ?? this.id,
     dailyTargetMl: dailyTargetMl ?? this.dailyTargetMl,
@@ -647,6 +683,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     dndEndHour: dndEndHour ?? this.dndEndHour,
     dndEndMinute: dndEndMinute ?? this.dndEndMinute,
     dndEnabled: dndEnabled ?? this.dndEnabled,
+    applyFromTomorrow: applyFromTomorrow ?? this.applyFromTomorrow,
   );
   UserSetting copyWithCompanion(UserSettingsCompanion data) {
     return UserSetting(
@@ -672,6 +709,9 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       dndEnabled: data.dndEnabled.present
           ? data.dndEnabled.value
           : this.dndEnabled,
+      applyFromTomorrow: data.applyFromTomorrow.present
+          ? data.applyFromTomorrow.value
+          : this.applyFromTomorrow,
     );
   }
 
@@ -685,7 +725,8 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           ..write('dndStartMinute: $dndStartMinute, ')
           ..write('dndEndHour: $dndEndHour, ')
           ..write('dndEndMinute: $dndEndMinute, ')
-          ..write('dndEnabled: $dndEnabled')
+          ..write('dndEnabled: $dndEnabled, ')
+          ..write('applyFromTomorrow: $applyFromTomorrow')
           ..write(')'))
         .toString();
   }
@@ -700,6 +741,7 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     dndEndHour,
     dndEndMinute,
     dndEnabled,
+    applyFromTomorrow,
   );
   @override
   bool operator ==(Object other) =>
@@ -713,7 +755,8 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           other.dndStartMinute == this.dndStartMinute &&
           other.dndEndHour == this.dndEndHour &&
           other.dndEndMinute == this.dndEndMinute &&
-          other.dndEnabled == this.dndEnabled);
+          other.dndEnabled == this.dndEnabled &&
+          other.applyFromTomorrow == this.applyFromTomorrow);
 }
 
 class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
@@ -725,6 +768,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
   final Value<int> dndEndHour;
   final Value<int> dndEndMinute;
   final Value<bool> dndEnabled;
+  final Value<bool> applyFromTomorrow;
   const UserSettingsCompanion({
     this.id = const Value.absent(),
     this.dailyTargetMl = const Value.absent(),
@@ -734,6 +778,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     this.dndEndHour = const Value.absent(),
     this.dndEndMinute = const Value.absent(),
     this.dndEnabled = const Value.absent(),
+    this.applyFromTomorrow = const Value.absent(),
   });
   UserSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -744,6 +789,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     this.dndEndHour = const Value.absent(),
     this.dndEndMinute = const Value.absent(),
     this.dndEnabled = const Value.absent(),
+    this.applyFromTomorrow = const Value.absent(),
   });
   static Insertable<UserSetting> custom({
     Expression<int>? id,
@@ -754,6 +800,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     Expression<int>? dndEndHour,
     Expression<int>? dndEndMinute,
     Expression<bool>? dndEnabled,
+    Expression<bool>? applyFromTomorrow,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -765,6 +812,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
       if (dndEndHour != null) 'dnd_end_hour': dndEndHour,
       if (dndEndMinute != null) 'dnd_end_minute': dndEndMinute,
       if (dndEnabled != null) 'dnd_enabled': dndEnabled,
+      if (applyFromTomorrow != null) 'apply_from_tomorrow': applyFromTomorrow,
     });
   }
 
@@ -777,6 +825,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     Value<int>? dndEndHour,
     Value<int>? dndEndMinute,
     Value<bool>? dndEnabled,
+    Value<bool>? applyFromTomorrow,
   }) {
     return UserSettingsCompanion(
       id: id ?? this.id,
@@ -788,6 +837,7 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
       dndEndHour: dndEndHour ?? this.dndEndHour,
       dndEndMinute: dndEndMinute ?? this.dndEndMinute,
       dndEnabled: dndEnabled ?? this.dndEnabled,
+      applyFromTomorrow: applyFromTomorrow ?? this.applyFromTomorrow,
     );
   }
 
@@ -820,6 +870,9 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     if (dndEnabled.present) {
       map['dnd_enabled'] = Variable<bool>(dndEnabled.value);
     }
+    if (applyFromTomorrow.present) {
+      map['apply_from_tomorrow'] = Variable<bool>(applyFromTomorrow.value);
+    }
     return map;
   }
 
@@ -833,7 +886,8 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
           ..write('dndStartMinute: $dndStartMinute, ')
           ..write('dndEndHour: $dndEndHour, ')
           ..write('dndEndMinute: $dndEndMinute, ')
-          ..write('dndEnabled: $dndEnabled')
+          ..write('dndEnabled: $dndEnabled, ')
+          ..write('applyFromTomorrow: $applyFromTomorrow')
           ..write(')'))
         .toString();
   }
@@ -1569,6 +1623,7 @@ typedef $$UserSettingsTableCreateCompanionBuilder =
       Value<int> dndEndHour,
       Value<int> dndEndMinute,
       Value<bool> dndEnabled,
+      Value<bool> applyFromTomorrow,
     });
 typedef $$UserSettingsTableUpdateCompanionBuilder =
     UserSettingsCompanion Function({
@@ -1580,6 +1635,7 @@ typedef $$UserSettingsTableUpdateCompanionBuilder =
       Value<int> dndEndHour,
       Value<int> dndEndMinute,
       Value<bool> dndEnabled,
+      Value<bool> applyFromTomorrow,
     });
 
 class $$UserSettingsTableFilterComposer
@@ -1628,6 +1684,11 @@ class $$UserSettingsTableFilterComposer
 
   ColumnFilters<bool> get dndEnabled => $composableBuilder(
     column: $table.dndEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get applyFromTomorrow => $composableBuilder(
+    column: $table.applyFromTomorrow,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1680,6 +1741,11 @@ class $$UserSettingsTableOrderingComposer
     column: $table.dndEnabled,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get applyFromTomorrow => $composableBuilder(
+    column: $table.applyFromTomorrow,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserSettingsTableAnnotationComposer
@@ -1728,6 +1794,11 @@ class $$UserSettingsTableAnnotationComposer
     column: $table.dndEnabled,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get applyFromTomorrow => $composableBuilder(
+    column: $table.applyFromTomorrow,
+    builder: (column) => column,
+  );
 }
 
 class $$UserSettingsTableTableManager
@@ -1769,6 +1840,7 @@ class $$UserSettingsTableTableManager
                 Value<int> dndEndHour = const Value.absent(),
                 Value<int> dndEndMinute = const Value.absent(),
                 Value<bool> dndEnabled = const Value.absent(),
+                Value<bool> applyFromTomorrow = const Value.absent(),
               }) => UserSettingsCompanion(
                 id: id,
                 dailyTargetMl: dailyTargetMl,
@@ -1778,6 +1850,7 @@ class $$UserSettingsTableTableManager
                 dndEndHour: dndEndHour,
                 dndEndMinute: dndEndMinute,
                 dndEnabled: dndEnabled,
+                applyFromTomorrow: applyFromTomorrow,
               ),
           createCompanionCallback:
               ({
@@ -1789,6 +1862,7 @@ class $$UserSettingsTableTableManager
                 Value<int> dndEndHour = const Value.absent(),
                 Value<int> dndEndMinute = const Value.absent(),
                 Value<bool> dndEnabled = const Value.absent(),
+                Value<bool> applyFromTomorrow = const Value.absent(),
               }) => UserSettingsCompanion.insert(
                 id: id,
                 dailyTargetMl: dailyTargetMl,
@@ -1798,6 +1872,7 @@ class $$UserSettingsTableTableManager
                 dndEndHour: dndEndHour,
                 dndEndMinute: dndEndMinute,
                 dndEnabled: dndEnabled,
+                applyFromTomorrow: applyFromTomorrow,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

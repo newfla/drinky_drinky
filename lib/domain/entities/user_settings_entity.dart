@@ -12,5 +12,6 @@ abstract class UserSettingsEntity with _$UserSettingsEntity {
     required int dndEndHour,
     required int dndEndMinute,
     required bool dndEnabled,
+    required bool applyFromTomorrow,
   }) = _UserSettingsEntity;
 }

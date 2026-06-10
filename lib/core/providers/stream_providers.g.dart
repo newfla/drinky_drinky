@@ -524,7 +524,7 @@ abstract class _$FocusedMonth extends $Notifier<DateTime> {
   DateTime build();
   @$mustCallSuper
   @override
-  WhenComplete runBuild() {
+  void runBuild() {
     final ref = this.ref as $Ref<DateTime, DateTime>;
     final element =
         ref.element
@@ -534,6 +534,6 @@ abstract class _$FocusedMonth extends $Notifier<DateTime> {
               Object?,
               Object?
             >;
-    return element.handleCreate(ref, build);
+    element.handleCreate(ref, build);
   }
 }

@@ -19,6 +19,7 @@ class SettingsRepository {
             dndEndHour: row.dndEndHour,
             dndEndMinute: row.dndEndMinute,
             dndEnabled: row.dndEnabled,
+            applyFromTomorrow: row.applyFromTomorrow,
           ),
         );
   }
@@ -34,6 +35,7 @@ class SettingsRepository {
       dndEndHour: row.dndEndHour,
       dndEndMinute: row.dndEndMinute,
       dndEnabled: row.dndEnabled,
+      applyFromTomorrow: row.applyFromTomorrow,
     );
   }
 
@@ -67,8 +69,33 @@ class SettingsRepository {
         dndEndHour: Value(entity.dndEndHour),
         dndEndMinute: Value(entity.dndEndMinute),
         dndEnabled: Value(entity.dndEnabled),
+        applyFromTomorrow: Value(entity.applyFromTomorrow),
       ),
     );
+  }
+
+  /// Dual-write a target change to both target_history and user_settings.
+  ///
+  /// The effectiveDate is today if [applyFromTomorrow] is false (the default),
+  /// or tomorrow if [applyFromTomorrow] is true.
+  ///
+  /// Throws [ArgumentError] if [newTargetMl] is not greater than 0.
+  Future<void> updateTargetWithHistory(int newTargetMl) async {
+    if (newTargetMl <= 0) {
+      throw ArgumentError('newTargetMl must be > 0');
+    }
+    final currentSettings = await _db.userSettingsDao.getSettings();
+    final now = DateTime.now();
+    final DateTime effectiveDateTime = currentSettings.applyFromTomorrow
+        ? now.add(const Duration(days: 1))
+        : now;
+    final effectiveDate =
+        '${effectiveDateTime.year.toString().padLeft(4, '0')}-'
+        '${effectiveDateTime.month.toString().padLeft(2, '0')}-'
+        '${effectiveDateTime.day.toString().padLeft(2, '0')}';
+    await _db.targetHistoryDao.insertOrReplace(effectiveDate, newTargetMl);
+    await _db.userSettingsDao
+        .updateSettings(UserSettingsCompanion(dailyTargetMl: Value(newTargetMl)));
   }
 
   /// Watch all presets, mapped to domain entities.

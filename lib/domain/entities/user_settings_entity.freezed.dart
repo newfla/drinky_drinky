@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UserSettingsEntity {
 
- int get dailyTargetMl; int get notificationIntervalMinutes; int get dndStartHour; int get dndStartMinute; int get dndEndHour; int get dndEndMinute; bool get dndEnabled;
+ int get dailyTargetMl; int get notificationIntervalMinutes; int get dndStartHour; int get dndStartMinute; int get dndEndHour; int get dndEndMinute; bool get dndEnabled; bool get applyFromTomorrow;
 /// Create a copy of UserSettingsEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $UserSettingsEntityCopyWith<UserSettingsEntity> get copyWith => _$UserSettingsEn
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserSettingsEntity&&(identical(other.dailyTargetMl, dailyTargetMl) || other.dailyTargetMl == dailyTargetMl)&&(identical(other.notificationIntervalMinutes, notificationIntervalMinutes) || other.notificationIntervalMinutes == notificationIntervalMinutes)&&(identical(other.dndStartHour, dndStartHour) || other.dndStartHour == dndStartHour)&&(identical(other.dndStartMinute, dndStartMinute) || other.dndStartMinute == dndStartMinute)&&(identical(other.dndEndHour, dndEndHour) || other.dndEndHour == dndEndHour)&&(identical(other.dndEndMinute, dndEndMinute) || other.dndEndMinute == dndEndMinute)&&(identical(other.dndEnabled, dndEnabled) || other.dndEnabled == dndEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserSettingsEntity&&(identical(other.dailyTargetMl, dailyTargetMl) || other.dailyTargetMl == dailyTargetMl)&&(identical(other.notificationIntervalMinutes, notificationIntervalMinutes) || other.notificationIntervalMinutes == notificationIntervalMinutes)&&(identical(other.dndStartHour, dndStartHour) || other.dndStartHour == dndStartHour)&&(identical(other.dndStartMinute, dndStartMinute) || other.dndStartMinute == dndStartMinute)&&(identical(other.dndEndHour, dndEndHour) || other.dndEndHour == dndEndHour)&&(identical(other.dndEndMinute, dndEndMinute) || other.dndEndMinute == dndEndMinute)&&(identical(other.dndEnabled, dndEnabled) || other.dndEnabled == dndEnabled)&&(identical(other.applyFromTomorrow, applyFromTomorrow) || other.applyFromTomorrow == applyFromTomorrow));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,dailyTargetMl,notificationIntervalMinutes,dndStartHour,dndStartMinute,dndEndHour,dndEndMinute,dndEnabled);
+int get hashCode => Object.hash(runtimeType,dailyTargetMl,notificationIntervalMinutes,dndStartHour,dndStartMinute,dndEndHour,dndEndMinute,dndEnabled,applyFromTomorrow);
 
 @override
 String toString() {
-  return 'UserSettingsEntity(dailyTargetMl: $dailyTargetMl, notificationIntervalMinutes: $notificationIntervalMinutes, dndStartHour: $dndStartHour, dndStartMinute: $dndStartMinute, dndEndHour: $dndEndHour, dndEndMinute: $dndEndMinute, dndEnabled: $dndEnabled)';
+  return 'UserSettingsEntity(dailyTargetMl: $dailyTargetMl, notificationIntervalMinutes: $notificationIntervalMinutes, dndStartHour: $dndStartHour, dndStartMinute: $dndStartMinute, dndEndHour: $dndEndHour, dndEndMinute: $dndEndMinute, dndEnabled: $dndEnabled, applyFromTomorrow: $applyFromTomorrow)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $UserSettingsEntityCopyWith<$Res>  {
   factory $UserSettingsEntityCopyWith(UserSettingsEntity value, $Res Function(UserSettingsEntity) _then) = _$UserSettingsEntityCopyWithImpl;
 @useResult
 $Res call({
- int dailyTargetMl, int notificationIntervalMinutes, int dndStartHour, int dndStartMinute, int dndEndHour, int dndEndMinute, bool dndEnabled
+ int dailyTargetMl, int notificationIntervalMinutes, int dndStartHour, int dndStartMinute, int dndEndHour, int dndEndMinute, bool dndEnabled, bool applyFromTomorrow
 });
 
 
@@ -62,7 +62,7 @@ class _$UserSettingsEntityCopyWithImpl<$Res>
 
 /// Create a copy of UserSettingsEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? dailyTargetMl = null,Object? notificationIntervalMinutes = null,Object? dndStartHour = null,Object? dndStartMinute = null,Object? dndEndHour = null,Object? dndEndMinute = null,Object? dndEnabled = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? dailyTargetMl = null,Object? notificationIntervalMinutes = null,Object? dndStartHour = null,Object? dndStartMinute = null,Object? dndEndHour = null,Object? dndEndMinute = null,Object? dndEnabled = null,Object? applyFromTomorrow = null,}) {
   return _then(_self.copyWith(
 dailyTargetMl: null == dailyTargetMl ? _self.dailyTargetMl : dailyTargetMl // ignore: cast_nullable_to_non_nullable
 as int,notificationIntervalMinutes: null == notificationIntervalMinutes ? _self.notificationIntervalMinutes : notificationIntervalMinutes // ignore: cast_nullable_to_non_nullable
@@ -71,6 +71,7 @@ as int,dndStartMinute: null == dndStartMinute ? _self.dndStartMinute : dndStartM
 as int,dndEndHour: null == dndEndHour ? _self.dndEndHour : dndEndHour // ignore: cast_nullable_to_non_nullable
 as int,dndEndMinute: null == dndEndMinute ? _self.dndEndMinute : dndEndMinute // ignore: cast_nullable_to_non_nullable
 as int,dndEnabled: null == dndEnabled ? _self.dndEnabled : dndEnabled // ignore: cast_nullable_to_non_nullable
+as bool,applyFromTomorrow: null == applyFromTomorrow ? _self.applyFromTomorrow : applyFromTomorrow // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -156,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int dailyTargetMl,  int notificationIntervalMinutes,  int dndStartHour,  int dndStartMinute,  int dndEndHour,  int dndEndMinute,  bool dndEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int dailyTargetMl,  int notificationIntervalMinutes,  int dndStartHour,  int dndStartMinute,  int dndEndHour,  int dndEndMinute,  bool dndEnabled,  bool applyFromTomorrow)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserSettingsEntity() when $default != null:
-return $default(_that.dailyTargetMl,_that.notificationIntervalMinutes,_that.dndStartHour,_that.dndStartMinute,_that.dndEndHour,_that.dndEndMinute,_that.dndEnabled);case _:
+return $default(_that.dailyTargetMl,_that.notificationIntervalMinutes,_that.dndStartHour,_that.dndStartMinute,_that.dndEndHour,_that.dndEndMinute,_that.dndEnabled,_that.applyFromTomorrow);case _:
   return orElse();
 
 }
@@ -177,10 +178,10 @@ return $default(_that.dailyTargetMl,_that.notificationIntervalMinutes,_that.dndS
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int dailyTargetMl,  int notificationIntervalMinutes,  int dndStartHour,  int dndStartMinute,  int dndEndHour,  int dndEndMinute,  bool dndEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int dailyTargetMl,  int notificationIntervalMinutes,  int dndStartHour,  int dndStartMinute,  int dndEndHour,  int dndEndMinute,  bool dndEnabled,  bool applyFromTomorrow)  $default,) {final _that = this;
 switch (_that) {
 case _UserSettingsEntity():
-return $default(_that.dailyTargetMl,_that.notificationIntervalMinutes,_that.dndStartHour,_that.dndStartMinute,_that.dndEndHour,_that.dndEndMinute,_that.dndEnabled);case _:
+return $default(_that.dailyTargetMl,_that.notificationIntervalMinutes,_that.dndStartHour,_that.dndStartMinute,_that.dndEndHour,_that.dndEndMinute,_that.dndEnabled,_that.applyFromTomorrow);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -197,10 +198,10 @@ return $default(_that.dailyTargetMl,_that.notificationIntervalMinutes,_that.dndS
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int dailyTargetMl,  int notificationIntervalMinutes,  int dndStartHour,  int dndStartMinute,  int dndEndHour,  int dndEndMinute,  bool dndEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int dailyTargetMl,  int notificationIntervalMinutes,  int dndStartHour,  int dndStartMinute,  int dndEndHour,  int dndEndMinute,  bool dndEnabled,  bool applyFromTomorrow)?  $default,) {final _that = this;
 switch (_that) {
 case _UserSettingsEntity() when $default != null:
-return $default(_that.dailyTargetMl,_that.notificationIntervalMinutes,_that.dndStartHour,_that.dndStartMinute,_that.dndEndHour,_that.dndEndMinute,_that.dndEnabled);case _:
+return $default(_that.dailyTargetMl,_that.notificationIntervalMinutes,_that.dndStartHour,_that.dndStartMinute,_that.dndEndHour,_that.dndEndMinute,_that.dndEnabled,_that.applyFromTomorrow);case _:
   return null;
 
 }
@@ -212,7 +213,7 @@ return $default(_that.dailyTargetMl,_that.notificationIntervalMinutes,_that.dndS
 
 
 class _UserSettingsEntity implements UserSettingsEntity {
-  const _UserSettingsEntity({required this.dailyTargetMl, required this.notificationIntervalMinutes, required this.dndStartHour, required this.dndStartMinute, required this.dndEndHour, required this.dndEndMinute, required this.dndEnabled});
+  const _UserSettingsEntity({required this.dailyTargetMl, required this.notificationIntervalMinutes, required this.dndStartHour, required this.dndStartMinute, required this.dndEndHour, required this.dndEndMinute, required this.dndEnabled, required this.applyFromTomorrow});
   
 
 @override final  int dailyTargetMl;
@@ -222,6 +223,7 @@ class _UserSettingsEntity implements UserSettingsEntity {
 @override final  int dndEndHour;
 @override final  int dndEndMinute;
 @override final  bool dndEnabled;
+@override final  bool applyFromTomorrow;
 
 /// Create a copy of UserSettingsEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -233,16 +235,16 @@ _$UserSettingsEntityCopyWith<_UserSettingsEntity> get copyWith => __$UserSetting
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserSettingsEntity&&(identical(other.dailyTargetMl, dailyTargetMl) || other.dailyTargetMl == dailyTargetMl)&&(identical(other.notificationIntervalMinutes, notificationIntervalMinutes) || other.notificationIntervalMinutes == notificationIntervalMinutes)&&(identical(other.dndStartHour, dndStartHour) || other.dndStartHour == dndStartHour)&&(identical(other.dndStartMinute, dndStartMinute) || other.dndStartMinute == dndStartMinute)&&(identical(other.dndEndHour, dndEndHour) || other.dndEndHour == dndEndHour)&&(identical(other.dndEndMinute, dndEndMinute) || other.dndEndMinute == dndEndMinute)&&(identical(other.dndEnabled, dndEnabled) || other.dndEnabled == dndEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserSettingsEntity&&(identical(other.dailyTargetMl, dailyTargetMl) || other.dailyTargetMl == dailyTargetMl)&&(identical(other.notificationIntervalMinutes, notificationIntervalMinutes) || other.notificationIntervalMinutes == notificationIntervalMinutes)&&(identical(other.dndStartHour, dndStartHour) || other.dndStartHour == dndStartHour)&&(identical(other.dndStartMinute, dndStartMinute) || other.dndStartMinute == dndStartMinute)&&(identical(other.dndEndHour, dndEndHour) || other.dndEndHour == dndEndHour)&&(identical(other.dndEndMinute, dndEndMinute) || other.dndEndMinute == dndEndMinute)&&(identical(other.dndEnabled, dndEnabled) || other.dndEnabled == dndEnabled)&&(identical(other.applyFromTomorrow, applyFromTomorrow) || other.applyFromTomorrow == applyFromTomorrow));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,dailyTargetMl,notificationIntervalMinutes,dndStartHour,dndStartMinute,dndEndHour,dndEndMinute,dndEnabled);
+int get hashCode => Object.hash(runtimeType,dailyTargetMl,notificationIntervalMinutes,dndStartHour,dndStartMinute,dndEndHour,dndEndMinute,dndEnabled,applyFromTomorrow);
 
 @override
 String toString() {
-  return 'UserSettingsEntity(dailyTargetMl: $dailyTargetMl, notificationIntervalMinutes: $notificationIntervalMinutes, dndStartHour: $dndStartHour, dndStartMinute: $dndStartMinute, dndEndHour: $dndEndHour, dndEndMinute: $dndEndMinute, dndEnabled: $dndEnabled)';
+  return 'UserSettingsEntity(dailyTargetMl: $dailyTargetMl, notificationIntervalMinutes: $notificationIntervalMinutes, dndStartHour: $dndStartHour, dndStartMinute: $dndStartMinute, dndEndHour: $dndEndHour, dndEndMinute: $dndEndMinute, dndEnabled: $dndEnabled, applyFromTomorrow: $applyFromTomorrow)';
 }
 
 
@@ -253,7 +255,7 @@ abstract mixin class _$UserSettingsEntityCopyWith<$Res> implements $UserSettings
   factory _$UserSettingsEntityCopyWith(_UserSettingsEntity value, $Res Function(_UserSettingsEntity) _then) = __$UserSettingsEntityCopyWithImpl;
 @override @useResult
 $Res call({
- int dailyTargetMl, int notificationIntervalMinutes, int dndStartHour, int dndStartMinute, int dndEndHour, int dndEndMinute, bool dndEnabled
+ int dailyTargetMl, int notificationIntervalMinutes, int dndStartHour, int dndStartMinute, int dndEndHour, int dndEndMinute, bool dndEnabled, bool applyFromTomorrow
 });
 
 
@@ -270,7 +272,7 @@ class __$UserSettingsEntityCopyWithImpl<$Res>
 
 /// Create a copy of UserSettingsEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? dailyTargetMl = null,Object? notificationIntervalMinutes = null,Object? dndStartHour = null,Object? dndStartMinute = null,Object? dndEndHour = null,Object? dndEndMinute = null,Object? dndEnabled = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? dailyTargetMl = null,Object? notificationIntervalMinutes = null,Object? dndStartHour = null,Object? dndStartMinute = null,Object? dndEndHour = null,Object? dndEndMinute = null,Object? dndEnabled = null,Object? applyFromTomorrow = null,}) {
   return _then(_UserSettingsEntity(
 dailyTargetMl: null == dailyTargetMl ? _self.dailyTargetMl : dailyTargetMl // ignore: cast_nullable_to_non_nullable
 as int,notificationIntervalMinutes: null == notificationIntervalMinutes ? _self.notificationIntervalMinutes : notificationIntervalMinutes // ignore: cast_nullable_to_non_nullable
@@ -279,6 +281,7 @@ as int,dndStartMinute: null == dndStartMinute ? _self.dndStartMinute : dndStartM
 as int,dndEndHour: null == dndEndHour ? _self.dndEndHour : dndEndHour // ignore: cast_nullable_to_non_nullable
 as int,dndEndMinute: null == dndEndMinute ? _self.dndEndMinute : dndEndMinute // ignore: cast_nullable_to_non_nullable
 as int,dndEnabled: null == dndEnabled ? _self.dndEnabled : dndEnabled // ignore: cast_nullable_to_non_nullable
+as bool,applyFromTomorrow: null == applyFromTomorrow ? _self.applyFromTomorrow : applyFromTomorrow // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
