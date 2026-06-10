@@ -15,7 +15,7 @@ Requirements for milestone v1.2 (Bug Fixes & Feature Depth).
 
 ### Target History
 
-- [ ] **TARGET-01**: Nuova tabella Drift `target_history (id, effectiveDate TEXT UNIQUE, targetMl INTEGER)` con migration schema v1→v2 e sentinel row per utenti esistenti (`effectiveDate = '2000-01-01'`)
+- [ ] **TARGET-01**: Nuova tabella Drift `target_history (id, effectiveDate TEXT UNIQUE, targetMl INTEGER)` aggiunta allo schema iniziale (prima vera installazione — nessuna migration necessaria); seeded con il target default al primo avvio
 - [ ] **TARGET-02**: Nuovo setting "Applica target da: oggi / da domani" — la scelta viene applicata ad ogni modifica del target nei Settings
 - [ ] **TARGET-03**: Home screen usa il target effettivo della giornata corrente (query su `target_history`) per il progress ring e il testo goal
 - [ ] **TARGET-04**: Calendario usa il target effettivo della giornata appropriata (query su `target_history`) per determinare verde/rosso per ogni giorno

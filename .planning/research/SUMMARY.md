@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-Drinky Drinky v1.2 adds target history, a hydration calculator, and 3 bug fixes — all using the existing stack with no new packages. The central change is a Drift schema v1→v2 migration adding a `target_history` table, which enables the calendar and streak to evaluate each past day against the target that was actually active then. The dominant risks are in the migration (missing `schemaVersion` bump, no sentinel row for upgrade users, no test coverage) and the onboarding redirect (wrong priority order, redirect loop if flag set too late).
+Drinky Drinky v1.2 adds target history, a hydration calculator, and 3 bug fixes — all using the existing stack with no new packages. This is the first real installation of the app, so `target_history` is added directly to the initial Drift schema with no migration path needed. The dominant risks are the onboarding redirect (wrong priority order, redirect loop if flag set too late) and the dual-write invariant (all target changes must go through a single method that writes to both `UserSettings` and `target_history`).
 
 ## Key Findings
 
@@ -14,26 +14,17 @@ Drinky Drinky v1.2 adds target history, a hydration calculator, and 3 bug fixes 
 
 **No new packages required.** All v1.2 features are achievable with the existing dependency set (drift, shared_preferences, go_router, freezed, intl).
 
-**Drift migration API (v2.33.0):**
+**Drift schema (no migration needed — first real install):**
 ```dart
-@override
-int get schemaVersion => 2; // bump from 1
-
-@override
-MigrationStrategy get migration => MigrationStrategy(
-  onCreate: (m) async => await m.createAll(),
-  onUpgrade: (m, from, to) async {
-    if (from < 2) {
-      await m.createTable(targetHistory);
-      // Seed sentinel row for existing users
-      await into(targetHistory).insert(TargetHistoryCompanion.insert(
-        effectiveDate: '2000-01-01',
-        targetMl: currentTargetMl,
-      ));
-    }
-  },
-);
+// target_history added to initial schema alongside existing tables
+// schemaVersion stays at 1; onCreate handles everything
+class TargetHistory extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get effectiveDate => text().unique()(); // YYYY-MM-DD
+  IntColumn get targetMl => integer()();
+}
 ```
+Seed the first row in `beforeOpen` (or app init) when `target_history` is empty, using the default target (2000 ml).
 
 **First-launch detection:** add `drinky_calculatorShown` key to existing SharedPreferences + GoRouter redirect chain (identical pattern to existing `drinky_permissionScreenShown`). Set flag in calculator screen `initState`, not on button tap.
 
@@ -94,9 +85,9 @@ class TargetHistory extends Table {
 
 | # | Pitfall | Severity |
 |---|---------|----------|
-| 1 | Forgetting to bump `schemaVersion` to 2 — `onUpgrade` silently skipped, app crashes for existing users | CRITICAL |
-| 2 | No sentinel row seeded in `onUpgrade` — pre-v1.2 calendar dates have no evaluable target | CRITICAL |
-| 3 | Redirect loop — `drinky_calculatorShown` set on button tap instead of on screen display | CRITICAL |
+| 1 | No initial seed row in `target_history` — all date queries return null, home/calendar crash or show 0 | CRITICAL |
+| 2 | Redirect loop — `drinky_calculatorShown` set on button tap instead of on screen display | CRITICAL |
+| 3 | ~~Migration schemaVersion bump~~ — N/A, first real install, no migration needed | ~~CRITICAL~~ |
 | 4 | Dual-write not enforced — bare `updateSettings()` skips `target_history`; home and calendar diverge | HIGH |
 | 5 | Streak broken retroactively — streak uses today's global target for all past days | HIGH |
 | 6 | No UNIQUE constraint on `effectiveDate` — same-day duplicates produce non-deterministic query results | HIGH |
@@ -106,7 +97,7 @@ class TargetHistory extends Table {
 
 ### Research Flags
 
-- **Export schema v1 BEFORE bumping `schemaVersion`:** `dart run drift_dev schema dump` — first step in Phase 1
+- **No migration needed:** `target_history` entra nello schema iniziale (`onCreate`). Nessun `onUpgrade`, nessun `schemaVersion` bump.
 - **BUG-01 may already be fixed:** architecture research found `deleteLastEntry` DAO may already filter by `dateKey`; verify before implementing
 - **Climate multipliers are opinionated estimates** — no authority publishes exact per-temperature-band percentages; add disclaimer text on screen
 - **Formula constants (30/28/29 ml/kg)** are EFSA-anchored but not published verbatim; conservative and defensible

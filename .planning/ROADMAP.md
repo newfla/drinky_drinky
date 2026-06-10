@@ -43,14 +43,14 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 ## Phase Details
 
 ### Phase 9: Data Foundation & Bug Fixes
-**Goal**: Data layer correctly validates dates, safely deletes entries, and stores target history for all downstream features
+**Goal**: Data layer correctly validates dates, safely deletes entries, and includes target_history from the initial schema
 **Depends on**: Phase 8 (v1.1 complete)
 **Requirements**: BUG-01, BUG-03, TARGET-01
 **Success Criteria** (what must be TRUE):
   1. Undo on a new day does not delete yesterday's last entry — only today's entries are candidates for deletion
   2. Invalid dateKeys such as "2024-02-30" or "abcd-ef-gh" are rejected by the shared validator
-  3. Drift schema migration from v1 to v2 completes without data loss for existing users
-  4. The target_history table exists after migration with a sentinel row (effectiveDate='2000-01-01') seeded from the user's current dailyTargetMl
+  3. target_history table is part of the initial Drift schema (no migration needed — first real install)
+  4. On first launch, target_history is seeded with the default target so downstream queries always find a row
 **Plans**: TBD
 
 ### Phase 10: Target History Integration
