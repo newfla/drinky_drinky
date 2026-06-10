@@ -73,15 +73,15 @@ The user always knows how close they are to their daily hydration goal and gets 
 
 ## Context
 
-**Current state (v1.1):**
+**Current state (Phase 9 complete):**
 - Stack: Flutter 3.44.1, Riverpod 3.x (code-gen), Drift 2.33.0 (SQLite), flutter_local_notifications 21.0.0
 - Target platforms: iOS and Android
 - Fully offline — no backend, no user accounts, no sync
-- ~134 files changed across v1.1 (38 icon asset files, 4 Dart source files, planning artifacts)
-- 12 DAO/unit tests passing; flutter analyze clean
+- Phase 9 complete: `target_history` Drift table in initial schema, full `TargetHistoryDao`, BUG-01/BUG-03 confirmed by tests
+- 22 DAO/unit tests passing; flutter analyze clean
 
 **Known issues / tech debt:**
-- `deleteLastEntry` date filter, `_todayDateKey()` midnight reset, `dateKey` semantic validation — **in scope v1.2** (BUG-01/02/03)
+- `_todayDateKey()` midnight reset — **in scope v1.2 Phase 10** (BUG-02)
 - Android OEM background killing (Samsung/Xiaomi) may silently suppress notifications — requires physical device testing; **deferred**
 - Timeline sort order is oldest-first (ASC) in code; UI-SPEC specified newest-first — accepted as-is
 - Material You dynamic color on Android 12+ (THEME-01) verified by code; device wallpaper color extraction skipped in UAT (iOS/Android <12 device used)
