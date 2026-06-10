@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -20,25 +18,16 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  late String _dateKey;
   late AppLifecycleListener _lifecycleListener;
-  Timer? _midnightTimer;
 
   @override
   void initState() {
     super.initState();
-    _dateKey = todayDateKey();
 
     _lifecycleListener = AppLifecycleListener(
       onResume: () {
-        _checkDateChange();
         _rescheduleNotifications();
       },
-    );
-
-    _midnightTimer = Timer.periodic(
-      const Duration(seconds: 60),
-      (_) => _checkDateChange(),
     );
   }
 
@@ -48,25 +37,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await NotificationService.instance.scheduleWindow(settings);
   }
 
-  void _checkDateChange() {
-    final newKey = todayDateKey();
-    if (newKey != _dateKey && mounted) {
-      setState(() => _dateKey = newKey);
-    }
-  }
-
   @override
   void dispose() {
     _lifecycleListener.dispose();
-    _midnightTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final todayKey = ref.watch(todayDateKeyProvider);
     final settingsAsync = ref.watch(userSettingsProvider);
-    final totalAsync = ref.watch(totalMlForDateProvider(_dateKey));
-    final entriesAsync = ref.watch(waterEntriesForDateProvider(_dateKey));
+    final totalAsync = ref.watch(totalMlForDateProvider(todayKey));
+    final entriesAsync = ref.watch(waterEntriesForDateProvider(todayKey));
     final presetsAsync = ref.watch(drinkPresetsProvider);
 
     // NOTF-03 / D-07: Goal-reached auto-stop — cancel all pending notifications
@@ -75,12 +57,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Crossing check: only fires on the transition from below → at/above target
     // to avoid calling cancelAll() on every subsequent log entry.
     ref.listen<AsyncValue<int>>(
-      totalMlForDateProvider(_dateKey),
+      totalMlForDateProvider(todayKey),
       (previous, next) {
         final prev = previous?.value ?? 0;
         final curr = next.value ?? 0;
         final target =
-            ref.read(userSettingsProvider).value?.dailyTargetMl ?? 0;
+            ref.read(effectiveTargetForDateProvider(todayKey)).value ?? 0;
         if (target > 0 && prev < target && curr >= target) {
           NotificationService.instance.cancelAll();
         }
@@ -113,8 +95,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         data: (settings) {
           final totalMl = totalAsync.value ?? 0;
           final entries = (entriesAsync.value ?? <WaterEntryEntity>[]).reversed.toList();
+          final target = ref.watch(effectiveTargetForDateProvider(todayKey)).value ?? 2000;
 
-          return _buildContent(context, settings, totalMl, entries);
+          return _buildContent(context, settings, totalMl, entries, target);
         },
       ),
     );
@@ -125,8 +108,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     UserSettingsEntity settings,
     int totalMl,
     List<WaterEntryEntity> entries,
+    int target,
   ) {
-    final target = settings.dailyTargetMl;
     final percentage =
         target > 0 ? (totalMl / target).clamp(0.0, 1.0) : 0.0;
     final isGoalMet = totalMl >= target;
@@ -243,7 +226,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // HOME-02, HOME-03, D-03, D-05
   void _onQuickAdd(int amountMl) async {
     // Capture date key before async gap (Pitfall 3 / T-02-03)
-    final capturedKey = _dateKey;
+    final capturedKey = ref.read(todayDateKeyProvider);
     final repo = ref.read(waterRepositoryProvider);
     await repo.insertEntry(amountMl, DateTime.now(), capturedKey);
 
