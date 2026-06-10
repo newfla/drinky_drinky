@@ -1089,12 +1089,271 @@ class DrinkPresetsCompanion extends UpdateCompanion<DrinkPreset> {
   }
 }
 
+class $TargetHistoryTable extends TargetHistory
+    with TableInfo<$TargetHistoryTable, TargetHistoryData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TargetHistoryTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _effectiveDateMeta = const VerificationMeta(
+    'effectiveDate',
+  );
+  @override
+  late final GeneratedColumn<String> effectiveDate = GeneratedColumn<String>(
+    'effective_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _targetMlMeta = const VerificationMeta(
+    'targetMl',
+  );
+  @override
+  late final GeneratedColumn<int> targetMl = GeneratedColumn<int>(
+    'target_ml',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, effectiveDate, targetMl];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'target_history';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TargetHistoryData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('effective_date')) {
+      context.handle(
+        _effectiveDateMeta,
+        effectiveDate.isAcceptableOrUnknown(
+          data['effective_date']!,
+          _effectiveDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_effectiveDateMeta);
+    }
+    if (data.containsKey('target_ml')) {
+      context.handle(
+        _targetMlMeta,
+        targetMl.isAcceptableOrUnknown(data['target_ml']!, _targetMlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_targetMlMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TargetHistoryData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TargetHistoryData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      effectiveDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}effective_date'],
+      )!,
+      targetMl: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_ml'],
+      )!,
+    );
+  }
+
+  @override
+  $TargetHistoryTable createAlias(String alias) {
+    return $TargetHistoryTable(attachedDatabase, alias);
+  }
+}
+
+class TargetHistoryData extends DataClass
+    implements Insertable<TargetHistoryData> {
+  final int id;
+  final String effectiveDate;
+  final int targetMl;
+  const TargetHistoryData({
+    required this.id,
+    required this.effectiveDate,
+    required this.targetMl,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['effective_date'] = Variable<String>(effectiveDate);
+    map['target_ml'] = Variable<int>(targetMl);
+    return map;
+  }
+
+  TargetHistoryCompanion toCompanion(bool nullToAbsent) {
+    return TargetHistoryCompanion(
+      id: Value(id),
+      effectiveDate: Value(effectiveDate),
+      targetMl: Value(targetMl),
+    );
+  }
+
+  factory TargetHistoryData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TargetHistoryData(
+      id: serializer.fromJson<int>(json['id']),
+      effectiveDate: serializer.fromJson<String>(json['effectiveDate']),
+      targetMl: serializer.fromJson<int>(json['targetMl']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'effectiveDate': serializer.toJson<String>(effectiveDate),
+      'targetMl': serializer.toJson<int>(targetMl),
+    };
+  }
+
+  TargetHistoryData copyWith({int? id, String? effectiveDate, int? targetMl}) =>
+      TargetHistoryData(
+        id: id ?? this.id,
+        effectiveDate: effectiveDate ?? this.effectiveDate,
+        targetMl: targetMl ?? this.targetMl,
+      );
+  TargetHistoryData copyWithCompanion(TargetHistoryCompanion data) {
+    return TargetHistoryData(
+      id: data.id.present ? data.id.value : this.id,
+      effectiveDate: data.effectiveDate.present
+          ? data.effectiveDate.value
+          : this.effectiveDate,
+      targetMl: data.targetMl.present ? data.targetMl.value : this.targetMl,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TargetHistoryData(')
+          ..write('id: $id, ')
+          ..write('effectiveDate: $effectiveDate, ')
+          ..write('targetMl: $targetMl')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, effectiveDate, targetMl);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TargetHistoryData &&
+          other.id == this.id &&
+          other.effectiveDate == this.effectiveDate &&
+          other.targetMl == this.targetMl);
+}
+
+class TargetHistoryCompanion extends UpdateCompanion<TargetHistoryData> {
+  final Value<int> id;
+  final Value<String> effectiveDate;
+  final Value<int> targetMl;
+  const TargetHistoryCompanion({
+    this.id = const Value.absent(),
+    this.effectiveDate = const Value.absent(),
+    this.targetMl = const Value.absent(),
+  });
+  TargetHistoryCompanion.insert({
+    this.id = const Value.absent(),
+    required String effectiveDate,
+    required int targetMl,
+  }) : effectiveDate = Value(effectiveDate),
+       targetMl = Value(targetMl);
+  static Insertable<TargetHistoryData> custom({
+    Expression<int>? id,
+    Expression<String>? effectiveDate,
+    Expression<int>? targetMl,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (effectiveDate != null) 'effective_date': effectiveDate,
+      if (targetMl != null) 'target_ml': targetMl,
+    });
+  }
+
+  TargetHistoryCompanion copyWith({
+    Value<int>? id,
+    Value<String>? effectiveDate,
+    Value<int>? targetMl,
+  }) {
+    return TargetHistoryCompanion(
+      id: id ?? this.id,
+      effectiveDate: effectiveDate ?? this.effectiveDate,
+      targetMl: targetMl ?? this.targetMl,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (effectiveDate.present) {
+      map['effective_date'] = Variable<String>(effectiveDate.value);
+    }
+    if (targetMl.present) {
+      map['target_ml'] = Variable<int>(targetMl.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TargetHistoryCompanion(')
+          ..write('id: $id, ')
+          ..write('effectiveDate: $effectiveDate, ')
+          ..write('targetMl: $targetMl')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $WaterEntriesTable waterEntries = $WaterEntriesTable(this);
   late final $UserSettingsTable userSettings = $UserSettingsTable(this);
   late final $DrinkPresetsTable drinkPresets = $DrinkPresetsTable(this);
+  late final $TargetHistoryTable targetHistory = $TargetHistoryTable(this);
   late final Index idxWaterEntriesDateKey = Index(
     'idx_water_entries_date_key',
     'CREATE INDEX idx_water_entries_date_key ON water_entries (date_key)',
@@ -1106,6 +1365,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final DrinkPresetDao drinkPresetDao = DrinkPresetDao(
     this as AppDatabase,
   );
+  late final TargetHistoryDao targetHistoryDao = TargetHistoryDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1114,6 +1376,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     waterEntries,
     userSettings,
     drinkPresets,
+    targetHistory,
     idxWaterEntriesDateKey,
   ];
   @override
@@ -1717,6 +1980,168 @@ typedef $$DrinkPresetsTableProcessedTableManager =
       DrinkPreset,
       PrefetchHooks Function()
     >;
+typedef $$TargetHistoryTableCreateCompanionBuilder =
+    TargetHistoryCompanion Function({
+      Value<int> id,
+      required String effectiveDate,
+      required int targetMl,
+    });
+typedef $$TargetHistoryTableUpdateCompanionBuilder =
+    TargetHistoryCompanion Function({
+      Value<int> id,
+      Value<String> effectiveDate,
+      Value<int> targetMl,
+    });
+
+class $$TargetHistoryTableFilterComposer
+    extends Composer<_$AppDatabase, $TargetHistoryTable> {
+  $$TargetHistoryTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get effectiveDate => $composableBuilder(
+    column: $table.effectiveDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get targetMl => $composableBuilder(
+    column: $table.targetMl,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TargetHistoryTableOrderingComposer
+    extends Composer<_$AppDatabase, $TargetHistoryTable> {
+  $$TargetHistoryTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get effectiveDate => $composableBuilder(
+    column: $table.effectiveDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get targetMl => $composableBuilder(
+    column: $table.targetMl,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TargetHistoryTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TargetHistoryTable> {
+  $$TargetHistoryTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get effectiveDate => $composableBuilder(
+    column: $table.effectiveDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get targetMl =>
+      $composableBuilder(column: $table.targetMl, builder: (column) => column);
+}
+
+class $$TargetHistoryTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TargetHistoryTable,
+          TargetHistoryData,
+          $$TargetHistoryTableFilterComposer,
+          $$TargetHistoryTableOrderingComposer,
+          $$TargetHistoryTableAnnotationComposer,
+          $$TargetHistoryTableCreateCompanionBuilder,
+          $$TargetHistoryTableUpdateCompanionBuilder,
+          (
+            TargetHistoryData,
+            BaseReferences<
+              _$AppDatabase,
+              $TargetHistoryTable,
+              TargetHistoryData
+            >,
+          ),
+          TargetHistoryData,
+          PrefetchHooks Function()
+        > {
+  $$TargetHistoryTableTableManager(_$AppDatabase db, $TargetHistoryTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TargetHistoryTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TargetHistoryTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TargetHistoryTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> effectiveDate = const Value.absent(),
+                Value<int> targetMl = const Value.absent(),
+              }) => TargetHistoryCompanion(
+                id: id,
+                effectiveDate: effectiveDate,
+                targetMl: targetMl,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String effectiveDate,
+                required int targetMl,
+              }) => TargetHistoryCompanion.insert(
+                id: id,
+                effectiveDate: effectiveDate,
+                targetMl: targetMl,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TargetHistoryTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TargetHistoryTable,
+      TargetHistoryData,
+      $$TargetHistoryTableFilterComposer,
+      $$TargetHistoryTableOrderingComposer,
+      $$TargetHistoryTableAnnotationComposer,
+      $$TargetHistoryTableCreateCompanionBuilder,
+      $$TargetHistoryTableUpdateCompanionBuilder,
+      (
+        TargetHistoryData,
+        BaseReferences<_$AppDatabase, $TargetHistoryTable, TargetHistoryData>,
+      ),
+      TargetHistoryData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1727,4 +2152,6 @@ class $AppDatabaseManager {
       $$UserSettingsTableTableManager(_db, _db.userSettings);
   $$DrinkPresetsTableTableManager get drinkPresets =>
       $$DrinkPresetsTableTableManager(_db, _db.drinkPresets);
+  $$TargetHistoryTableTableManager get targetHistory =>
+      $$TargetHistoryTableTableManager(_db, _db.targetHistory);
 }

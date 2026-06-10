@@ -8,12 +8,14 @@ import 'tables/drink_presets_table.dart';
 import 'daos/water_entry_dao.dart';
 import 'daos/user_settings_dao.dart';
 import 'daos/drink_preset_dao.dart';
+import 'tables/target_history_table.dart';
+import 'daos/target_history_dao.dart';
 
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [WaterEntries, UserSettings, DrinkPresets],
-  daos: [WaterEntryDao, UserSettingsDao, DrinkPresetDao],
+  tables: [WaterEntries, UserSettings, DrinkPresets, TargetHistory],
+  daos: [WaterEntryDao, UserSettingsDao, DrinkPresetDao, TargetHistoryDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
@@ -49,6 +51,17 @@ class AppDatabase extends _$AppDatabase {
             DrinkPresetsCompanion.insert(amountMl: 500, sortOrder: 2),
           ]);
         });
+        // Seed default target history with today's date and default target.
+        // Date formatting inlined to avoid circular dependency on providers layer.
+        final now = DateTime.now();
+        final todayKey =
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+        await into(targetHistory).insert(
+          TargetHistoryCompanion.insert(
+            effectiveDate: todayKey,
+            targetMl: 2000,
+          ),
+        );
       },
       beforeOpen: (details) async {
         // Enable foreign keys.
