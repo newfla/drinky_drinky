@@ -1,155 +1,138 @@
-# Project Research Summary
+# Research Summary: Drinky Drinky v1.2
 
-**Project:** Drinky Drinky — v1.1 Polish & UX
-**Domain:** Flutter hydration tracker — UX refinement milestone
-**Researched:** 2026-06-08
+**Project:** Drinky Drinky — v1.2 Bug Fixes & Feature Depth
+**Researched:** 2026-06-10
 **Confidence:** HIGH
 
 ## Executive Summary
 
-v1.1 is a focused polish milestone delivering five independent improvements to an already-working app: a SnackBar auto-dismiss bug fix, liter-based progress display, a FAB + modal bottom sheet replacing the inline quick-add buttons, Material You dynamic theming, and a proper app icon. None of the five features require schema migrations, new data models, or provider changes. The research consensus is that all five are appropriate for a single milestone; no features should be deferred.
-
-The recommended approach is a 3-phase build order that sequences risk carefully: fix the existing bug and wire up theme infrastructure first (small, low-risk), then redesign the quick-add UX (the only substantial new widget), then generate the app icon (fully independent, requires a design asset). The single new runtime dependency is `dynamic_color ^1.8.1`, published by Google's Material team and confirmed compatible with Flutter 3.44.1.
-
-The primary risk area is `home_screen.dart`, which is touched by four of the five features. Sequencing Phase 1 (small changes: SnackBar fix, L-display, DynamicColorBuilder) before Phase 2 (structural: remove Row, add FAB, create AddDrinkSheet) avoids merge conflicts and ensures Phase 2 starts from a clean baseline. An open question on dark mode scope should be resolved before Phase 1 begins.
+Drinky Drinky v1.2 adds target history, a hydration calculator, and 3 bug fixes — all using the existing stack with no new packages. The central change is a Drift schema v1→v2 migration adding a `target_history` table, which enables the calendar and streak to evaluate each past day against the target that was actually active then. The dominant risks are in the migration (missing `schemaVersion` bump, no sentinel row for upgrade users, no test coverage) and the onboarding redirect (wrong priority order, redirect loop if flag set too late).
 
 ## Key Findings
 
-### Stack Additions for v1.1
+### Stack Additions
 
-Only one new runtime dependency is needed. The base stack is unchanged.
+**No new packages required.** All v1.2 features are achievable with the existing dependency set (drift, shared_preferences, go_router, freezed, intl).
 
-| Package | Version | Purpose | Why |
-|---------|---------|---------|-----|
-| dynamic_color | ^1.8.1 | Material You wallpaper-derived ColorScheme on Android 12+ | Published by material.io (verified publisher). Returns null on unsupported platforms, enabling clean fallback. |
+**Drift migration API (v2.33.0):**
+```dart
+@override
+int get schemaVersion => 2; // bump from 1
 
-`flutter_launcher_icons ^0.14.4` is added as a dev dependency (already listed in CLAUDE.md, not yet in pubspec.yaml). No other packages are needed: `showModalBottomSheet` is built into Flutter, `toStringAsFixed(2)` is Dart core, and the SnackBar fix is a one-line property change.
+@override
+MigrationStrategy get migration => MigrationStrategy(
+  onCreate: (m) async => await m.createAll(),
+  onUpgrade: (m, from, to) async {
+    if (from < 2) {
+      await m.createTable(targetHistory);
+      // Seed sentinel row for existing users
+      await into(targetHistory).insert(TargetHistoryCompanion.insert(
+        effectiveDate: '2000-01-01',
+        targetMl: currentTargetMl,
+      ));
+    }
+  },
+);
+```
 
-**Do not add:** `intl` (overkill for a single formatting call), `modal_bottom_sheet` (built-in covers all needs), or `google_fonts` (not in scope for v1.1).
+**First-launch detection:** add `drinky_calculatorShown` key to existing SharedPreferences + GoRouter redirect chain (identical pattern to existing `drinky_permissionScreenShown`). Set flag in calculator screen `initState`, not on button tap.
 
-### Expected Features
+---
 
-**Table stakes (must ship in v1.1):**
-- Liter display ("1.75 L / 2.00 L") — pure formatting change, no data model impact
-- SnackBar auto-dismiss fix — existing feature that is currently broken on Flutter 3.44.1
-- App icon (water glass) — default Flutter icon signals an unfinished product
+### Feature Constants (implementation-ready)
 
-**Differentiators (should ship in v1.1):**
-- Material You dynamic color — app feels native on Android 12+ devices; falls back cleanly on older Android and iOS
-- FAB + modal bottom sheet — cleaner home screen with custom ml input; replaces 4 inline buttons with a single action point
+**Hydration formula (EFSA-anchored):**
+- Male: **30 ml/kg** | Female: **28 ml/kg** | Other: **29 ml/kg**
+- Climate multipliers: Freddo/Mite = **1.00** | Caldo = **1.10** | Molto caldo = **1.20** | Afoso = **1.30**
+- Output: clamped 1,000–5,000 ml, rounded to nearest 50 ml
+- Calculator inputs (sex, weight, climate) are **NOT persisted** — local widget state only
+- Privacy disclaimer required on screen
 
-**Defer to v2+:**
-- Custom drink icons or colors in the bottom sheet — over-engineering for 3 presets
-- Animated FAB (morphing, hero) — distraction with accessibility concerns
-- History screen liter formatting — the home screen change is the high-visibility improvement; history can follow separately
+**Target history schema:**
+```dart
+class TargetHistory extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get effectiveDate => text().unique()(); // YYYY-MM-DD
+  IntColumn get targetMl => integer()();
+}
+```
+- Query pattern: `WHERE effectiveDate <= :dateKey ORDER BY effectiveDate DESC LIMIT 1`
+- Seed row on v1→v2 upgrade: `effectiveDate = '2000-01-01'`, `targetMl = currentSettings.dailyTargetMl`
+- Upsert via `insertOnConflictUpdate` for same-day target changes
 
-### Architecture Approach
+**SharedPreferences keys:**
+- `drinky_permissionScreenShown` — existing
+- `drinky_calculatorShown` — new; set in `initState` of calculator screen
 
-All five features have well-defined integration points with minimal overlap at the data and provider layers. The Riverpod provider graph, Drift DAOs, and repository layer are entirely untouched. Changes are concentrated in `lib/main.dart` (theme), `lib/presentation/screens/home_screen.dart` (4 of 5 features), `lib/presentation/screens/settings_screen.dart` (1-line preset filter), and one new file `lib/presentation/widgets/add_drink_sheet.dart`.
+---
 
-**Key architectural decisions confirmed by research:**
+### Architecture
 
-1. **Preset storage is Drift, not SharedPreferences.** Presets live in the `DrinkPresets` table. The 4-to-3 reduction is a display-only change: pass `presets.take(3).toList()` at the UI layer in both HomeScreen and SettingsScreen. No Drift migration needed.
+**New components:**
+- `TargetHistoryDao` — separate from `UserSettingsDao`; append-only with range query
+- `effectiveTargetForDateProvider(dateKey)` — Riverpod provider for per-day target lookup
+- `HydrationCalculatorScreen` — pure stateless computation screen
+- `/calculator` GoRoute — top-level route with onboarding redirect guard
 
-2. **FAB belongs on the inner HomeScreen Scaffold**, not the outer router Scaffold from `StatefulShellRoute`. This ensures the FAB appears only on the Home tab.
+**Provider graph changes (additive only, no breaking changes):**
+- `settingsProvider` unchanged — `UserSettings.dailyTargetMl` stays as current-target source for home screen and notifications
+- `effectiveTargetForDateProvider(dateKey)` — new; used by calendar and streak only
+- `calendarMonthTargetsProvider` — new; pre-fetches target history for visible month
 
-3. **DynamicColorBuilder wraps `MaterialApp.router`** inside `DrinkyDrinkyApp.build()`. ProviderScope stays above it. `colorSchemeSeed: Colors.blue` must be fully replaced with `colorScheme: lightDynamic ?? ColorScheme.fromSeed(seedColor: Colors.blue)` — ThemeData asserts if both are present simultaneously.
+**Key integration rule:** All target changes (from Settings slider AND from "Use as target" button) MUST go through a single `updateTargetWithHistory()` method that writes to BOTH `UserSettings.dailyTargetMl` AND inserts into `target_history`. Never call bare `updateSettings()` for target updates.
 
-4. **AddDrinkSheet is a plain StatefulWidget** (not ConsumerWidget). It receives presets and an `onAdd` callback from HomeScreen. This keeps the sheet testable and decoupled from Riverpod.
+**Build order:**
+1. Data Foundation — schema v2 migration + `TargetHistoryDao` + shared dateKey validator; BUG-01, BUG-03 here
+2. Provider Layer + BUG-02 — `effectiveTargetForDateProvider`, updated `streakProvider`, midnight invalidation fix
+3. Hydration Calculator Screen — formula function, screen, GoRoute, onboarding redirect, Settings tile
+4. UI Integration — wire new providers into HomeScreen, HistoryScreen, SettingsScreen (today/tomorrow toggle)
+5. Validation — migration integration test, onboarding flow test, calendar regression test
 
-5. **L-display uses `(ml / 1000).toStringAsFixed(2)`** for "1.75 L". Individual drink amounts in the timeline and SnackBar stay in ml (more natural for 200-500 ml increments).
+---
 
-### Critical Pitfalls
+### Critical Watch List
 
-Ranked by severity:
+| # | Pitfall | Severity |
+|---|---------|----------|
+| 1 | Forgetting to bump `schemaVersion` to 2 — `onUpgrade` silently skipped, app crashes for existing users | CRITICAL |
+| 2 | No sentinel row seeded in `onUpgrade` — pre-v1.2 calendar dates have no evaluable target | CRITICAL |
+| 3 | Redirect loop — `drinky_calculatorShown` set on button tap instead of on screen display | CRITICAL |
+| 4 | Dual-write not enforced — bare `updateSettings()` skips `target_history`; home and calendar diverge | HIGH |
+| 5 | Streak broken retroactively — streak uses today's global target for all past days | HIGH |
+| 6 | No UNIQUE constraint on `effectiveDate` — same-day duplicates produce non-deterministic query results | HIGH |
+| 7 | Calculator "Use as Target" must use "apply from today" semantics during onboarding | MEDIUM |
 
-1. **SnackBar `persist` breaking change (Flutter 3.38+)** — SnackBars with a `SnackBarAction` no longer auto-dismiss. Fix: `persist: false` on the SnackBar constructor. Do NOT change ScaffoldMessenger lifecycle or the `clearSnackBars()` call — those are already correct.
-
-2. **ThemeData `colorScheme` vs `colorSchemeSeed` assertion** — Adding `colorScheme:` from DynamicColorBuilder while leaving `colorSchemeSeed: Colors.blue` causes an immediate crash on launch. Remove `colorSchemeSeed` entirely.
-
-3. **Bottom sheet keyboard overlap** — The custom amount TextField will be hidden by the soft keyboard unless `isScrollControlled: true` is set AND the sheet content is wrapped in `Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom))`.
-
-4. **Wrong Navigator context closes the screen** — Use `sheetContext` from the builder callback (not the parent screen's context) when calling `Navigator.of(context).pop()`. Using the parent context pops HomeScreen instead of the sheet.
-
-5. **FAB overlaps timeline list content** — Add `padding: const EdgeInsets.only(bottom: 80)` to the timeline ListView (FAB height 56 + margin 24).
-
-6. **Dark mode hardcoded color contrast** — Adding `darkTheme` activates dark mode. Hardcoded `Colors.green.shade600`, `Colors.red.shade600`, and `Colors.orange.shade700` may lose contrast on dark surfaces. Mitigation: suppress dark mode with `themeMode: ThemeMode.light` for v1.1 (see open questions).
-
-7. **iOS icon transparency rejection** — Source PNG must not have an alpha channel for iOS. Use a solid-background image for `image_path`; transparent foreground is OK for `adaptive_icon_foreground` (Android only).
-
-## Implications for Roadmap
-
-### Phase 1: Bug Fix + Theme Infrastructure
-**Rationale:** Smallest, lowest-risk changes first. SnackBar fix corrects broken existing behavior. DynamicColorBuilder and L-display are both isolated. Bundling avoids churning home_screen.dart across multiple commits.
-**Delivers:** Working UNDO SnackBar, liter-based progress display, Material You theming on Android 12+.
-**Features:** SnackBar fix, L-display, Material You dynamic color.
-**Avoids:** Pitfall 1 (persist: false), Pitfall 2 (colorSchemeSeed removal), Pitfall 6 (dark mode — resolve via open question first).
-**Files changed:** `pubspec.yaml`, `lib/main.dart`, `lib/presentation/screens/home_screen.dart` (2 small edits).
-
-### Phase 2: Quick-Add Redesign
-**Rationale:** Largest structural change, isolated so it can be tested against the Phase 1 baseline. The 4-to-3 preset filter is coupled here because the sheet shows 3 presets.
-**Delivers:** FAB on home screen, modal bottom sheet with 3 presets + custom ml input, 4-to-3 preset display reduction.
-**Features:** FAB + modal bottom sheet, 4-to-3 preset filter.
-**Avoids:** Pitfall 3 (isScrollControlled + viewInsets), Pitfall 4 (sheetContext for pop), Pitfall 5 (ListView bottom padding).
-**Files changed:** `lib/presentation/screens/home_screen.dart` (remove Row, add FAB), `lib/presentation/screens/settings_screen.dart` (take(3)), `lib/presentation/widgets/add_drink_sheet.dart` (NEW).
-
-### Phase 3: App Icon
-**Rationale:** Fully independent — no Dart code changes, no runtime behavior. Placed last because it requires a design asset that may not be ready in parallel with code work.
-**Delivers:** Proper water glass app icon on iOS and Android (adaptive icon on Android 8+).
-**Features:** App icon via flutter_launcher_icons.
-**Avoids:** Pitfall 7 (iOS transparency — opaque PNG for iOS source).
-**Files changed:** `pubspec.yaml` (dev dep + config block), `assets/icon/` (NEW source images), generated platform assets.
-
-### Phase Ordering Rationale
-
-- Phase 1 before Phase 2: Ensures the FAB/sheet implementation starts from a home_screen.dart baseline that already has SnackBar fix and L-display in place. Avoids merge conflicts from simultaneous edits to the same file.
-- Phase 3 last: Requires a design asset. Code work should not block on icon design.
-- All phases are independent enough to complete within a single milestone without branching risk.
+---
 
 ### Research Flags
 
-All features follow well-documented Flutter patterns. No phase requires additional pre-implementation research.
+- **Export schema v1 BEFORE bumping `schemaVersion`:** `dart run drift_dev schema dump` — first step in Phase 1
+- **BUG-01 may already be fixed:** architecture research found `deleteLastEntry` DAO may already filter by `dateKey`; verify before implementing
+- **Climate multipliers are opinionated estimates** — no authority publishes exact per-temperature-band percentages; add disclaimer text on screen
+- **Formula constants (30/28/29 ml/kg)** are EFSA-anchored but not published verbatim; conservative and defensible
 
-- **Phase 1:** Standard patterns — DynamicColorBuilder canonical example from official Google repo; SnackBar fix from official breaking-changes docs.
-- **Phase 2:** Standard patterns — showModalBottomSheet with isScrollControlled thoroughly documented; FAB is a basic Scaffold property.
-- **Phase 3:** Standard patterns — flutter_launcher_icons is config-only tooling.
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All package versions verified via pub.dev direct fetch. dynamic_color 1.8.1 confirmed from material.io publisher. |
-| Features | HIGH | Official Flutter API docs and breaking-changes docs consulted directly. |
-| Architecture | HIGH | Integration points identified against actual codebase files. Drift vs SharedPreferences discrepancy resolved by reading actual code. |
-| Pitfalls | HIGH | Critical pitfalls sourced from official Flutter breaking-changes documentation and ThemeData source assertions. |
+| Drift migration API | HIGH | Verified via Context7 (drift.simonbinder.eu official docs) |
+| Stack additions | HIGH | No new packages; all patterns already in use |
+| Hydration formula | MEDIUM | EFSA-derived per-kg simplification; not published verbatim |
+| Climate multipliers | LOW-MEDIUM | Conservative estimates; no authoritative source |
+| Architecture / build order | HIGH | Traced through actual import graph and source files |
+| Pitfalls | HIGH | Verified against official Drift docs and existing codebase |
 
 **Overall confidence:** HIGH
 
-### Gaps to Address
-
-1. **Dark mode scope (open question — resolve before Phase 1):**
-   - Option A: Ship dark mode in v1.1 — `themeMode: ThemeMode.system`, add brightness-conditional variants for 3 hardcoded semantic colors (green/red/orange). Low extra effort.
-   - Option B: Suppress dark mode — `themeMode: ThemeMode.light`. Simpler, avoids semantic color contrast issue. Users on dark mode get light theme.
-   - Recommendation: Option B for v1.1 given European market focus; defer Option A to v1.2.
-
-2. **L-display locale handling (out of scope for v1.1):** `toStringAsFixed` always uses `.` as decimal separator. European locales use `,` (e.g., "1,75 L"). For v1.1, `.` is acceptable and avoids an `intl` dependency. Flag for v1.2 if localization is added.
-
-3. **Icon design asset dependency:** Phase 3 requires a 1024x1024 PNG before the generator can run. Commission/create the asset in parallel with Phase 1-2 code work.
-
 ## Sources
 
-### Primary (HIGH confidence)
-- https://docs.flutter.dev/release/breaking-changes/snackbar-with-action-behavior-update — SnackBar persist breaking change
-- https://pub.dev/packages/dynamic_color — version 1.8.1, publisher material.io verified
-- https://github.com/material-foundation/flutter-packages/tree/main/packages/dynamic_color/example — complete_example.dart canonical pattern
-- https://api.flutter.dev/flutter/material/showModalBottomSheet.html — isScrollControlled, viewInsets pattern
-- https://dart.dev/libraries/dart-core — toStringAsFixed behavior
-- https://pub.dev/packages/flutter_launcher_icons — version 0.14.4
-- Flutter ThemeData source code — colorScheme/colorSchemeSeed assertion
-
-### Secondary (MEDIUM confidence)
-- Apple Human Interface Guidelines — icon transparency prohibition (enforced by App Store Connect)
+- drift.simonbinder.eu — migration API, `createTable` in `onUpgrade`
+- EFSA (2010) — Scientific Opinion on Dietary Reference Values for water (AI: 2.5L men, 2.0L women)
+- GoRouter docs — redirect callback with StatefulShellRoute
+- Existing codebase: `app_router.dart`, `settings_repository.dart`, `user_settings_dao.dart`
 
 ---
-*Research completed: 2026-06-08*
+*Research completed: 2026-06-10*
 *Ready for roadmap: yes*
