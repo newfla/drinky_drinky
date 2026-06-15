@@ -94,7 +94,11 @@ Plans:
   4. "Use as target" button applies the recommendation as the daily target by writing to target_history
   5. Calculator inputs (sex, weight, climate) are never persisted to disk or transmitted — privacy disclaimer is visible on screen
 
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+
+- [ ] 11-01-PLAN.md — Calculator screen, GoRouter redirect gate, and Settings tile integration
+
 **UI hint**: yes
 
 ## Progress
@@ -111,4 +115,4 @@ Plans:
 | 8. App Icon | v1.1 | 1/1 | Complete | 2026-06-08 |
 | 9. Data Foundation & Bug Fixes | v1.2 | 2/2 | Complete    | 2026-06-10 |
 | 10. Target History Integration | v1.2 | 3/3 | Complete   | 2026-06-10 |
-| 11. Hydration Calculator | v1.2 | 0/? | Not started | - |
+| 11. Hydration Calculator | v1.2 | 0/1 | Not started | - |
