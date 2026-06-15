@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
 import '../../core/providers/repository_providers.dart';
+import '../../l10n/l10n_extensions.dart';
 import '../../core/providers/stream_providers.dart';
 import '../../core/services/notification_service.dart';
 import '../../domain/entities/drink_preset_entity.dart';
@@ -70,9 +71,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Drinky Drinky')),
+      appBar: AppBar(title: Text(context.l10n.appTitle)),
       floatingActionButton: FloatingActionButton(
-        tooltip: 'Add water',
+        tooltip: context.l10n.addWaterTooltip,
         onPressed: () {
           final presets = presetsAsync.value ?? <DrinkPresetEntity>[];
           showModalBottomSheet(
@@ -89,8 +90,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: settingsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const Center(
-          child: Text('Something went wrong loading your data. Please restart the app.'),
+        error: (e, _) => Center(
+          child: Text(context.l10n.errorLoadingDataRestart),
         ),
         data: (settings) {
           final totalMl = totalAsync.value ?? 0;
@@ -137,7 +138,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           backgroundColor:
               colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           center: Text(
-            totalMl == target ? 'Goal reached!' : '${_formatLiters(context, totalMl)} / ${_formatLiters(context, target)} L',
+            totalMl == target ? context.l10n.goalReached : context.l10n.currentIntake(_formatLiters(context, totalMl), _formatLiters(context, target)),
             style: theme.textTheme.headlineMedium?.copyWith(
               color: isGoalMet ? goalMetColor : null,
             ),
@@ -150,7 +151,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              "Today's Intake",
+              context.l10n.todaysIntake,
               style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w500,
               ),
@@ -182,7 +183,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       ),
                       trailing: Text(
-                        '+${entry.amountMl} ml',
+                        context.l10n.presetButtonLabel(entry.amountMl),
                         style: theme.textTheme.bodyLarge,
                       ),
                     );
@@ -199,12 +200,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'No drinks logged yet',
+            context.l10n.noDrinksLogged,
             style: theme.textTheme.bodyLarge,
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap the + button to log your first drink today.',
+            context.l10n.noDrinksLoggedHint,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -237,13 +238,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
-        content: Text('+$amountMl ml added'),
+        content: Text(context.l10n.mlAdded(amountMl)),
         duration: const Duration(seconds: 5),
         persist: false,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(8),
         action: SnackBarAction(
-          label: 'UNDO',
+          label: context.l10n.undo,
           onPressed: () async {
             await repo.deleteLastEntry(capturedKey);
           },
@@ -302,7 +303,7 @@ class _IntakeBottomSheetState extends State<_IntakeBottomSheet> {
                       Navigator.pop(context);
                       widget.onAdd(preset.amountMl);
                     },
-                    child: Text('+${preset.amountMl} ml'),
+                    child: Text(context.l10n.presetButtonLabel(preset.amountMl)),
                   ),
                 ),
               );
@@ -312,9 +313,9 @@ class _IntakeBottomSheetState extends State<_IntakeBottomSheet> {
           TextField(
             controller: _controller,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              hintText: 'Custom amount',
-              suffixText: 'ml',
+            decoration: InputDecoration(
+              hintText: context.l10n.customAmountHint,
+              suffixText: context.l10n.mlUnit,
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -328,7 +329,7 @@ class _IntakeBottomSheetState extends State<_IntakeBottomSheet> {
                       widget.onAdd(parsed);
                     }
                   : null,
-              child: const Text('Add'),
+              child: Text(context.l10n.addButton),
             ),
           ),
           const SizedBox(height: 16),

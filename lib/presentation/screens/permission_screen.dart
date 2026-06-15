@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/providers/stream_providers.dart';
 import '../../core/services/notification_service.dart';
+import '../../l10n/l10n_extensions.dart';
 
 /// First-launch permission explanation screen (D-01, D-02, NOTF-02).
 ///
@@ -41,13 +42,13 @@ class _PermissionScreenState extends ConsumerState<PermissionScreen> {
               ),
               const SizedBox(height: 32),
               Text(
-                'Stay hydrated with reminders',
+                context.l10n.permissionTitle,
                 style: theme.textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
-                'Drinky Drinky sends you gentle reminders to drink water throughout the day.',
+                context.l10n.permissionBody,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -58,13 +59,13 @@ class _PermissionScreenState extends ConsumerState<PermissionScreen> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _isLoading ? null : _onEnableReminders,
-                  child: const Text('Enable Reminders'),
+                  child: Text(context.l10n.enableReminders),
                 ),
               ),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: _isLoading ? null : _onSkip,
-                child: const Text('Skip for now'),
+                child: Text(context.l10n.skipForNow),
               ),
             ],
           ),
@@ -93,8 +94,8 @@ class _PermissionScreenState extends ConsumerState<PermissionScreen> {
       SnackBar(
         content: Text(
           granted
-              ? 'Reminders enabled! You can adjust them anytime in Settings.'
-              : 'No problem — you can enable reminders later in your device Settings.',
+              ? context.l10n.remindersEnabled
+              : context.l10n.remindersDeclined,
         ),
         duration: const Duration(seconds: 4),
         behavior: SnackBarBehavior.floating,
