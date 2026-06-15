@@ -8,21 +8,13 @@ A Flutter mobile app that helps users track their daily water intake and stay hy
 
 The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
 
-## Current Milestone: v1.4 Polish & Bug Fixes
-
-**Goal:** Correggere due bug visibili post-v1.3 e aggiungere il README pubblico del progetto con screenshot.
-
-**Target features:**
-- Placeholder home centrato con margini corretti quando non ci sono dati per oggi
-- Bug "Nessuna cronologia": la schermata Cronologia mostra la stato vuoto anche dopo aver aggiunto acqua (fresh install)
-- README.md con screenshot home iOS + Android
-
 ## Shipped
 
 - ✅ **v1.0 MVP** — Phases 1-5 (2026-06-08)
 - ✅ **v1.1 Polish & UX** — Phases 6-8 (2026-06-08)
 - ✅ **v1.2 Bug Fixes & Feature Depth** — Phases 9-11 (2026-06-15)
 - ✅ **v1.3 Multilingual Support** — Phases 12-14 (2026-06-15)
+- ✅ **v1.4 Polish & Bug Fixes** — Phases 15-16 (2026-06-15)
 
 ## Requirements
 
@@ -56,10 +48,7 @@ The user always knows how close they are to their daily hydration goal and gets 
 - ✓ **L10N-07/08/09**: Localized notifications via PlatformDispatcher + lookupAppLocalizations, iOS CFBundleLocalizations, Android resourceConfigurations — Phase 14 (v1.3)
 - ✓ **POLISH-01**: Home empty-state placeholder text centered with 32px horizontal padding — Phase 15 (v1.4)
 - ✓ **BUG-04**: History screen reactively updates when first water entry is logged on fresh install — Phase 15 (v1.4)
-
-### Active
-
-- [ ] DOC-01: README.md con screenshot home iOS + Android — v1.4
+- ✓ **DOC-01**: README.md with project description, screenshot references (iOS + Android), 12-item feature list, and build instructions — Phase 16 (v1.4)
 
 ### Out of Scope
 
@@ -75,12 +64,12 @@ The user always knows how close they are to their daily hydration goal and gets 
 
 ## Context
 
-**Current state (v1.3 complete — 14 phases shipped):**
+**Current state (v1.4 complete — 16 phases shipped):**
 - Stack: Flutter 3.44.1, Riverpod 3.x (code-gen), Drift 2.33.0 (SQLite), flutter_local_notifications 21.0.0, flutter_localizations (SDK), intl 0.20.2
-- Target platforms: iOS and Android
+- Target platforms: iOS 16.0+ and Android (minSdk 26 / compileSdk 36)
 - Fully offline — no backend, no user accounts, no sync
-- All v1.3 requirements shipped: gen-l10n pipeline, 79-key ARB with 4 locales, localized notifications, iOS/Android platform locale declarations
-- UAT passed for Phases 12, 13, 14; all 4 locales (en/it/fr/es) verified at runtime
+- All v1.4 requirements shipped: home placeholder polish, history screen reactivity fix, project README
+- UAT passed for all phases; DOC-01 verified; iOS screenshot present, Android screenshot pending developer addition
 
 **Known issues / tech debt:**
 - Android OEM background killing (Samsung/Xiaomi) may silently suppress notifications — requires physical device testing; **deferred**
@@ -141,4 +130,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-15 — Phase 15 complete (POLISH-01 + BUG-04 shipped; DOC-01 README remains).*
+*Last updated: 2026-06-15 — Phase 16 complete. v1.4 milestone closed. All 16 phases shipped. DOC-01 validated.*

@@ -9,15 +9,15 @@ Requirements for milestone v1.4 (Polish & Bug Fixes).
 
 ### UI Polish
 
-- [ ] **POLISH-01**: Il testo placeholder nella home ("tocca il pulsante...") ha padding laterale/verticale consistente con il resto dell'UI e il testo è centrato orizzontalmente
+- [x] **POLISH-01**: Il testo placeholder nella home ("tocca il pulsante...") ha padding laterale/verticale consistente con il resto dell'UI e il testo è centrato orizzontalmente
 
 ### Bug Fix
 
-- [ ] **BUG-04**: La schermata Cronologia mostra correttamente gli intake del giorno corrente dopo il primo inserimento su fresh install — non mostra "Nessuna cronologia" in presenza di dati
+- [x] **BUG-04**: La schermata Cronologia mostra correttamente gli intake del giorno corrente dopo il primo inserimento su fresh install — non mostra "Nessuna cronologia" in presenza di dati
 
 ### Documentation
 
-- [ ] **DOC-01**: `README.md` nella root del repository descrive il progetto con due screenshot della home screen (iOS e Android) e le istruzioni di build essenziali
+- [x] **DOC-01**: `README.md` nella root del repository descrive il progetto con due screenshot della home screen (iOS e Android) e le istruzioni di build essenziali
 
 ## Future Requirements
 
@@ -43,9 +43,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| POLISH-01 | Phase 15 | Pending |
-| BUG-04 | Phase 15 | Pending |
-| DOC-01 | Phase 16 | Pending |
+| POLISH-01 | Phase 15 | Complete |
+| BUG-04 | Phase 15 | Complete |
+| DOC-01 | Phase 16 | Complete |
 
 **Coverage:**
 

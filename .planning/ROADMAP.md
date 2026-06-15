@@ -119,4 +119,4 @@ Plans:
 | 13. String Extraction & Translation | v1.3 | 2/2 | Complete | 2026-06-15 |
 | 14. Notification Localization & Platform Config | v1.3 | 2/2 | Complete | 2026-06-15 |
 | 15. Home & History Fixes | v1.4 | 1/1 | Complete    | 2026-06-15 |
-| 16. Project README | v1.4 | 1/1 | Complete   | 2026-06-15 |
+| 16. Project README | v1.4 | 1/1 | Complete    | 2026-06-15 |
