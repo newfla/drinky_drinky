@@ -1,4 +1,4 @@
-# Drinky Drinky
+# 💧 Drinky Drinky
 
 A Flutter mobile app that helps users track their daily water intake and stay hydrated. Users set a daily water goal, log drinks via a FAB-triggered bottom sheet with configurable preset buttons, review their history on a monthly calendar with color-coded days, and receive configurable reminder notifications. Runs on iOS and Android. Fully offline -- no backend, no user accounts, all data stored locally on device.
 
@@ -10,7 +10,7 @@ Built with Flutter, Riverpod, and Drift.
 |-----|---------|
 | ![Home screen -- iOS](docs/images/home_ios.png) | ![Home screen -- Android](docs/images/home_android.png) |
 
-*Screenshots are added manually -- see docs/images/ for expected file names.*
+_Screenshots are added manually -- see docs/images/ for expected file names._
 
 ## Features
 
@@ -38,7 +38,7 @@ Built with Flutter, Riverpod, and Drift.
 1. Clone the repository:
 
    ```sh
-   git clone https://github.com/user/drinky_drinky.git
+   git clone https://github.com/newfla/drinky_drinky.git
    cd drinky_drinky
    ```
 
@@ -64,8 +64,8 @@ Built with Flutter, Riverpod, and Drift.
 
 | Platform | Requirement |
 |----------|-------------|
-| Android  | compileSdk 36, minSdk 26 (Android 8.0+) |
-| iOS      | iOS 13+ |
+| Android  | compileSdk 36, minSdk 26 (Android 8.0+; required by permission_handler and flutter_local_notifications) |
+| iOS      | iOS 16.0+ |
 
 ## License
 
