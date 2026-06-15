@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
-**Current focus:** v1.3 Multilingual Support — Phase 12 (L10n Infrastructure) ready to plan
+**Current focus:** v1.3 Multilingual Support — Phase 13 (String Extraction & Translation) next
 
 ## Current Position
 
