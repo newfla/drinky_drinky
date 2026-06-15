@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Bug Fixes & Feature Depth
-status: completed
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-06-15T11:48:02.139Z"
-last_activity: 2026-06-15
+status: Awaiting next milestone
+stopped_at: Phase 11 UAT complete (11/11 passed) — v1.2 milestone ready for archive
+last_updated: "2026-06-15T11:50:17.122Z"
+last_activity: 2026-06-15 — Milestone v1.2 completed and archived
 progress:
   total_phases: 3
   completed_phases: 3
@@ -25,12 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-15)
 
 ## Current Position
 
-Phase: 11
-Plan: Not started
-Status: Phase 11 complete — all plans executed
-Last activity: 2026-06-15
-
-Progress: [████████████████████] 10/10 plans (100%)
+Phase: Milestone v1.2 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-15 — Milestone v1.2 completed and archived
 
 ## Performance Metrics
 
@@ -96,4 +94,4 @@ Resume file: None
 
 ## Operator Next Steps
 
-- Run /gsd-complete-milestone to archive v1.2 and prepare for next milestone
+- Start the next milestone with /gsd-new-milestone

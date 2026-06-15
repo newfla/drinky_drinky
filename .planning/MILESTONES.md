@@ -1,5 +1,20 @@
 # Milestones
 
+## v1.2 Bug Fixes & Feature Depth (Shipped: 2026-06-15)
+
+**Phases completed:** 3 phases, 6 plans, 11 tasks
+
+**Key accomplishments:**
+
+- Drift target_history table with UNIQUE effectiveDate, DAO with getTargetForDate/watchAll/insertOrReplace, and seed row in onCreate
+- Confirmation tests for BUG-01/BUG-03 and 7-test TargetHistoryDao suite validating seed, getTargetForDate, upsert, and watchAll ordering
+- Added `applyFromTomorrow` column to UserSettings, `watchTargetForDate(dateKey)` stream to TargetHistoryDao, and `updateTargetWithHistory(newTargetMl)` dual-write method to SettingsRepository — all propagated through entity and repository mappings with code-gen and clean analyze.
+- Riverpod provider layer for per-day target tracking: TodayDateKey keepAlive Notifier with midnight Timer (BUG-02 fix), effectiveTargetForDate stream family, allTargetHistory batch stream, and streak rewritten to use per-day targets via asyncExpand.
+- Wired HomeScreen to todayDateKeyProvider and effectiveTargetForDateProvider (BUG-02 fixed, TARGET-03), HistoryScreen to allTargetHistoryProvider with _findActiveTarget helper (TARGET-04), and SettingsScreen with applyFromTomorrow toggle and updateTargetWithHistory routing (TARGET-02) — all three screens now use per-day targets.
+- COMPLETE
+
+---
+
 ## v1.1 Polish & UX (Shipped: 2026-06-08)
 
 **Phases completed:** 3 phases, 4 plans, 10 tasks
