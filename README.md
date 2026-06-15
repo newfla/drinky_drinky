@@ -10,8 +10,6 @@ Built with Flutter, Riverpod, and Drift.
 |-----|---------|
 | ![Home screen -- iOS](docs/images/home_ios.png) | ![Home screen -- Android](docs/images/home_android.png) |
 
-_Screenshots are added manually -- see docs/images/ for expected file names._
-
 ## Features
 
 - Animated circular progress ring showing daily hydration progress
