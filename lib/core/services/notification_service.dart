@@ -164,12 +164,18 @@ class NotificationService {
   /// - Does nothing if not initialized.
   /// - Does nothing if permission is not granted.
   Future<void> scheduleWindow(UserSettingsEntity settings) async {
-    await cancelAll();
-
-    final l10n = lookupAppLocalizations(_resolveLocale());
-
     if (!_initialized) return;
     if (!(await permissionGranted())) return;
+    if (settings.notificationIntervalMinutes <= 0) return;
+
+    await cancelAll();
+
+    AppLocalizations l10n;
+    try {
+      l10n = lookupAppLocalizations(_resolveLocale());
+    } catch (_) {
+      l10n = lookupAppLocalizations(const Locale('en'));
+    }
 
     const int maxSlots = 64;
     int slotId = 1000;
