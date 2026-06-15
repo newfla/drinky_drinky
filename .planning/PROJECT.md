@@ -8,6 +8,15 @@ A Flutter mobile app that helps users track their daily water intake and stay hy
 
 The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
 
+## Current Milestone: v1.4 Polish & Bug Fixes
+
+**Goal:** Correggere due bug visibili post-v1.3 e aggiungere il README pubblico del progetto con screenshot.
+
+**Target features:**
+- Placeholder home centrato con margini corretti quando non ci sono dati per oggi
+- Bug "Nessuna cronologia": la schermata Cronologia mostra la stato vuoto anche dopo aver aggiunto acqua (fresh install)
+- README.md con screenshot home iOS + Android
+
 ## Shipped
 
 - ✅ **v1.0 MVP** — Phases 1-5 (2026-06-08)
@@ -48,7 +57,9 @@ The user always knows how close they are to their daily hydration goal and gets 
 
 ### Active
 
-*(No active requirements — planning next milestone)*
+- [ ] POLISH-01: Placeholder home centrato con margini corretti — v1.4
+- [ ] BUG-04: "Nessuna cronologia" su fresh install dopo il primo intake — v1.4
+- [ ] DOC-01: README.md con screenshot home iOS + Android — v1.4
 
 ### Out of Scope
 
@@ -129,4 +140,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-15 after v1.3 milestone — Multilingual Support shipped (it/en/fr/es, system locale, EN fallback, localized notifications).*
+*Last updated: 2026-06-15 — v1.4 milestone started (polish & bug fixes: placeholder home, cronologia fresh install, README).*
