@@ -11,7 +11,7 @@
 
   "currentIntake": "{current} / {target} L",
 
-  "todaysIntake": "Consumo de hoy",
+  "todaysIntake": "Historial de hoy",
 
   "noDrinksLogged": "Sin bebidas registradas",
   "noDrinksLoggedHint": "Pulsa el botón + para registrar tu primera bebida de hoy.",
