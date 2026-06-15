@@ -3,8 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Polish & Bug Fixes
 status: planning
-last_updated: "2026-06-15"
-last_activity: 2026-06-15
+stopped_at: Phase 15 context gathered
+last_updated: "2026-06-15T16:55:40.500Z"
+last_activity: 2026-06-15 — Roadmap created for v1.4
 progress:
   total_phases: 2
   completed_phases: 0
@@ -94,6 +95,6 @@ Items acknowledged and deferred at milestone close on 2026-06-15:
 
 ## Session Continuity
 
-Last session: 2026-06-15
-Stopped at: Roadmap created for v1.4 milestone
-Resume file: None
+Last session: 2026-06-15T16:55:40.496Z
+Stopped at: Phase 15 context gathered
+Resume file: .planning/phases/15-home-history-fixes/15-CONTEXT.md
