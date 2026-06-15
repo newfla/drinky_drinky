@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/repository_providers.dart';
+import '../../domain/entities/hydration_enums.dart';
+import '../../l10n/l10n_extensions.dart';
 
 class HydrationCalculatorScreen extends ConsumerStatefulWidget {
   const HydrationCalculatorScreen({super.key, required this.isOnboarding});
@@ -19,19 +21,18 @@ class HydrationCalculatorScreen extends ConsumerStatefulWidget {
 
 class _HydrationCalculatorScreenState
     extends ConsumerState<HydrationCalculatorScreen> {
-  String? _selectedSex;
+  BiologicalSex? _selectedSex;
   late final TextEditingController _weightController;
   double _climateValue = 1;
   bool _isLoading = false;
 
   static const _sexFactors = {
-    'Maschio': 35.0,
-    'Femmina': 31.0,
-    'Altro': 33.0,
+    BiologicalSex.male: 35.0,
+    BiologicalSex.female: 31.0,
+    BiologicalSex.other: 33.0,
   };
 
   static const _climateMultipliers = [1.0, 1.05, 1.1, 1.2, 1.3];
-  static const _climateLabels = ['Freddo', 'Mite', 'Caldo', 'Molto caldo', 'Afoso'];
 
   @override
   void initState() {
@@ -60,6 +61,14 @@ class _HydrationCalculatorScreenState
     return rounded.clamp(1000, 4000);
   }
 
+  List<String> _climateDisplayLabels(BuildContext context) => [
+    context.l10n.climateCold,
+    context.l10n.climateMild,
+    context.l10n.climateWarm,
+    context.l10n.climateVeryWarm,
+    context.l10n.climateHumid,
+  ];
+
   String _formatMl(BuildContext context, int ml) {
     final locale = Localizations.localeOf(context).toString();
     return '${NumberFormat.decimalPattern(locale).format(ml)} ml';
@@ -77,9 +86,8 @@ class _HydrationCalculatorScreenState
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
         ..showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Errore durante l\'aggiornamento del target. Riprova.'),
+          SnackBar(
+            content: Text(context.l10n.targetUpdateError),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -99,7 +107,7 @@ class _HydrationCalculatorScreenState
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text('Target aggiornato a ${_formatMl(context, recommendedMl)}'),
+          content: Text(context.l10n.targetUpdated(_formatMl(context, recommendedMl))),
           duration: const Duration(seconds: 4),
           behavior: SnackBarBehavior.floating,
         ),
@@ -124,17 +132,18 @@ class _HydrationCalculatorScreenState
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final recommendation = _computeRecommendation();
+    final climateLabels = _climateDisplayLabels(context);
 
     final weightText = _weightController.text;
     final weightValue = int.tryParse(weightText);
     final weightError =
         weightText.isNotEmpty && (weightValue == null || weightValue <= 0 || weightValue > 300)
-            ? 'Inserisci un peso tra 1 e 300 kg'
+            ? context.l10n.weightValidationError
             : null;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calcolatore idratazione'),
+        title: Text(context.l10n.calculatorTitle),
         automaticallyImplyLeading: !widget.isOnboarding,
       ),
       body: SafeArea(
@@ -148,18 +157,18 @@ class _HydrationCalculatorScreenState
 
                 // Sex section
                 Text(
-                  'Sesso',
+                  context.l10n.sexLabel,
                   style: theme.textTheme.bodyLarge!
                       .copyWith(fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 8),
-                SegmentedButton<String>(
+                SegmentedButton<BiologicalSex>(
                   emptySelectionAllowed: true,
                   multiSelectionEnabled: false,
-                  segments: const [
-                    ButtonSegment(value: 'Maschio', label: Text('Maschio')),
-                    ButtonSegment(value: 'Femmina', label: Text('Femmina')),
-                    ButtonSegment(value: 'Altro', label: Text('Altro')),
+                  segments: [
+                    ButtonSegment(value: BiologicalSex.male, label: Text(context.l10n.sexMale)),
+                    ButtonSegment(value: BiologicalSex.female, label: Text(context.l10n.sexFemale)),
+                    ButtonSegment(value: BiologicalSex.other, label: Text(context.l10n.sexOther)),
                   ],
                   selected: _selectedSex != null ? {_selectedSex!} : {},
                   onSelectionChanged: (sel) =>
@@ -169,7 +178,7 @@ class _HydrationCalculatorScreenState
 
                 // Weight section
                 Text(
-                  'Peso',
+                  context.l10n.weightLabel,
                   style: theme.textTheme.bodyLarge!
                       .copyWith(fontWeight: FontWeight.w500),
                 ),
@@ -179,8 +188,8 @@ class _HydrationCalculatorScreenState
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Peso (kg)',
-                    suffixText: 'kg',
+                    labelText: context.l10n.weightInputLabel,
+                    suffixText: context.l10n.weightUnit,
                     errorText: weightError,
                   ),
                   onChanged: (_) => setState(() {}),
@@ -189,7 +198,7 @@ class _HydrationCalculatorScreenState
 
                 // Climate section
                 Text(
-                  'Clima',
+                  context.l10n.climateLabel,
                   style: theme.textTheme.bodyLarge!
                       .copyWith(fontWeight: FontWeight.w500),
                 ),
@@ -201,11 +210,11 @@ class _HydrationCalculatorScreenState
                   divisions: 4,
                   onChanged: (val) => setState(() => _climateValue = val),
                   semanticFormatterCallback: (v) =>
-                      _climateLabels[v.round()],
+                      climateLabels[v.round()],
                 ),
                 Center(
                   child: Text(
-                    _climateLabels[_climateValue.round()],
+                    climateLabels[_climateValue.round()],
                     style: theme.textTheme.labelLarge,
                   ),
                 ),
@@ -216,7 +225,7 @@ class _HydrationCalculatorScreenState
                   child: Column(
                     children: [
                       Text(
-                        'La tua raccomandazione',
+                        context.l10n.yourRecommendation,
                         style: theme.textTheme.bodyLarge,
                       ),
                       const SizedBox(height: 8),
@@ -230,7 +239,7 @@ class _HydrationCalculatorScreenState
                         )
                       else
                         Text(
-                          'Compila tutti i campi',
+                          context.l10n.fillAllFields,
                           style: theme.textTheme.bodyLarge!.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
@@ -243,8 +252,7 @@ class _HydrationCalculatorScreenState
                 // Privacy disclaimer
                 Center(
                   child: Text(
-                    "I tuoi dati (sesso, peso, clima) non vengono salvati ne' trasmessi. "
-                    'Il calcolo avviene interamente sul tuo dispositivo.',
+                    context.l10n.privacyDisclaimer,
                     style: theme.textTheme.bodyLarge!.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -260,7 +268,7 @@ class _HydrationCalculatorScreenState
                     onPressed: recommendation != null && !_isLoading
                         ? () => _onUseAsTarget(recommendation)
                         : null,
-                    child: const Text('Usa come target'),
+                    child: Text(context.l10n.useAsTarget),
                   ),
                 ),
 
@@ -269,7 +277,7 @@ class _HydrationCalculatorScreenState
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: _isLoading ? null : _onSkip,
-                    child: const Text('Salta'),
+                    child: Text(context.l10n.skipButton),
                   ),
                 ],
 
