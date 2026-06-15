@@ -287,4 +287,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mlUnit => 'ml';
+
+  @override
+  String get notificationBody => 'Time to drink water! 💧';
 }
