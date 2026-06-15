@@ -70,7 +70,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 Plans:
 
 - [x] 12-01-PLAN.md — L10n pipeline setup (pubspec, l10n.yaml, MaterialApp wiring, initializeDateFormatting, TableCalendar locale, context extension)
-- [ ] 12-02-PLAN.md — Complete app_en.arb (~73 English strings) + flutter gen-l10n generation
+- [x] 12-02-PLAN.md — Complete app_en.arb (79 English strings) + flutter gen-l10n generation
 
 ### Phase 13: String Extraction & Translation
 
@@ -124,6 +124,6 @@ Plans:
 | 9. Data Foundation & Bug Fixes | v1.2 | 2/2 | Complete    | 2026-06-10 |
 | 10. Target History Integration | v1.2 | 3/3 | Complete   | 2026-06-10 |
 | 11. Hydration Calculator | v1.2 | 1/1 | Complete    | 2026-06-15 |
-| 12. L10n Infrastructure | v1.3 | 1/2 | In Progress|  |
+| 12. L10n Infrastructure | v1.3 | 2/2 | Complete   | 2026-06-15 |
 | 13. String Extraction & Translation | v1.3 | 0/0 | Not started | - |
 | 14. Notification Localization & Platform Config | v1.3 | 0/0 | Not started | - |
