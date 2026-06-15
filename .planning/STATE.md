@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Bug Fixes & Feature Depth
 status: completed
-stopped_at: Phase 11 context gathered
-last_updated: "2026-06-15T09:58:41.458Z"
+stopped_at: Phase 11 UI-SPEC approved
+last_updated: "2026-06-15T10:07:23.238Z"
 last_activity: 2026-06-10 -- Phase 10 complete (verified PASS)
 progress:
   total_phases: 3
@@ -89,9 +89,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-15T09:58:41.452Z
-Stopped at: Phase 11 context gathered
-Resume file: .planning/phases/11-hydration-calculator/11-CONTEXT.md
+Last session: 2026-06-15T10:07:23.235Z
+Stopped at: Phase 11 UI-SPEC approved
+Resume file: .planning/phases/11-hydration-calculator/11-UI-SPEC.md
 
 ## Operator Next Steps
 
