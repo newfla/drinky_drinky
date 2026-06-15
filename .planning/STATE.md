@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Polish & Bug Fixes
-status: Phase 15 executed and committed (9de6567)
+status: executing
 stopped_at: Phase 16 planned — ready for execution
-last_updated: "2026-06-15T17:51:06.351Z"
-last_activity: 2026-06-15
+last_updated: "2026-06-15T17:51:40.765Z"
+last_activity: 2026-06-15 -- Phase 16 execution started
 progress:
   total_phases: 2
   completed_phases: 1
@@ -21,14 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
-**Current focus:** v1.4 Phase 15 — Home & History Fixes
+**Current focus:** Phase 16 — project-readme
 
 ## Current Position
 
-Phase: 16 of 16 (project readme)
+Phase: 16 (project-readme) — EXECUTING
+Plan: 1 of 1
 Next: Phase 16 (README with screenshots)
-Status: Phase 15 executed and committed (9de6567)
-Last activity: 2026-06-15
+Status: Executing Phase 16
+Last activity: 2026-06-15 -- Phase 16 execution started
 
 Progress: [█████░░░░░] 50%
 

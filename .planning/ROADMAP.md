@@ -61,7 +61,7 @@ Full details: `.planning/milestones/v1.3-ROADMAP.md`
 **Milestone Goal:** Fix two visible UI issues from v1.3 and add a public-facing README with screenshots.
 
 - [x] **Phase 15: Home & History Fixes** - Fix placeholder centering on home and stale empty-state on history screen (completed 2026-06-15)
-- [ ] **Phase 16: Project README** - Add README.md with screenshots and build instructions
+- [x] **Phase 16: Project README** - Add README.md with screenshots and build instructions (completed 2026-06-15)
 
 ## Phase Details
 
@@ -98,7 +98,7 @@ Plans:
 
 Plans:
 
-- [ ] 16-01-PLAN.md — Write project README with description, screenshots, features, and build instructions
+- [x] 16-01-PLAN.md — Write project README with description, screenshots, features, and build instructions
 
 ## Progress
 
@@ -119,4 +119,4 @@ Plans:
 | 13. String Extraction & Translation | v1.3 | 2/2 | Complete | 2026-06-15 |
 | 14. Notification Localization & Platform Config | v1.3 | 2/2 | Complete | 2026-06-15 |
 | 15. Home & History Fixes | v1.4 | 1/1 | Complete    | 2026-06-15 |
-| 16. Project README | v1.4 | 0/1 | Not started | - |
+| 16. Project README | v1.4 | 1/1 | Complete   | 2026-06-15 |
