@@ -45,6 +45,14 @@ class DrinkyDrinkyApp extends ConsumerWidget {
           title: 'Drinky Drinky',
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          localeListResolutionCallback: (locales, supportedLocales) {
+            if (locales == null || locales.isEmpty) return const Locale('en');
+            final primary = locales.first;
+            for (final supported in supportedLocales) {
+              if (supported.languageCode == primary.languageCode) return supported;
+            }
+            return const Locale('en');
+          },
           theme: ThemeData(
             colorScheme: lightDynamic ??
                 ColorScheme.fromSeed(seedColor: Colors.blue),
