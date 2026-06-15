@@ -2,14 +2,20 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import 'core/router/app_router.dart';
 import 'core/services/notification_service.dart';
+import 'l10n/generated/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // L10N-03: Initialize date formatting for all locales.
+  // table_calendar uses intl internally for month/day names.
+  await initializeDateFormatting();
 
   // Timezone init — required by flutter_local_notifications for zonedSchedule().
   // initializeTimeZones() must be called before any tz.getLocation() call.
@@ -37,6 +43,8 @@ class DrinkyDrinkyApp extends ConsumerWidget {
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         return MaterialApp.router(
           title: 'Drinky Drinky',
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: ThemeData(
             colorScheme: lightDynamic ??
                 ColorScheme.fromSeed(seedColor: Colors.blue),

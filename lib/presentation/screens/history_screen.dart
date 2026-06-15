@@ -210,6 +210,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
                 // ---- TableCalendar ----
                 TableCalendar<Object>(
+                  locale: Localizations.localeOf(context).toString(),
                   firstDay: _firstDay!,
                   lastDay: lastDay,
                   focusedDay: clampedFocused,
