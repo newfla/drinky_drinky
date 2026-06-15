@@ -1,5 +1,5 @@
 ---
-status: diagnosed
+status: complete
 phase: 12-l10n-infrastructure
 source: [12-01-SUMMARY.md, 12-02-SUMMARY.md]
 started: 2026-06-15T15:30:00Z
@@ -18,9 +18,8 @@ result: pass
 
 ### 2. Time picker buttons localized (iOS)
 expected: On an iOS device/simulator set to Italian, open Settings → Do Not Disturb → tap "Start time". The time picker's OK and Cancel buttons should appear in Italian ("OK" stays "OK", but "Cancel" → "Annulla"). This confirms GlobalCupertinoLocalizations.delegate is active.
-result: issue
-reported: "mostra in inglese"
-severity: major
+result: pass
+note: initially failed (supportedLocales=[en] only); fixed by adding stub it/fr/es ARBs (commit 2d49744)
 
 ### 3. English fallback for unsupported locale
 expected: Set device/simulator locale to German (Deutsch). Launch the app. It should not crash and should display the same UI as English (no missing strings, no "???" placeholders). German is not in supportedLocales so basicLocaleListResolution falls back to English automatically.
@@ -28,21 +27,19 @@ result: pass
 
 ### 4. TableCalendar shows localized month/day names
 expected: Set device/simulator locale to Italian. Open the History tab. The calendar should display month names in Italian (e.g., "giugno" for June) and day-of-week abbreviations in Italian (lun, mar, mer, gio, ven, sab, dom). This confirms initializeDateFormatting() + TableCalendar locale parameter are working.
-result: issue
-reported: "no sono visualizzati in inglese"
-severity: major
+result: pass
+note: initially failed (supportedLocales=[en] only); fixed by adding stub it/fr/es ARBs (commit 2d49744)
 
 ### 5. TableCalendar shows localized month/day names in French
 expected: Set device/simulator locale to French. Open the History tab. The calendar should display month names in French (e.g., "juin" for June) and day abbreviations in French (lun., mar., mer., etc.).
-result: issue
-reported: "rimane in inglese"
-severity: major
+result: pass
+note: initially failed (supportedLocales=[en] only); fixed by adding stub it/fr/es ARBs (commit 2d49744)
 
 ## Summary
 
 total: 5
-passed: 2
-issues: 3
+passed: 5
+issues: 0
 pending: 0
 skipped: 0
 blocked: 0
