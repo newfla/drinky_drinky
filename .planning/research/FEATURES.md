@@ -1,481 +1,661 @@
-# Features Research: Drinky Drinky v1.2
+# Feature Landscape: Flutter l10n (Multilingual Support)
 
-**Domain:** Flutter hydration tracker -- feature depth additions
-**Researched:** 2026-06-10
-**Overall confidence:** HIGH (formula based on well-established health authority values; data model and query patterns verified against existing codebase and Drift docs)
-
----
-
-## Hydration Calculator Formula
-
-### Background: What Health Authorities Recommend
-
-There is no single universally accepted formula for daily water intake. The three major health authorities provide **fixed Adequate Intake (AI) values by sex**, not per-kg formulas:
-
-| Authority | Males (total water/day) | Females (total water/day) | Basis |
-|-----------|------------------------|--------------------------|-------|
-| **EFSA** (Europe) | 2,500 ml | 2,000 ml | Observed intakes in populations with desirable urine osmolality |
-| **IOM/NASEM** (US/Canada) | 3,700 ml | 2,700 ml | Median intakes from national dietary surveys |
-
-These figures include **all water sources** (beverages + food). Approximately 20% comes from food, so the **beverage-only** figures are:
-
-| Authority | Males (beverages) | Females (beverages) |
-|-----------|-------------------|---------------------|
-| **EFSA** | 2,000 ml | 1,600 ml |
-| **IOM** | 2,960 ml | 2,160 ml |
-
-**Important:** These are population-level recommendations assuming moderate temperature and moderate physical activity (PAL ~1.6). They are explicitly stated as NOT applicable to hot climates or high activity levels.
-
-**Confidence:** HIGH -- values confirmed via EFSA Journal 2010;8(3):1459, IOM 2005 DRI for Water, and corroborated by multiple secondary sources (Wikipedia DRI table, Medical News Today, Healthline, Omnicalculator).
-
-### Baseline (sex + weight)
-
-Since the app focuses on European users (Italian interface elements visible in the codebase -- "Freddo/Mite/Caldo/Molto caldo/Afoso") and needs a **weight-based** calculation, the approach is:
-
-**Use the EFSA baseline values as anchor points, then scale by body weight relative to a reference weight.**
-
-**Core formula:**
-
-```
-baselineMl = mlPerKg * weightKg
-```
-
-Where `mlPerKg` is derived from the EFSA AI values:
-
-| Sex | EFSA AI (beverages) | Reference weight | Derived ml/kg |
-|-----|---------------------|------------------|---------------|
-| Male | 2,000 ml | 70 kg | ~28.6 ml/kg |
-| Female | 1,600 ml | 60 kg | ~26.7 ml/kg |
-
-**Recommended constants (rounded for simplicity and consistency with common hydration apps):**
-
-| Sex | ml/kg constant | Source rationale |
-|-----|---------------|-----------------|
-| Male | **30 ml/kg** | EFSA-derived ~28.6 rounded up slightly; aligns with the commonly cited "30-35 ml/kg" range in clinical nutrition |
-| Female | **28 ml/kg** | EFSA-derived ~26.7 rounded up; slightly below male to reflect the EFSA sex differential |
-| Other | **29 ml/kg** | Midpoint between male and female constants |
-
-**Example outputs:**
-- Male, 80 kg: 80 * 30 = 2,400 ml
-- Female, 55 kg: 55 * 28 = 1,540 ml (clamped to minimum 1,540 -> 1,550 after rounding)
-- Female, 70 kg: 70 * 28 = 1,960 ml -> 1,950 ml
-- Male, 65 kg: 65 * 30 = 1,950 ml
-
-These align well with the EFSA AI ranges and produce sensible results across normal body weights.
-
-**Confidence:** MEDIUM -- The per-kg derivation is a practical simplification. The exact constants (30/28/29) are an opinionated choice based on EFSA anchoring. No single authority publishes exact per-kg values for the general population; clinical nutrition commonly uses "30-35 ml/kg" as a rule of thumb (verified in multiple secondary sources). The chosen values sit at the conservative end of this range.
-
-### Climate Adjustments (5 levels with multipliers)
-
-EFSA and IOM both state their AI values apply only to "moderate environmental temperatures." Quantified climate adjustments are not published by health authorities because water loss through sweating is highly variable (0.3 L/h sedentary to 2.0+ L/h active in heat, per Popkin et al. 2010 in *Nutrition Reviews*).
-
-**Recommended multipliers (opinionated, conservative):**
-
-| Level | Italian label | Approx. temp range | Multiplier | Rationale |
-|-------|---------------|-------------------|------------|-----------|
-| 1 | Freddo | < 10 C | **1.00** | Baseline; AI was set at moderate temp; cold weather does not reduce needs below baseline |
-| 2 | Mite | 10-20 C | **1.00** | Still within the "moderate temperature" range assumed by EFSA |
-| 3 | Caldo | 20-30 C | **1.10** | +10% accounts for mild increase in insensible perspiration |
-| 4 | Molto caldo | 30-35 C | **1.20** | +20% for noticeable sweating; consistent with sports science guidance of 500-750 ml/hour additional fluid for heat stress |
-| 5 | Afoso | > 35 C (humid heat) | **1.30** | +30% for significant sweat loss; humid heat impairs evaporative cooling, increasing sweat volume |
-
-**Confidence:** LOW-MEDIUM -- These multipliers are an opinionated estimate. No health authority publishes exact percentage increases by temperature band. The chosen values are conservative: even at the highest level (1.30x), a 70 kg male would get 2,730 ml (well within EFSA's range). Sports science literature suggests water needs can increase 50-100% during sustained exercise in heat, but the app's climate factor represents ambient living conditions, not exercise. The 10/20/30% increments are a reasonable simplification.
-
-### Combined Formula (Implementation Reference)
-
-```dart
-int calculateRecommendedIntake({
-  required String sex,       // 'M', 'F', 'other'
-  required double weightKg,
-  required int climateLevel, // 1-5
-}) {
-  // Step 1: Base ml/kg by sex
-  final double mlPerKg;
-  switch (sex) {
-    case 'M':
-      mlPerKg = 30.0;
-    case 'F':
-      mlPerKg = 28.0;
-    default:
-      mlPerKg = 29.0;
-  }
-
-  // Step 2: Climate multiplier
-  final double climateMultiplier;
-  switch (climateLevel) {
-    case 1: // Freddo
-    case 2: // Mite
-      climateMultiplier = 1.00;
-    case 3: // Caldo
-      climateMultiplier = 1.10;
-    case 4: // Molto caldo
-      climateMultiplier = 1.20;
-    case 5: // Afoso
-      climateMultiplier = 1.30;
-    default:
-      climateMultiplier = 1.00;
-  }
-
-  // Step 3: Calculate and round to nearest 50 ml
-  final raw = mlPerKg * weightKg * climateMultiplier;
-  return ((raw / 50).round() * 50).clamp(1000, 5000);
-}
-```
-
-### Output Bounds
-
-| Bound | Value | Rationale |
-|-------|-------|-----------|
-| Minimum | **1,000 ml** | Below this is clinically insufficient for any adult. Even a 35 kg person at 28 ml/kg = 980 ml, rounded to 1,000. |
-| Maximum | **5,000 ml** | A 120 kg male in afoso climate: 120 * 30 * 1.30 = 4,680 ml. Capping at 5,000 prevents unreasonable values and avoids any risk of hyponatremia advice. The slider max in settings is already 10,000 ml, so 5,000 from the calculator is well within bounds. |
-| Rounding | **Nearest 50 ml** | Clean, user-friendly output. 2,437 ml -> 2,450 ml. Avoids false precision from a formula that is inherently approximate. |
-
-### Privacy Considerations
-
-The milestone spec says "Privacy notice: no data saved or transmitted." Implementation notes:
-
-1. **Calculator inputs (sex, weight, climate) must NOT be persisted.** The screen is stateless -- inputs live in local widget state only, discarded when the screen is popped.
-2. **Only the output target value is saved** (when the user taps "Use as target"), and it is saved as the regular `dailyTargetMl` value in settings/target_history -- indistinguishable from a manual target change.
-3. **Privacy disclaimer text** should be shown on the calculator screen. Suggested wording: "I tuoi dati (sesso, peso, clima) non vengono salvati ne trasmessi. Il calcolo avviene interamente sul tuo dispositivo." / "Your data (sex, weight, climate) is not saved or transmitted. The calculation happens entirely on your device."
-4. **No analytics or logging** of inputs. The function is a pure computation.
-
-### Disclaimer Text
-
-The calculator screen should include a short disclaimer clarifying this is a general recommendation, not medical advice. Suggested text:
-
-"This recommendation is based on EFSA guidelines and is intended as a general guideline. Individual needs vary. Consult a healthcare professional for personalized advice."
-
-This protects against liability and manages user expectations about the precision of the formula.
+**Domain:** Flutter hydration tracker -- multilingual support (it/en/fr/es, EN fallback)
+**Researched:** 2026-06-15
+**Overall confidence:** HIGH (Flutter ARB-based l10n is mature, well-documented, and verified via Context7 + official docs)
 
 ---
 
-## Target History Data Model
+## Table Stakes
 
-### Schema
+Features users expect from a properly localized app. Missing any = broken UX for non-Italian speakers.
 
-New Drift table: `TargetHistory`
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| All visible UI strings translated (it/en/fr/es) | Core multilingual requirement | Medium | ~75-85 distinct string keys across 5 screens + 1 dialog + 1 bottom sheet |
+| Notification title/body translated | Users see notifications in system language | Medium | **Critical challenge:** NotificationService is a singleton, not in widget tree; requires `delegate.load()` pattern |
+| System locale auto-detection | Standard mobile behavior | Low | Flutter's `supportedLocales` + default locale resolution handle this automatically |
+| English fallback for unsupported locales | Prevents empty/broken strings | Low | Put `Locale('en')` first in `supportedLocales` list; Flutter falls back to first entry |
+| Plural forms for streak counter | "1 day streak" vs "2 days streak" / "1 giorno di fila" vs "2 giorni di fila" | Low | ICU plural syntax in ARB; `=1{...} other{...}` |
+| Parameterized strings with arguments | "Target: 2,000 ml", "+250 ml added" | Low | ARB placeholder syntax with `{value}` |
+| Calendar/date formatting locale-aware | Month names, date order in table_calendar and day summary | Low | Already using `intl` package; `DateFormat` is locale-aware when `initializeDateFormatting()` is called |
+| Material widget localization | Date pickers, buttons, dialog text in correct language | Low | `GlobalMaterialLocalizations.delegate` via `flutter_localizations` SDK package |
+| Accessibility labels translated | Semantic labels on calendar day cells | Low | Replace hardcoded `_monthName()` helper with `DateFormat.MMMM()` + localized goal status strings |
+
+## Differentiators
+
+Features that go beyond minimum l10n but add polish. Not expected, but valued.
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Non-nullable AppLocalizations getter | Eliminates `!` on every `AppLocalizations.of(context)` call; cleaner code | Low | Set `nullable-getter: false` in l10n.yaml |
+| Number formatting locale-aware (decimal separators) | Italian: "2.000,50" vs English: "2,000.50" | Already done | `NumberFormat.decimalPatternDigits(locale: locale)` already used in home_screen.dart `_formatLiters()` |
+| Climate labels translated in calculator | "Freddo/Mite/Caldo" -> "Cold/Mild/Hot" | Low | Currently hardcoded Italian in `_climateLabels` array |
+| Sex options translated in calculator | "Maschio/Femmina/Altro" -> "Male/Female/Other" | Low-Med | **Requires decoupling display text from map keys** -- currently `_sexFactors` uses Italian labels as keys |
+| Notification channel name translated | Android notification settings show localized channel name | Low | Channel name set at init time; re-create channel with localized name |
+| Locale-aware notification rescheduling on language change | Notifications update to new language on next schedule cycle | Low | Already happens naturally: `scheduleWindow()` is called on app resume |
+
+## Anti-Features
+
+Features to explicitly NOT build for this milestone.
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| In-app language picker | Adds complexity, non-standard UX; 4 locales do not justify a picker | Follow system locale; users change language in device Settings |
+| Country-variant locales (en_US vs en_GB, es_ES vs es_MX) | Overkill for 4-language scope; no meaningful string differences for this app | Use language-only locales: `en`, `it`, `fr`, `es` |
+| RTL layout support | None of the 4 target languages are RTL | Do not add RTL-specific layout code |
+| Translated app name (CFBundleDisplayName / AndroidManifest label) | App name "Drinky Drinky" is a brand name | Keep "Drinky Drinky" in all locales |
+| Translation management platform (Crowdin, Lokalise) | 4 languages, ~80 keys, single developer | Manage ARB files directly in repo |
+| Dynamic locale switching without app restart | Flutter's built-in locale resolution handles system changes automatically | Let the system handle it |
+| Machine translation / auto-translate | Quality is unpredictable for a polished app | Human-written translations for all four locales |
+| Per-screen lazy-loaded translations | Unnecessary for 4 locales with ~80 strings | Load all strings at startup (Flutter's default ARB approach) |
+
+---
+
+## Feature Dependencies
+
+```
+initializeDateFormatting() -> calendar month names, date formats
+     |
+l10n.yaml + ARB files -> flutter gen-l10n -> AppLocalizations class
+     |
+     +-> MaterialApp.localizationsDelegates + supportedLocales
+     |       |
+     |       +-> All widget-tree strings (AppLocalizations.of(context))
+     |       |
+     |       +-> table_calendar locale property
+     |
+     +-> AppLocalizations.delegate.load(locale) [no context needed]
+             |
+             +-> NotificationService localized strings
+```
+
+---
+
+## ARB-Based l10n: How It Works in Practice
+
+### Infrastructure Setup
+
+**1. Add `flutter_localizations` SDK dependency to pubspec.yaml:**
+
+```yaml
+dependencies:
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2  # already present
+```
+
+**2. Add `generate: true` to pubspec.yaml flutter section:**
+
+```yaml
+flutter:
+  generate: true
+  uses-material-design: true
+```
+
+**3. Create `l10n.yaml` in project root:**
+
+```yaml
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false
+synthetic-package: false
+output-dir: lib/l10n/generated
+```
+
+Key options:
+- `nullable-getter: false` -- removes the need for `!` on every `AppLocalizations.of(context)` call. Instead of `AppLocalizations.of(context)!.hello`, you write `AppLocalizations.of(context).hello`.
+- `synthetic-package: false` -- **required** since Flutter 3.32+. The old `package:flutter_gen` approach is EOL. Files generate directly into your source tree.
+- `output-dir` -- keeps generated code separate from ARB source files for clarity.
+
+**Confidence:** HIGH -- verified via Context7 (Flutter docs) and official breaking change docs for synthetic-package removal.
+
+**4. Wire into MaterialApp:**
 
 ```dart
-@TableIndex(name: 'idx_target_history_effective_date', columns: {#effectiveDate})
-class TargetHistory extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get effectiveDate => text().unique()();  // 'YYYY-MM-DD', same as dateKey
-  IntColumn get targetMl => integer()();
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/generated/app_localizations.dart';
+
+MaterialApp.router(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  // ... existing config
+);
+```
+
+`AppLocalizations.localizationsDelegates` is a generated convenience list that includes:
+- `AppLocalizations.delegate` (your app strings)
+- `GlobalMaterialLocalizations.delegate` (Material widget strings)
+- `GlobalWidgetsLocalizations.delegate` (text direction)
+- `GlobalCupertinoLocalizations.delegate` (Cupertino widget strings)
+
+`AppLocalizations.supportedLocales` is auto-generated from your ARB files.
+
+**Confidence:** HIGH -- verified via Context7 (Flutter internationalization docs).
+
+### Pattern 1: Simple String Substitution
+
+**ARB (app_en.arb):**
+```json
+{
+  "@@locale": "en",
+  "appTitle": "Drinky Drinky",
+  "settingsTitle": "Settings",
+  "historyTitle": "History",
+  "noHistory": "No history yet",
+  "goalReached": "Goal reached!",
+  "addWater": "Add water",
+  "add": "Add",
+  "customAmount": "Custom amount",
+  "doNotDisturb": "Do Not Disturb",
+  "startTime": "Start time",
+  "endTime": "End time",
+  "enableReminders": "Enable Reminders",
+  "skipForNow": "Skip for now"
 }
 ```
 
-**Why this schema:**
-- `effectiveDate` is the date from which this target applies (inclusive). Same TEXT format as `dateKey` in `water_entries`, enabling direct string comparison.
-- `targetMl` stores the target active from that date forward.
-- No `endDate` needed -- the next row's `effectiveDate` implicitly terminates the previous period.
-- **UNIQUE constraint on `effectiveDate`** prevents duplicate rows for the same date when the user changes the target multiple times on the same day.
-- An index on `effectiveDate` makes the "find target for date" query efficient.
-
-**Relationship to `user_settings.dailyTargetMl`:** The existing `dailyTargetMl` column in `user_settings` continues to serve as the *current* target (the one the home screen progress ring shows). `target_history` is the audit log that enables per-day lookup for past dates. When a target changes, BOTH are updated: `user_settings.dailyTargetMl` is set to the new value, and a row is inserted/upserted into `target_history`. This avoids breaking any existing code that reads from `user_settings`.
-
-### Database Migration (v1 -> v2)
-
-The app's current `schemaVersion` is 1. Adding the `target_history` table requires version 2.
-
+**Dart usage:**
 ```dart
-@override
-int get schemaVersion => 2;
+Text(AppLocalizations.of(context).settingsTitle)
+```
 
-@override
-MigrationStrategy get migration {
-  return MigrationStrategy(
-    onCreate: (Migrator m) async {
-      await m.createAll();
-      // ... existing seed logic for user_settings and drink_presets ...
-    },
-    onUpgrade: (Migrator m, int from, int to) async {
-      if (from < 2) {
-        await m.createTable(targetHistory);
-        // Seed the first history row with the user's current target.
-        // This ensures every existing user has at least one row.
-        final currentSettings = await (select(userSettings)
-              ..where((t) => t.id.equals(1)))
-            .getSingleOrNull();
-        final currentTarget = currentSettings?.dailyTargetMl ?? 2000;
-        final today = DateTime.now();
-        final todayKey =
-            '${today.year}-${today.month.toString().padLeft(2, '0')}-'
-            '${today.day.toString().padLeft(2, '0')}';
-        await into(targetHistory).insert(
-          TargetHistoryCompanion.insert(
-            effectiveDate: todayKey,
-            targetMl: currentTarget,
-          ),
-        );
+**Confidence:** HIGH -- fundamental gen-l10n pattern, verified via Context7.
+
+### Pattern 2: Plurals (Streak Counter)
+
+**ARB (app_en.arb):**
+```json
+{
+  "streakCount": "{count, plural, =0{No streak} =1{1 day streak} other{{count} day streak}}",
+  "@streakCount": {
+    "description": "Streak counter label on history screen",
+    "placeholders": {
+      "count": {
+        "type": "num"
       }
-    },
-    beforeOpen: (details) async {
-      await customStatement('PRAGMA foreign_keys = ON');
-    },
-  );
-}
-```
-
-**Why seed on upgrade:** Existing users who upgrade from v1 have been using a single global target. We create one `target_history` row with today's date and their current target so that:
-- All past calendar days use this target (it is the earliest row, so `MAX(effectiveDate) <= anyPastDate` finds it).
-- The query logic works consistently without special-casing "no history."
-
-**Confidence:** HIGH -- The `m.createTable()` in `onUpgrade` pattern is documented in Drift's official migration guide (verified via Context7). The seed-on-upgrade approach ensures existing users have valid data.
-
-### Query Pattern (find target for a given date)
-
-The core query: "For a given `dateKey`, find the `targetMl` from the most recent `target_history` row whose `effectiveDate <= dateKey`."
-
-**SQL equivalent:**
-```sql
-SELECT target_ml FROM target_history
-WHERE effective_date <= :dateKey
-ORDER BY effective_date DESC
-LIMIT 1;
-```
-
-**Drift DAO methods:**
-
-```dart
-/// Get the target that was active on [dateKey].
-/// Returns null if no history exists before that date (should not happen
-/// after migration seeds the first row).
-Future<int?> getTargetForDate(String dateKey) async {
-  final row = await (select(targetHistory)
-        ..where((t) => t.effectiveDate.isSmallerOrEqualValue(dateKey))
-        ..orderBy([(t) => OrderingTerm.desc(t.effectiveDate)])
-        ..limit(1))
-      .getSingleOrNull();
-  return row?.targetMl;
-}
-
-/// Watch all target history rows, sorted by effectiveDate ASC.
-/// The calendar/streak providers use this to look up per-day targets
-/// without issuing N individual queries.
-Stream<List<TargetHistoryData>> watchAllTargetHistory() {
-  return (select(targetHistory)
-        ..orderBy([(t) => OrderingTerm.asc(t.effectiveDate)]))
-      .watch();
-}
-
-/// Insert or update a target for the given effective date.
-/// Uses UNIQUE constraint on effectiveDate for conflict resolution.
-Future<void> upsertTarget(String effectiveDate, int targetMl) async {
-  await into(targetHistory).insertOnConflictUpdate(
-    TargetHistoryCompanion.insert(
-      effectiveDate: effectiveDate,
-      targetMl: targetMl,
-    ),
-  );
-}
-```
-
-### Client-Side Resolution for Calendar and Streak
-
-For the calendar (which needs per-day targets for ~30 days) and the streak provider (which scans backwards), issue ONE query for the full history and resolve per-day targets in memory:
-
-```dart
-/// Find the active target for a given dateKey from a sorted history list.
-/// [history] must be sorted by effectiveDate ASC.
-int targetForDate(List<TargetHistoryData> history, String dateKey) {
-  // Iterate backwards to find the most recent effective date <= dateKey.
-  for (int i = history.length - 1; i >= 0; i--) {
-    if (history[i].effectiveDate.compareTo(dateKey) <= 0) {
-      return history[i].targetMl;
     }
   }
-  // Fallback (should never happen after migration seed).
-  return 2000;
 }
 ```
 
-**Why client-side resolution:** The `target_history` table will have very few rows (one per target change -- most users will have 1-5 rows over their lifetime). Loading the full list is trivially cheap. Running 30+ individual SQL queries per calendar month would be far more expensive.
+**ARB (app_it.arb):**
+```json
+{
+  "streakCount": "{count, plural, =0{Nessuna serie} =1{1 giorno di fila} other{{count} giorni di fila}}"
+}
+```
 
-### Edge Cases
+**ARB (app_fr.arb):**
+```json
+{
+  "streakCount": "{count, plural, =0{Pas de serie} =1{1 jour consecutif} other{{count} jours consecutifs}}"
+}
+```
 
-| Edge case | Behavior | Implementation |
-|-----------|----------|---------------|
-| **No history rows** | Should not happen after migration seed. Fallback: return 2000 (the default target). | `?? 2000` in DAO, `return 2000` in `targetForDate` fallback |
-| **All history dates are after the queried date** | Possible for very old past dates before the user started using the app. `targetForDate` returns 2000 as fallback. | The migration seed date is "today at upgrade time," so dates before that get the fallback. This is acceptable -- the user had no logs before using the app. |
-| **Multiple changes on same effective date** | UNIQUE constraint on `effectiveDate` + `insertOnConflictUpdate` ensures only one row per date. The last value set wins. | `upsertTarget()` method handles this |
-| **"Apply from today"** | Upsert row with `effectiveDate = today`, update `user_settings.dailyTargetMl` immediately. | Both operations in single method call |
-| **"Apply from tomorrow"** | Insert row with `effectiveDate = tomorrow`, update `user_settings.dailyTargetMl` immediately (home screen shows new target). Calendar for "today" still uses the old target from history lookup. | Two writes: upsert to history, update to settings |
-| **User downgrades app** | Schema version 2 database opened by schema version 1 code. The `target_history` table is ignored (Drift/SQLite do not fail on extra tables). Settings still work from `user_settings`. | No action needed -- graceful degradation |
+**ARB (app_es.arb):**
+```json
+{
+  "streakCount": "{count, plural, =0{Sin racha} =1{1 dia consecutivo} other{{count} dias consecutivos}}"
+}
+```
 
-### Critical Design Decision: "Apply from tomorrow" and user_settings.dailyTargetMl
+**Dart usage:**
+```dart
+Text(AppLocalizations.of(context).streakCount(streak))
+```
 
-When the user picks "apply from tomorrow":
-1. A `target_history` row is created with `effectiveDate = tomorrow` and the new `targetMl`.
-2. The `user_settings.dailyTargetMl` IS updated to the new value immediately. Reason: the home screen progress ring should reflect the user's new intent for today's remaining logging.
-3. The calendar for "today" will still use the OLD target (from `target_history` lookup), because today's effectiveDate query will find the previous row.
+The generated code produces a method `String streakCount(num count)` that handles plural selection per locale using ICU rules. Only `other` is required; `=0`, `=1`, `few`, `many` are optional.
 
-This means:
-- `user_settings.dailyTargetMl` = "what the progress ring shows" (always current intent)
-- `target_history` = "what was the official target on day X" (what the calendar evaluates)
+**Important:** Italian, French, Spanish, and English all follow simple `one`/`other` plural rules. No `few` or `many` forms needed for these 4 languages.
 
-### Impact on Existing Code
+**Confidence:** HIGH -- ICU plural syntax verified via Context7 (Flutter internationalization docs).
 
-| Component | Current behavior | Required change |
-|-----------|-----------------|-----------------|
-| **Home screen** | Reads `dailyTargetMl` from `userSettingsProvider` | **No change** -- `user_settings.dailyTargetMl` is always the current target |
-| **History screen (calendar)** | Uses single `dailyTarget` from settings for all days | Must watch `targetHistoryProvider` and use `targetForDate()` per day instead of one global target |
-| **Streak provider** | Compares daily totals against single `settings.dailyTargetMl` | Must watch `targetHistoryProvider` and use `targetForDate()` per day |
-| **Settings screen** | Slider updates `user_settings.dailyTargetMl` directly via `updateSettings()` | Must show "Apply from today/tomorrow" dialog on slider change end, then call `upsertTarget()` AND `updateSettings()` |
-| **Notification goal-reached check** | Compares today's total against `settings.dailyTargetMl` | **No change** -- uses current target, which is always correct |
-| **Day summary card** | Shows total against single target | Must use `targetForDate()` for the selected day |
+### Pattern 3: Strings with Arguments (Parameterized)
+
+**ARB (app_en.arb):**
+```json
+{
+  "progressDisplay": "{current} / {target} L",
+  "@progressDisplay": {
+    "description": "Progress ring text showing current/target in liters",
+    "placeholders": {
+      "current": { "type": "String" },
+      "target": { "type": "String" }
+    }
+  },
+  "mlAdded": "+{amount} ml added",
+  "@mlAdded": {
+    "description": "SnackBar confirmation after adding water",
+    "placeholders": {
+      "amount": { "type": "int" }
+    }
+  },
+  "presetLabel": "+{amount} ml",
+  "@presetLabel": {
+    "description": "Quick-add preset button label",
+    "placeholders": {
+      "amount": { "type": "int" }
+    }
+  },
+  "presetNumber": "Preset {number}",
+  "@presetNumber": {
+    "description": "Settings preset row title",
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "targetUpdated": "Target updated to {value}",
+  "@targetUpdated": {
+    "description": "SnackBar after calculator applies target",
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  }
+}
+```
+
+**Dart usage:**
+```dart
+// Progress ring
+Text(AppLocalizations.of(context).progressDisplay(
+  _formatLiters(context, totalMl),
+  _formatLiters(context, target),
+))
+
+// SnackBar
+Text(AppLocalizations.of(context).mlAdded(amountMl))
+```
+
+**Note on the progress display:** The `current` and `target` parameters are `String` (not `int`) because the liters formatting (`_formatLiters`) already handles locale-aware decimal formatting. Passing pre-formatted strings avoids double-formatting.
+
+**Confidence:** HIGH -- placeholder syntax verified via Context7.
+
+### Pattern 4: Notification Strings Outside Widget Tree
+
+**The problem:** `NotificationService` is a singleton accessed via `NotificationService.instance`. It has no `BuildContext`, so `AppLocalizations.of(context)` is not available. The notification title and body are currently hardcoded as `static const String` fields.
+
+**The solution: `AppLocalizations.delegate.load(locale)`**
+
+The generated `AppLocalizations.delegate` is a `LocalizationsDelegate<AppLocalizations>`. Its `load(Locale locale)` method returns `Future<AppLocalizations>` and can be called anywhere -- no `BuildContext` required.
+
+To get the device locale without context: `WidgetsBinding.instance.platformDispatcher.locale`
+
+**Implementation pattern:**
+
+```dart
+import 'dart:ui' show PlatformDispatcher;
+import '../l10n/generated/app_localizations.dart';
+
+class NotificationService {
+  // ... existing code ...
+
+  /// Get localized strings for the current device locale.
+  /// Falls back to English if the device locale is not supported.
+  Future<AppLocalizations> _getLocalizations() async {
+    final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
+
+    // Check if device locale is supported; fall back to English
+    final supportedLocale = AppLocalizations.supportedLocales.firstWhere(
+      (l) => l.languageCode == deviceLocale.languageCode,
+      orElse: () => const Locale('en'),
+    );
+
+    return AppLocalizations.delegate.load(supportedLocale);
+  }
+
+  Future<void> scheduleWindow(UserSettingsEntity settings) async {
+    await cancelAll();
+    if (!_initialized) return;
+    if (!(await permissionGranted())) return;
+
+    // Load localized strings once for all notifications in this batch
+    final l10n = await _getLocalizations();
+    final title = l10n.notificationTitle;   // e.g. "Drinky Drinky"
+    final body = l10n.notificationBody;     // e.g. "Time to drink water!"
+
+    // ... scheduling loop uses title and body instead of _notifTitle/_notifBody ...
+    await _plugin.zonedSchedule(
+      id: slotId++,
+      scheduledDate: candidate,
+      notificationDetails: _notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      title: title,
+      body: body,
+      matchDateTimeComponents: null,
+    );
+  }
+}
+```
+
+**Why this works:**
+- `delegate.load()` is a pure factory method that instantiates the correct locale subclass of `AppLocalizations`. It does not require the widget tree.
+- The locale is read from `PlatformDispatcher` which reflects the device's current system locale.
+- Fallback to English is explicit via the `firstWhere` + `orElse` pattern.
+
+**Critical caveat:** Notifications are scheduled with the locale active at scheduling time. If the user changes their device language, previously scheduled notifications retain the OLD language text. This is acceptable because `scheduleWindow()` is called on every app resume, settings change, and permission grant -- so notifications are re-scheduled frequently with the new locale.
+
+**ARB entries for notifications:**
+```json
+{
+  "notificationTitle": "Drinky Drinky",
+  "@notificationTitle": {
+    "description": "Notification title for hydration reminders"
+  },
+  "notificationBody": "Time to drink water!",
+  "@notificationBody": {
+    "description": "Notification body for hydration reminders"
+  }
+}
+```
+
+**Confidence:** HIGH -- `LocalizationsDelegate.load(Locale)` returns `Future<T>` per official API docs (api.flutter.dev). `WidgetsBinding.instance.platformDispatcher.locale` verified via Context7 (Flutter breaking changes docs for window singleton deprecation).
+
+### Pattern 5: Locale Fallback for Unsupported System Locale
+
+**How Flutter resolves locale (built-in, no custom code needed):**
+
+1. User's device locale matches a supported locale exactly (e.g., `it` matches `it`) -- use it
+2. Language code matches but country code differs (e.g., `es_AR` matches `es`) -- use the matching language
+3. No match at all (e.g., `de`) -- fall back to **first entry** in `supportedLocales`
+
+**Therefore, put English first in the ARB directory:**
+
+```
+lib/l10n/
+  app_en.arb    <-- template (first = default fallback)
+  app_it.arb
+  app_fr.arb
+  app_es.arb
+```
+
+In `l10n.yaml`:
+```yaml
+template-arb-file: app_en.arb
+```
+
+The generated `AppLocalizations.supportedLocales` list is ordered by the ARB files. By making `app_en.arb` the template, English is the first element and becomes the fallback for any unsupported locale.
+
+**No `localeResolutionCallback` needed** for this use case. Flutter's default resolution handles it.
+
+**Confidence:** HIGH -- Flutter docs explicitly state: "If an exact match for the device locale isn't found, then the first supported locale with a matching languageCode is used. If that fails, then the first element of the supportedLocales list is used." Verified via Context7.
 
 ---
 
-## First-Launch Detection Pattern
+## Complete String Inventory (Extraction Scope)
 
-### Existing Pattern in the Codebase
+### Home Screen (`home_screen.dart`)
 
-The app already has a proven first-launch detection pattern for the permission screen:
+| Current String | Type | ARB Key | Notes |
+|----------------|------|---------|-------|
+| `'Drinky Drinky'` (AppBar) | Simple | `appTitle` | Brand name, same in all locales |
+| `'Add water'` (FAB tooltip) | Simple | `addWater` | |
+| `'Goal reached!'` | Simple | `goalReached` | |
+| `'{current} / {target} L'` | Parameterized | `progressDisplay` | Args are pre-formatted liter strings |
+| `"Today's Intake"` | Simple | `todaysIntake` | |
+| `'No drinks logged yet'` | Simple | `noDrinksLogged` | |
+| `'Tap the + button to log your first drink today.'` | Simple | `noDrinksLoggedHint` | |
+| `'+$amountMl ml added'` | Parameterized | `mlAdded` | SnackBar |
+| `'UNDO'` | Simple | `undo` | SnackBar action |
+| `'+${preset.amountMl} ml'` | Parameterized | `presetLabel` | Preset button text |
+| `'Custom amount'` (hint) | Simple | `customAmount` | Bottom sheet TextField |
+| `'ml'` (suffix) | Simple | `mlUnit` | Unit suffix |
+| `'Add'` (button) | Simple | `add` | Bottom sheet confirm |
+| `'Something went wrong...'` | Simple | `errorLoadingDataRestart` | Error state |
 
-1. **SharedPreferences boolean flag:** `drinky_permissionScreenShown`
-2. **GoRouter async redirect:** checks the flag on every navigation; redirects to `/permission` if false
-3. **One-time set:** after the user completes the screen, the flag is set to `true` and navigation proceeds to `/`
+### Settings Screen (`settings_screen.dart`)
 
-This exact pattern should be replicated for the calculator onboarding.
+| Current String | Type | ARB Key | Notes |
+|----------------|------|---------|-------|
+| `'Settings'` (AppBar) | Simple | `settingsTitle` | |
+| `'DAILY GOAL'` | Simple | `dailyGoalSection` | Section label |
+| `'QUICK-ADD PRESETS'` | Simple | `presetsSection` | Section label |
+| `'NOTIFICATIONS'` | Simple | `notificationsSection` | Section label |
+| `'HYDRATION'` | Simple | `hydrationSection` | Section label |
+| `'${currentTarget.toInt()} ml'` | Parameterized | `valueMl` | Target slider value |
+| `'${currentInterval.toInt()} min'` | Parameterized | `valueMin` | Interval slider value |
+| `'Applica da domani'` | Simple | `applyFromTomorrow` | Already Italian! |
+| `'Le modifiche al target entrano in vigore domani'` | Simple | `applyFromTomorrowDesc` | |
+| `'Le modifiche al target entrano in vigore oggi'` | Simple | `applyFromTodayDesc` | |
+| `'Preset ${preset.sortOrder + 1}'` | Parameterized | `presetNumber` | |
+| `'${preset.amountMl} ml'` | Parameterized | `valueMl` | Reuse of valueMl |
+| `'Ricalcola raccomandazione idratazione'` | Simple | `recalculateHydration` | Already Italian! |
+| `'Notifications are disabled...'` | Simple | `notificationsDisabled` | Permission banner |
+| `'Open'` | Simple | `openSystemSettings` | Button to system settings |
+| `'Do Not Disturb'` | Simple | `doNotDisturb` | |
+| `'On'` / `'Off'` | Simple | `on` / `off` | DND status |
+| `'Start time'` / `'End time'` | Simple | `startTime` / `endTime` | |
+| `'Something went wrong...'` | Simple | `errorLoadingData` | Error state |
 
-### Recommended Implementation
+### History Screen (`history_screen.dart`)
 
-**New SharedPreferences key:** `drinky_calculatorShown`
+| Current String | Type | ARB Key | Notes |
+|----------------|------|---------|-------|
+| `'History'` (AppBar, 3 instances) | Simple | `historyTitle` | |
+| `'No history yet'` | Simple | `noHistory` | Empty state |
+| `'Start logging water on the Home tab...'` | Simple | `noHistoryBody` | Empty state body |
+| `'$streak'` + `' day streak'` | **Plural** | `streakCount` | ICU plural format: `{count, plural, =1{...} other{...}}` |
+| `'${_monthName(day.month)} ${day.day}: goal met'` | Parameterized | `calendarDayGoalMet` | Semantic label |
+| `'${_monthName(day.month)} ${day.day}: goal not met'` | Parameterized | `calendarDayGoalNotMet` | Semantic label |
+| `'$dateLabel -- $total of $dailyTarget ml'` | Parameterized | `daySummary` | Day summary card |
+| `'$dateLabel -- No entries'` | Parameterized | `daySummaryEmpty` | Day summary card |
+| `_monthName()` helper (English array) | **Remove entirely** | -- | Replace with `DateFormat.MMMM(locale).format(date)` |
+| `'Something went wrong...'` | Simple | `errorLoadingData` | Reuse |
 
-**GoRouter redirect chain (order matters):**
+### Permission Screen (`permission_screen.dart`)
+
+| Current String | Type | ARB Key | Notes |
+|----------------|------|---------|-------|
+| `'Stay hydrated with reminders'` | Simple | `permissionTitle` | |
+| `'Drinky Drinky sends you gentle reminders...'` | Simple | `permissionBody` | |
+| `'Enable Reminders'` | Simple | `enableReminders` | |
+| `'Skip for now'` | Simple | `skipForNow` | |
+| `'Reminders enabled!...'` | Simple | `remindersEnabledMessage` | SnackBar |
+| `'No problem...'` | Simple | `remindersDeniedMessage` | SnackBar |
+
+### Hydration Calculator Screen (`hydration_calculator_screen.dart`)
+
+| Current String | Type | ARB Key | Notes |
+|----------------|------|---------|-------|
+| `'Calcolatore idratazione'` | Simple | `calculatorTitle` | Already Italian |
+| `'Sesso'` | Simple | `sexLabel` | Section label |
+| `'Maschio'` / `'Femmina'` / `'Altro'` | Simple | `sexMale` / `sexFemale` / `sexOther` | **CRITICAL: decouple from `_sexFactors` map keys** |
+| `'Peso'` | Simple | `weightLabel` | Section label |
+| `'Peso (kg)'` | Simple | `weightInputLabel` | TextField label |
+| `'kg'` | Simple | `kgUnit` | Suffix |
+| `'Inserisci un peso tra 1 e 300 kg'` | Simple | `weightError` | Validation error |
+| `'Clima'` | Simple | `climateLabel` | Section label |
+| `'Freddo'`/`'Mite'`/`'Caldo'`/`'Molto caldo'`/`'Afoso'` | Simple | `climateCold`/`climateMild`/`climateHot`/`climateVeryHot`/`climateHumid` | 5 climate labels |
+| `'La tua raccomandazione'` | Simple | `yourRecommendation` | |
+| `'Compila tutti i campi'` | Simple | `fillAllFields` | Incomplete state |
+| Privacy disclaimer text | Simple | `privacyDisclaimer` | Multi-sentence |
+| `'Usa come target'` | Simple | `useAsTarget` | |
+| `'Salta'` | Simple | `skip` | Onboarding only |
+| `'Errore durante l\'aggiornamento...'` | Simple | `targetUpdateError` | SnackBar error |
+| `'Target aggiornato a ${value}'` | Parameterized | `targetUpdated` | SnackBar success |
+
+### Preset Edit Dialog (`preset_edit_dialog.dart`)
+
+| Current String | Type | ARB Key | Notes |
+|----------------|------|---------|-------|
+| `'Edit Preset ${widget.preset.sortOrder + 1}'` | Parameterized | `editPreset` | Dialog title |
+| `'Amount (ml)'` | Simple | `amountMlLabel` | TextField label |
+| `'ml'` | Simple | `mlUnit` | Reuse |
+| `'Enter a value between 50 and 2000'` | Simple | `presetAmountError` | Validation |
+| `'Cancel'` | Simple | `cancel` | |
+| `'Confirm'` | Simple | `confirm` | |
+
+### NotificationService (`notification_service.dart`)
+
+| Current String | Type | ARB Key | Notes |
+|----------------|------|---------|-------|
+| `'Hydration Reminders'` (channel name) | Simple | `notificationChannelName` | Android notification channel |
+| `'Drinky Drinky'` (notification title) | Simple | `notificationTitle` | |
+| `'Time to drink water!'` (notification body) | Simple | `notificationBody` | |
+
+**Total estimated string keys: ~75-85**
+
+---
+
+## Critical Implementation Details
+
+### Decoupling Calculator Sex Labels from Logic Keys
+
+**Problem:** The current `_sexFactors` map uses Italian display text as keys:
 
 ```dart
-redirect: (BuildContext context, GoRouterState state) async {
-  // Prevent redirect loops for onboarding screens
-  if (state.matchedLocation == '/permission') return null;
-  if (state.matchedLocation == '/calculator') return null;
-
-  final prefs = await SharedPreferences.getInstance();
-
-  // 1. Permission screen takes priority (must be shown first)
-  final permissionShown = prefs.getBool('drinky_permissionScreenShown') ?? false;
-  if (!permissionShown) return '/permission';
-
-  // 2. Calculator onboarding shown second
-  final calculatorShown = prefs.getBool('drinky_calculatorShown') ?? false;
-  if (!calculatorShown) return '/calculator';
-
-  return null;
-}
+static const _sexFactors = {
+  'Maschio': 35.0,
+  'Femmina': 31.0,
+  'Altro': 33.0,
+};
 ```
 
-**Flow for new users (fresh install of v1.2):**
-1. App launches -> redirect to `/permission`
-2. User completes permission screen -> sets flag, navigates to `/`
-3. Redirect fires again -> permission done, calculator not shown -> redirect to `/calculator`
-4. User completes calculator (or skips) -> sets flag, navigates to `/`
-5. All subsequent launches -> both flags true -> no redirect
+The `_selectedSex` state variable stores `'Maschio'`, `'Femmina'`, or `'Altro'` -- the SAME strings used for both display and computation. When display strings are localized, the map lookup breaks.
 
-**Flow for existing users (upgrading from v1.0/v1.1 to v1.2):**
-1. `drinky_permissionScreenShown` is already `true`
-2. `drinky_calculatorShown` does not exist -> defaults to `false`
-3. First launch after update -> redirected to `/calculator`
-4. User completes or skips calculator -> normal flow
-
-### Route Registration
-
-The calculator route is a **top-level route** (outside `StatefulShellRoute`), just like `/permission`, so it renders WITHOUT the bottom NavigationBar:
+**Solution:** Use locale-independent enum for logic; display strings from ARB:
 
 ```dart
-GoRoute(
-  path: '/calculator',
-  builder: (context, state) {
-    final isOnboarding = state.extra as bool? ?? true;
-    return HydrationCalculatorScreen(isOnboarding: isOnboarding);
-  },
+// Logic keys (never change, never displayed directly)
+enum BiologicalSex { male, female, other }
+
+static const _sexFactors = {
+  BiologicalSex.male: 35.0,
+  BiologicalSex.female: 31.0,
+  BiologicalSex.other: 33.0,
+};
+
+BiologicalSex? _selectedSex;
+
+// Display via ARB
+SegmentedButton<BiologicalSex>(
+  segments: [
+    ButtonSegment(
+      value: BiologicalSex.male,
+      label: Text(AppLocalizations.of(context).sexMale),
+    ),
+    ButtonSegment(
+      value: BiologicalSex.female,
+      label: Text(AppLocalizations.of(context).sexFemale),
+    ),
+    ButtonSegment(
+      value: BiologicalSex.other,
+      label: Text(AppLocalizations.of(context).sexOther),
+    ),
+  ],
+  selected: _selectedSex != null ? {_selectedSex!} : {},
+  onSelectionChanged: (sel) =>
+      setState(() => _selectedSex = sel.firstOrNull),
 ),
 ```
 
-### Re-entry from Settings
+Same pattern applies to `_climateLabels` -- replace the Italian string array with a method that returns localized labels from AppLocalizations indexed by integer position.
 
-The calculator is also accessible from Settings for re-use. Differentiate onboarding vs. settings entry via the `extra` parameter:
+### Replacing `_monthName()` in History Screen
 
-| Entry point | `isOnboarding` | "Skip" button | Sets SharedPrefs flag | Navigation on complete |
-|-------------|---------------|--------------|----------------------|----------------------|
-| GoRouter redirect (first launch) | `true` | Shown | Yes | `context.go('/')` (replaces stack) |
-| Settings ListTile | `false` | Hidden | No | `context.pop()` (returns to settings) |
+The hardcoded English month name array must be replaced:
 
-**Settings entry point:**
 ```dart
-ListTile(
-  title: const Text('Hydration Calculator'),
-  subtitle: const Text('Get a personalized recommendation'),
-  trailing: const Icon(Icons.chevron_right),
-  onTap: () => context.push('/calculator', extra: false),
+// BEFORE (hardcoded English)
+String _monthName(int month) {
+  const names = ['', 'January', 'February', ...];
+  return names[month];
+}
+
+// AFTER (locale-aware via intl)
+String _monthName(DateTime date, String locale) {
+  return DateFormat.MMMM(locale).format(date);
+}
+```
+
+This requires passing the locale string (from `Localizations.localeOf(context).toString()`) or using `DateFormat.MMMM()` with the current locale. The `intl` package handles Italian/French/Spanish/English month names automatically after `initializeDateFormatting()` is called.
+
+### table_calendar Locale Property
+
+`TableCalendar` accepts a `locale` property that controls day-of-week headers and month names:
+
+```dart
+TableCalendar(
+  locale: Localizations.localeOf(context).toString(),
+  // ... rest of config
 )
 ```
 
-**Note on `context.go` vs `context.push`:** From onboarding, use `context.go('/')` to replace the route stack (prevents back-navigating to the onboarding screen). From settings, use `context.push('/calculator')` to add to the stack (allows the back button to return to settings).
+**Prerequisite:** `initializeDateFormatting()` must be called in `main()` before `runApp()`:
 
-**Confidence:** HIGH -- This pattern is already proven in the codebase (`permission_screen.dart`, `app_router.dart`). SharedPreferences + GoRouter async redirect is the standard Flutter pattern for conditional first-launch screens.
+```dart
+import 'package:intl/date_symbol_data_local.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting();  // ADD THIS -- inits all locale data for intl
+  // ... existing timezone init, notification init ...
+  runApp(const ProviderScope(child: DrinkyDrinkyApp()));
+}
+```
+
+**Confidence:** HIGH -- verified via Context7 (table_calendar docs).
+
+### Notification Channel Name Re-creation
+
+Android notification channels are created once and persist. If the user changes language, the channel name shown in Android Settings stays in the old language.
+
+**Solution:** Re-create the channel on every `initialize()` call with the localized name. Android allows re-creating channels with the same ID -- it updates the display name without losing user preferences (importance, sound, etc.):
+
+```dart
+Future<void> initialize() async {
+  // ... existing init code ...
+
+  if (Platform.isAndroid) {
+    final l10n = await _getLocalizations();
+    final channel = AndroidNotificationChannel(
+      _channelId,
+      l10n.notificationChannelName,  // localized
+      importance: Importance.high,
+    );
+    await _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+  }
+  _initialized = true;
+}
+```
+
+### `const` Removal Impact
+
+Many widgets currently use `const Text('...')` for hardcoded strings. After l10n, these become `Text(AppLocalizations.of(context).someKey)` which is NOT const. This is expected and harmless -- the performance difference is negligible. Do not try to preserve `const` by caching strings.
 
 ---
 
-## Calculator Screen UX
+## MVP Recommendation
 
-### Input Widgets
+**Prioritize (must-have for v1.3):**
 
-| Input | Widget | Constraints | Default |
-|-------|--------|-------------|---------|
-| Sex | `SegmentedButton<String>` (Material 3) with 3 segments | Required | No default (force explicit selection) |
-| Weight | `TextField` with `keyboardType: TextInputType.number`, suffix "kg" | Required; valid range 30-200 kg; integer only | Empty |
-| Climate | `SegmentedButton<int>` or 5 `ChoiceChip` widgets | Required | No default (force explicit selection) |
+1. l10n infrastructure (l10n.yaml, ARB files, flutter_localizations dep, MaterialApp wiring, initializeDateFormatting)
+2. Template ARB file (app_en.arb) with all ~80 string keys and metadata
+3. Translation ARB files (app_it.arb, app_fr.arb, app_es.arb) -- all strings translated
+4. All UI screens refactored to use `AppLocalizations.of(context)` instead of hardcoded strings
+5. Calculator sex/climate label decoupling from logic keys (enum instead of string keys)
+6. `_monthName()` replacement with locale-aware `DateFormat.MMMM()`
+7. table_calendar `locale` property wiring
+8. Notification strings via `delegate.load()` pattern in NotificationService
+9. English fallback (template = en, first in supportedLocales)
 
-### Interaction Flow
+**Defer (nice-to-have, include if time permits):**
 
-1. User selects sex, enters weight, selects climate level
-2. Result calculates reactively as inputs change (local `setState`)
-3. Result is hidden until all 3 inputs are valid
-4. "Use as target" button enables only when result is displayed
-5. On "Use as target":
-   - Calls `upsertTarget(todayKey, calculatedMl)` on target history DAO
-   - Calls `updateSettings(settings.copyWith(dailyTargetMl: calculatedMl))` on settings repo
-   - If onboarding: sets `drinky_calculatorShown = true`, `context.go('/')`
-   - If from settings: `context.pop()`, shows SnackBar "Target updated to X ml"
-6. "Skip for now" (onboarding only): sets `drinky_calculatorShown = true`, `context.go('/')` without changing target
-
-### Layout Structure
-
-```
-SafeArea > SingleChildScrollView > Column:
-  - Icon (water_drop, size 64)
-  - Headline: "How much water do you need?"
-  - Body text: brief explanation
-  - Sex selector (SegmentedButton)
-  - Weight input (TextField)
-  - Climate selector (SegmentedButton or ChoiceChip row)
-  - AnimatedSwitcher for result card (appears when all inputs valid)
-  - "Use as target" button (FilledButton, full width)
-  - "Skip for now" (TextButton, onboarding only)
-  - Privacy + disclaimer text (bodySmall, muted color)
-```
+- Notification channel name localization: Low impact, channel name is rarely seen by users
+- Semantic label translations for calendar day cells: Important for accessibility but not blocking
 
 ---
 
 ## Sources
 
-### Hydration Formula
-
-- EFSA Panel on Dietetic Products, Nutrition, and Allergies. "Scientific Opinion on Dietary Reference Values for water." EFSA Journal 2010;8(3):1459. -- Primary source for 2,000/2,500 ml AI values
-- IOM/NASEM. Dietary Reference Intakes for Water, Potassium, Sodium, Chloride, and Sulfate. National Academies Press, 2005. -- US/Canadian 3,700/2,700 ml AI values
-- Popkin BM, D'Anci KE, Rosenberg IH. "Water, hydration, and health." Nutr Rev. 2010;68(8):439-458. PMC2908954. -- Confirmed sweat loss variability (0.3-2.0 L/h), supports "1 ml per kcal" as alternative expression
-- Wikipedia: Dietary Reference Intake -- Confirmed EFSA 2.0/2.5 L and IOM 3.7/2.7 L total water values
-- Wikipedia: Drinking water -- Confirmed EFSA and IOM values, noted extreme variability in hot climates
-- Omnicalculator.com Water Intake Calculator -- Uses IOM AI lookup (not weight-based); confirms no standard per-kg formula exists
-- Medical News Today -- Confirmed "weight x 0.5 oz" rule of thumb (~33 ml/kg), age-stratified IOM values
-- Healthline -- Confirmed 2.7/3.7 L IOM values, climate increases, 20% food contribution
-
-### Target History / Drift Migrations
-
-- Drift official documentation: https://drift.simonbinder.eu/migrations/ -- Schema migration patterns, `m.createTable()` in `onUpgrade` (verified via Context7 library /websites/drift_simonbinder_eu)
-- Drift migration API (Context7) -- Confirmed `m.createTable(schema.tableName)` pattern, `stepByStep()` helper, `insertOnConflictUpdate` for upsert
-
-### First-Launch Detection
-
-- Existing codebase: `lib/core/router/app_router.dart` lines 20-29 -- Proven SharedPreferences + GoRouter async redirect pattern
-- Existing codebase: `lib/presentation/screens/permission_screen.dart` -- One-time screen flow reference implementation
+- Flutter internationalization docs (Context7: /websites/flutter_dev, topic "internationalization l10n gen-l10n ARB") -- ARB syntax, plural format, placeholder syntax, MaterialApp wiring, locale resolution, l10n.yaml options
+- Flutter breaking changes: synthetic-package removal (https://docs.flutter.dev/release/breaking-changes/flutter-generate-i10n-source) -- `synthetic-package: false` required since 3.32
+- Flutter API: LocalizationsDelegate.load() (https://api.flutter.dev/flutter/widgets/LocalizationsDelegate-class.html) -- `load(Locale) -> Future<T>` for non-context usage
+- Flutter window singleton deprecation (Context7: /websites/flutter_dev) -- `WidgetsBinding.instance.platformDispatcher.locale` for device locale without context
+- table_calendar docs (Context7: /aleksanderwozniak/table_calendar) -- `locale` property, `initializeDateFormatting()` prerequisite
+- Existing codebase: notification_service.dart, home_screen.dart, settings_screen.dart, history_screen.dart, hydration_calculator_screen.dart, permission_screen.dart, preset_edit_dialog.dart

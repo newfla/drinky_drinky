@@ -1,286 +1,318 @@
-# Stack Research: Drinky Drinky v1.2 (Bug Fixes & Feature Depth)
+# Stack Research: Drinky Drinky v1.3 (Multilingual Support)
 
 **Project:** Drinky Drinky (Hydration Tracker)
-**Researched:** 2026-06-10
-**Scope:** Stack additions, Drift migration API, and integration patterns for v1.2.
+**Researched:** 2026-06-15
+**Scope:** L10n infrastructure additions for Italian/English/French/Spanish with EN fallback.
 **Overall confidence:** HIGH
 
-## New Packages Required
+## New Dependencies Required
 
-**None required.** All v1.2 features are achievable with the existing dependency set:
+### 1. flutter_localizations (SDK package) -- REQUIRED
 
-| v1.2 Feature Area | New Package? | Approach |
-|-------------------|--------------|----------|
-| Bug fixes (BUG-01/02/03) | NO | Pure Dart logic fixes in existing DAO and utility code |
-| Target history (TARGET-01/02/03/04) | NO | New Drift table + DAO using existing drift ^2.33.0; migration from schema v1 to v2 |
-| Hydration calculator (CALC-01/04) | NO | Stateless screen with pure arithmetic (sex + weight + climate factors) |
-| First-launch onboarding (CALC-02/03) | NO | Extends existing SharedPreferences + GoRouter redirect pattern already used for PermissionScreen |
+| Field | Value |
+|-------|-------|
+| Package | `flutter_localizations` |
+| Source | Flutter SDK (not pub.dev) |
+| Purpose | Provides `GlobalMaterialLocalizations.delegate`, `GlobalWidgetsLocalizations.delegate`, `GlobalCupertinoLocalizations.delegate` -- these translate Material/Cupertino widget strings (button labels, date pickers, back button tooltips, etc.) into all supported locales |
+| Why needed | Without this, Material widgets remain in English regardless of device locale. It also provides the Cupertino delegates needed if any Cupertino-style widgets are used on iOS |
 
-The existing `pubspec.yaml` already includes every dependency needed: `drift`, `drift_flutter`, `shared_preferences`, `go_router`, `freezed_annotation`, and `intl`.
+**pubspec.yaml addition:**
 
-## Drift Migration API (v2.33.0)
+```yaml
+dependencies:
+  flutter_localizations:
+    sdk: flutter
+```
 
-### Current State
+**Confidence:** HIGH -- verified via Flutter official docs (Context7, docs.flutter.dev/ui/internationalization) and Flutter pubspec.yaml reference.
 
-The app is at `schemaVersion => 1` with three tables: `WaterEntries`, `UserSettings`, `DrinkPresets`. The `MigrationStrategy` currently only defines `onCreate` (which seeds default settings and presets) and `beforeOpen` (which enables foreign keys).
+### 2. intl (already present) -- NO CHANGE
 
-### Adding the `target_history` Table: Schema v1 -> v2
+| Field | Value |
+|-------|-------|
+| Package | `intl` |
+| Current version | `^0.20.2` |
+| Action | **Keep as-is.** No version change needed. |
+| Compatibility | `flutter_localizations` from the Flutter 3.44.1 SDK depends on exactly `intl: 0.20.2`, which satisfies the existing `^0.20.2` constraint. No conflict. |
+| Used for | ARB codegen runtime (generated `AppLocalizations` class imports `intl`), plus existing `NumberFormat.decimalPatternDigits` usage in `home_screen.dart` and `hydration_calculator_screen.dart` |
 
-**Confidence: HIGH** -- verified via Context7 (drift.simonbinder.eu official docs).
+**Confidence:** HIGH -- verified that Flutter stable's `flutter_localizations/pubspec.yaml` pins `intl: 0.20.2`.
 
-Drift provides two migration approaches. For this project, the **simple `onUpgrade` callback** is the right choice because:
+## No Other New Packages Required
 
-1. This is the first-ever migration (v1 -> v2), so there is no multi-step history to manage.
-2. The step-by-step generated migration tooling (`drift_dev schema dump` + `drift_dev schema steps`) adds build complexity that is not justified for a single table addition.
-3. The simple approach is well-documented and sufficient.
+| Considered | Why Not Needed |
+|------------|----------------|
+| `intl_utils` / `intl_translation` | Flutter's built-in `flutter gen-l10n` handles ARB-to-Dart codegen. No third-party tool needed. |
+| `easy_localization` | Third-party l10n wrapper; adds runtime JSON/YAML loading and complexity. Flutter's built-in ARB approach is the official, compile-time-safe solution. |
+| `slang` | Alternative l10n with type-safe code-gen from YAML. Compelling but non-standard; ARB is the official Flutter approach and integrates with `flutter gen-l10n` out of the box. |
+| `locale_plus` | Device locale detection beyond what Flutter provides. Not needed -- `WidgetsBinding.instance.platformDispatcher.locale` and `supportedLocales` resolution handle the four target locales. |
 
-#### Required Code Changes
+## pubspec.yaml Changes Required
 
-**Step 1: Define the new table class.**
+### Dependencies section
 
-Create `lib/data/database/tables/target_history_table.dart`:
+Add one line:
 
-```dart
-import 'package:drift/drift.dart';
+```yaml
+dependencies:
+  # ... existing deps ...
 
-@TableIndex(name: 'idx_target_history_date', columns: {#effectiveDate})
-class TargetHistory extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get effectiveDate => text()();  // 'YYYY-MM-DD' format, like dateKey
-  IntColumn get targetMl => integer()();
+  # Localization (l10n)
+  flutter_localizations:
+    sdk: flutter
+```
+
+### Flutter section
+
+Add `generate: true`:
+
+```yaml
+flutter:
+  uses-material-design: true
+  generate: true  # <-- ADD THIS LINE
+```
+
+**Why `generate: true` is mandatory:** As of Flutter 3.32.0 (this project is on 3.44.1), `generate: true` is **required** in pubspec.yaml for `flutter gen-l10n` to work. This was a breaking change -- previously it was optional. Without this flag, `flutter pub get` and `flutter gen-l10n` will not generate localization source files.
+
+**Confidence:** HIGH -- verified via Flutter breaking changes page (docs.flutter.dev/release/breaking-changes/flutter-generate-i10n-source).
+
+## l10n.yaml Configuration File (New File)
+
+Create `l10n.yaml` in the project root (same directory as `pubspec.yaml`):
+
+```yaml
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+synthetic-package: false
+nullable-getter: false
+preferred-supported-locales: [en]
+```
+
+### Option-by-option rationale
+
+| Option | Value | Why |
+|--------|-------|-----|
+| `arb-dir` | `lib/l10n` | Standard location. Keeps ARB files and generated Dart files together in one directory. |
+| `template-arb-file` | `app_en.arb` | English is the fallback language. The template file defines ALL message keys; other locale files translate them. EN as template means any missing translation falls back to English. |
+| `output-localization-file` | `app_localizations.dart` | Default name. Generated into `lib/l10n/` (because `synthetic-package: false`). |
+| `output-class` | `AppLocalizations` | Default class name. Used as `AppLocalizations.of(context).messageKey`. |
+| `synthetic-package` | `false` | **Critical.** The synthetic `package:flutter_gen` approach was deprecated in Flutter 3.28 and removed after 3.32. Since this project is on Flutter 3.44.1, `synthetic-package: true` (the old default) will not work. Setting `false` generates files directly into `lib/l10n/`, imported as `import 'package:drinky_drinky/l10n/app_localizations.dart';`. |
+| `nullable-getter` | `false` | With `false`, `AppLocalizations.of(context)` returns `AppLocalizations` (non-nullable) instead of `AppLocalizations?`. Eliminates the `!` null assertion operator at every call site. Safe because the app always has `MaterialApp` with delegates initialized before any widget accesses localized strings. |
+| `preferred-supported-locales` | `[en]` | English is the fallback locale. If the device locale does not match any of the four supported locales, the app uses English. |
+
+## ARB File Structure
+
+Create four files in `lib/l10n/`:
+
+| File | Locale | Role |
+|------|--------|------|
+| `app_en.arb` | English | **Template file.** Contains ALL message keys with `@` metadata (descriptions, placeholders). Fallback locale. |
+| `app_it.arb` | Italian | Translations only (no `@` metadata needed, though allowed). |
+| `app_fr.arb` | French | Translations only. |
+| `app_es.arb` | Spanish | Translations only. |
+
+### Template ARB example (app_en.arb)
+
+```json
+{
+  "@@locale": "en",
+  "appTitle": "Drinky Drinky",
+  "@appTitle": {
+    "description": "App title shown in AppBar and system task switcher"
+  },
+  "dailyGoal": "Daily Goal",
+  "@dailyGoal": {
+    "description": "Label for daily water target"
+  },
+  "currentIntake": "{current} / {target} L",
+  "@currentIntake": {
+    "description": "Progress text showing current intake vs target in liters",
+    "placeholders": {
+      "current": { "type": "String" },
+      "target": { "type": "String" }
+    }
+  },
+  "notificationTitle": "Drinky Drinky",
+  "@notificationTitle": {
+    "description": "Title for hydration reminder notification"
+  },
+  "notificationBody": "Time to drink water!",
+  "@notificationBody": {
+    "description": "Body text for hydration reminder notification"
+  }
 }
 ```
 
-**Step 2: Register the table in `@DriftDatabase`.**
+### Translation ARB example (app_it.arb)
 
-```dart
-@DriftDatabase(
-  tables: [WaterEntries, UserSettings, DrinkPresets, TargetHistory],
-  daos: [WaterEntryDao, UserSettingsDao, DrinkPresetDao, TargetHistoryDao],
-)
-```
-
-**Step 3: Bump schema version and add `onUpgrade`.**
-
-```dart
-@override
-int get schemaVersion => 2;
-
-@override
-MigrationStrategy get migration {
-  return MigrationStrategy(
-    onCreate: (Migrator m) async {
-      await m.createAll();
-      // Seed defaults (same as before)
-      await into(userSettings).insert(UserSettingsCompanion.insert());
-      await batch((batch) {
-        batch.insertAll(drinkPresets, [
-          DrinkPresetsCompanion.insert(amountMl: 150, sortOrder: 0),
-          DrinkPresetsCompanion.insert(amountMl: 250, sortOrder: 1),
-          DrinkPresetsCompanion.insert(amountMl: 500, sortOrder: 2),
-        ]);
-      });
-    },
-    onUpgrade: (Migrator m, int from, int to) async {
-      if (from < 2) {
-        // v1 -> v2: Add target_history table
-        await m.createTable(targetHistory);
-      }
-    },
-    beforeOpen: (details) async {
-      await customStatement('PRAGMA foreign_keys = ON');
-
-      // Seed initial target_history row for upgrading users.
-      // New installs get this via onCreate -> createAll().
-      // Existing v1 users need their current dailyTargetMl captured.
-      if (details.hadUpgrade) {
-        final existingTarget = await (select(userSettings)..limit(1))
-            .getSingle();
-        final today = DateTime.now();
-        final dateKey = '${today.year}-'
-            '${today.month.toString().padLeft(2, '0')}-'
-            '${today.day.toString().padLeft(2, '0')}';
-        // Only seed if no history exists yet (idempotent).
-        final count = await (selectOnly(targetHistory)
-              ..addColumns([targetHistory.id.count()])
-            ).getSingle();
-        if ((count.read(targetHistory.id.count()) ?? 0) == 0) {
-          await into(targetHistory).insert(
-            TargetHistoryCompanion.insert(
-              effectiveDate: dateKey,
-              targetMl: existingTarget.dailyTargetMl,
-            ),
-          );
-        }
-      }
-    },
-  );
+```json
+{
+  "@@locale": "it",
+  "appTitle": "Drinky Drinky",
+  "dailyGoal": "Obiettivo giornaliero",
+  "currentIntake": "{current} / {target} L",
+  "notificationTitle": "Drinky Drinky",
+  "notificationBody": "E' ora di bere acqua!"
 }
 ```
 
-### Key API Details (Verified)
-
-| Migrator Method | Purpose | Used For |
-|-----------------|---------|----------|
-| `m.createAll()` | Creates all tables registered in `@DriftDatabase` | Fresh installs (onCreate) |
-| `m.createTable(tableInstance)` | Creates a single new table | Adding `targetHistory` in onUpgrade |
-| `m.addColumn(table, column)` | Adds a column to existing table | Not needed for v1.2 |
-| `m.deleteTable('name')` | Drops a table | Not needed for v1.2 |
-
-**Important:** `m.createTable(targetHistory)` uses the table instance from the database class (the generated `$TargetHistoryTable` accessor), NOT the `TargetHistory` class definition directly. Drift generates this accessor when you add the table to `@DriftDatabase.tables`.
-
-### Migration Testing
-
-Drift provides `SchemaVerifier` from `drift_dev/api/migrations_native.dart` for testing migrations. For v1.2, a simple test should:
-
-1. Start a database at schema v1
-2. Insert some water entries and settings
-3. Run migration to v2
-4. Verify `target_history` table exists
-5. Verify existing data is preserved
-
-This requires exporting schema snapshots:
+## Code Generation Command
 
 ```bash
-# Export v1 schema (do this BEFORE changing schemaVersion)
-dart run drift_dev schema dump lib/data/database/app_database.dart drift_schemas/
-
-# After implementing v2, export v2
-dart run drift_dev schema dump lib/data/database/app_database.dart drift_schemas/
-
-# Generate test helper
-dart run drift_dev schema generate drift_schemas/ test/generated_migrations/
+flutter gen-l10n
 ```
 
-**Recommendation:** Migration testing is valuable but optional for v1.2 because the migration is a simple `createTable` (no data transformation). If the team wants to skip the schema dump tooling, a manual integration test that opens an in-memory v1 database and verifies upgrade is sufficient.
+This is a standalone command -- it does NOT go through `build_runner`. It reads `l10n.yaml`, processes ARB files, and generates:
 
-## First-Launch Onboarding Detection Pattern
+- `lib/l10n/app_localizations.dart` -- abstract `AppLocalizations` class with `.of(context)`, `.delegate`, `.supportedLocales`, `.localizationsDelegates`
+- `lib/l10n/app_localizations_en.dart` -- English implementation
+- `lib/l10n/app_localizations_it.dart` -- Italian implementation
+- `lib/l10n/app_localizations_fr.dart` -- French implementation
+- `lib/l10n/app_localizations_es.dart` -- Spanish implementation
 
-### Current Pattern (Already Established)
+**Alternative:** `flutter pub get` also triggers gen-l10n automatically when `generate: true` is set. And `flutter run` triggers it before building. But running `flutter gen-l10n` explicitly is useful during development when adding/changing ARB keys.
 
-The app already has a first-launch gate using SharedPreferences + GoRouter redirect. This pattern is in `app_router.dart`:
+**Note:** This is independent of `dart run build_runner build` (used for Drift, Riverpod, Freezed). The two codegen systems do not interfere with each other.
+
+## MaterialApp Integration
+
+### Current main.dart (relevant excerpt)
 
 ```dart
-redirect: (BuildContext context, GoRouterState state) async {
-  if (state.matchedLocation == '/permission') return null;
-  final prefs = await SharedPreferences.getInstance();
-  final shown = prefs.getBool('drinky_permissionScreenShown') ?? false;
-  if (!shown) return '/permission';
-  return null;
-},
+return MaterialApp.router(
+  title: 'Drinky Drinky',
+  // ... themes ...
+  routerConfig: router,
+);
 ```
 
-### Recommended Approach for Onboarding Calculator
-
-**Use the same pattern.** Add a second SharedPreferences key and extend the redirect chain:
+### Required changes to main.dart
 
 ```dart
-redirect: (BuildContext context, GoRouterState state) async {
-  final prefs = await SharedPreferences.getInstance();
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 
-  // Gate 1: Permission screen (existing)
-  if (state.matchedLocation == '/permission') return null;
-  final permShown = prefs.getBool('drinky_permissionScreenShown') ?? false;
-  if (!permShown) return '/permission';
+// ...
 
-  // Gate 2: Onboarding calculator (new for v1.2)
-  if (state.matchedLocation == '/onboarding-calculator') return null;
-  final calcShown = prefs.getBool('drinky_onboardingCalculatorShown') ?? false;
-  if (!calcShown) return '/onboarding-calculator';
+return MaterialApp.router(
+  title: 'Drinky Drinky',
+  // ... themes ...
+  routerConfig: router,
 
-  return null;
-},
+  // L10n: add these three properties
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  locale: null, // null = follow system locale (default behavior)
+);
 ```
 
-**Order matters:** Permission screen comes first (user needs to decide on notifications), then the hydration calculator (user sees recommended target). This mirrors the UX flow: permission is a system concern, calculator is a personalization concern.
+`AppLocalizations.localizationsDelegates` is a convenience getter generated by `flutter gen-l10n` that includes:
+- `AppLocalizations.delegate` (the app's own translations)
+- `GlobalMaterialLocalizations.delegate` (Material widget translations)
+- `GlobalWidgetsLocalizations.delegate` (text direction, etc.)
+- `GlobalCupertinoLocalizations.delegate` (Cupertino widget translations)
 
-### Why SharedPreferences Over Alternatives
+`AppLocalizations.supportedLocales` is auto-generated from the ARB files: `[Locale('en'), Locale('es'), Locale('fr'), Locale('it')]`.
 
-| Alternative | Why Not |
-|-------------|---------|
-| Drift table | Over-engineered for a boolean flag; adds a migration for no benefit |
-| `isFirstInstall` from package_info | Detects first install but not "has the user completed onboarding" -- what if they kill the app mid-onboarding? |
-| Riverpod state | Not persisted; would reset on app restart |
+## Notification String Localization
 
-SharedPreferences is the correct choice because:
-- Already in the dependency graph
-- Already proven in the same pattern (PermissionScreen)
-- Persists across app restarts
-- Simple boolean read; fast (cached after first access)
-- Key-value semantics match the use case exactly
+### The problem
 
-### Onboarding Route Registration
-
-Add `/onboarding-calculator` as a top-level GoRoute (like `/permission`), outside the `StatefulShellRoute.indexedStack` so it renders without the bottom NavigationBar:
+`NotificationService` is a singleton initialized in `main()` before `MaterialApp` exists. It has no `BuildContext`, so it cannot call `AppLocalizations.of(context)`. Notification strings are currently hardcoded:
 
 ```dart
-GoRoute(
-  path: '/onboarding-calculator',
-  builder: (context, state) => const HydrationCalculatorScreen(isOnboarding: true),
-),
+static const String _notifTitle = 'Drinky Drinky';
+static const String _notifBody = 'Time to drink water!';
 ```
 
-The same `HydrationCalculatorScreen` should be reusable from Settings (CALC-03) via a different route or by navigating to `/calculator` within the Settings branch. Pass an `isOnboarding` flag to control whether the screen shows "Skip" / navigation behavior vs. a simple back button.
+### Recommended solution: Pass locale strings at schedule time
 
-## Hydration Calculator -- No Package Needed
+The `scheduleWindow` method is always called from widget code that HAS a `BuildContext` (settings_screen, permission_screen, home_screen). The solution is to pass localized title/body as parameters:
 
-The calculator is pure arithmetic. A common hydration formula:
-
-```
-Base (ml) = weight_kg * 30
-Climate adjustment:
-  - Sedentary/Cool: 0%
-  - Temperate: +10%
-  - Warm: +20%
-  - Hot: +30%
-  - Very Hot/Active: +40%
-Sex adjustment (optional):
-  - Male: +0 ml (base is calibrated for males)
-  - Female: -200 ml (or use weight_kg * 28)
+```dart
+// NotificationService -- change signature:
+Future<void> scheduleWindow(
+  UserSettingsEntity settings, {
+  required String title,
+  required String body,
+}) async {
+  // ... use title/body instead of _notifTitle/_notifBody ...
+}
 ```
 
-This is a stateless computation. No external API, no package, no persistence (the result is passed to the existing `updateSettings` flow via the "Use as target" button).
+At every call site (which has context):
 
-## Version Conflicts to Watch
-
-**None identified for v1.2.**
-
-The only operation is adding a Drift table and a new screen. All existing dependencies remain unchanged. Specific considerations:
-
-| Concern | Status |
-|---------|--------|
-| drift ^2.33.0 + drift_dev ^2.33.0 | No change; createTable API is stable since drift 2.x |
-| drift_flutter ^0.3.0 | No change; database setup unchanged |
-| shared_preferences ^2.5.5 | No change; adding a new key does not affect compatibility |
-| go_router ^17.3.0 | No change; redirect pattern unchanged |
-| build_runner ^2.15.0 | No change; required for code-gen after adding new table |
-| freezed ^3.2.5 | Optional: could use for a TargetHistoryEntity domain class |
-| riverpod_lint + custom_lint | Still excluded due to analyzer conflict (noted in pubspec.yaml). No change for v1.2 |
-
-**Build step reminder:** After adding `TargetHistory` table and its DAO, run:
-
-```bash
-dart run build_runner build --delete-conflicting-outputs
+```dart
+final l10n = AppLocalizations.of(context);
+await NotificationService.instance.scheduleWindow(
+  settings,
+  title: l10n.notificationTitle,
+  body: l10n.notificationBody,
+);
 ```
 
-This regenerates `app_database.g.dart` to include the new table accessors.
+**Why this approach:** It is the simplest and most correct. The notification text is determined at schedule time based on the current locale. If the user changes their system language, the next time `scheduleWindow` is called (which happens on every settings change and on app launch from home_screen), notifications will use the new locale's text.
 
-## Integration Points Summary
+**Alternative considered:** Using `lookupAppLocalizations(locale)` directly in NotificationService (calling the generated lookup function without a context). This works but creates a tighter coupling to the generated l10n code and is less idiomatic. The parameter approach is cleaner.
 
-| Component | Touches | Details |
-|-----------|---------|---------|
-| `app_database.dart` | `@DriftDatabase.tables`, `schemaVersion`, `migration` | Add TargetHistory table, bump to v2, add onUpgrade |
-| `target_history_table.dart` | New file | Table definition with effectiveDate + targetMl |
-| `target_history_dao.dart` | New file | CRUD operations: insert, watchForDate, getTargetForDate |
-| `app_router.dart` | `redirect`, `routes` | Add onboarding gate + /onboarding-calculator route |
-| `settings_repository.dart` | Possibly extend | Add method to update target + insert target_history row |
-| `home_screen.dart` | Provider usage | Use target from target_history instead of userSettings.dailyTargetMl |
-| `history_screen.dart` | Provider usage | Calendar green/red uses per-day target from target_history |
-| `water_entry_dao.dart` | Bug fix only | Fix deleteLastEntry date filter, dateKey validation |
+## Locale Resolution Behavior
+
+Flutter's locale resolution (built into `MaterialApp`) automatically:
+
+1. Reads the device's system locale via `platformDispatcher.locale`
+2. Matches against `supportedLocales` (en, it, fr, es)
+3. If exact match found, uses it
+4. If language-only match found (e.g., `es_MX` matches `es`), uses it
+5. If no match, uses the first locale in `preferred-supported-locales` (English)
+
+No custom `localeResolutionCallback` is needed. The built-in behavior handles the four-locale setup correctly.
+
+## Version Conflicts Assessment
+
+| Concern | Status | Detail |
+|---------|--------|--------|
+| `intl ^0.20.2` vs `flutter_localizations` | No conflict | SDK's flutter_localizations pins `intl: 0.20.2`; satisfies `^0.20.2` |
+| `flutter gen-l10n` vs `build_runner` | No conflict | Independent codegen systems; do not share build steps |
+| `generate: true` vs existing flutter section | No conflict | Additive; does not affect `uses-material-design: true` |
+| `synthetic-package: false` on Flutter 3.44.1 | Required | `synthetic-package: true` (old default) is removed post-3.32; must be explicit `false` |
+
+## Generated Files and .gitignore
+
+The generated `app_localizations*.dart` files in `lib/l10n/` should be committed to git (not gitignored). Reasons:
+
+1. With `synthetic-package: false`, they are regular source files in the lib directory
+2. Committing them allows the project to build without running `flutter gen-l10n` first
+3. This matches how `*.g.dart` files from build_runner are already handled in this project (they are committed)
+
+## Complete pubspec.yaml Diff Summary
+
+```diff
+ dependencies:
+   flutter:
+     sdk: flutter
++
++  # Localization
++  flutter_localizations:
++    sdk: flutter
+
+   # State Management
+   flutter_riverpod: ^3.3.1
+   # ... rest unchanged ...
+
+ flutter:
+   uses-material-design: true
++  generate: true
+```
+
+That is it. Two lines in dependencies, one line in the flutter section.
 
 ## Sources
 
-- Drift official documentation (Context7, drift.simonbinder.eu): Migration API, `createTable`, `addColumn`, `MigrationStrategy.onUpgrade`, schema versioning -- HIGH confidence
-- Drift official documentation (Context7, drift.simonbinder.eu): Migration testing with `SchemaVerifier`, `drift_dev schema dump` -- HIGH confidence
-- Existing codebase: `app_database.dart` (schema v1), `app_router.dart` (GoRouter redirect pattern), `permission_screen.dart` (SharedPreferences pattern), `pubspec.yaml` and `pubspec.lock` (dependency versions) -- HIGH confidence
-- pub.dev package pages for drift, shared_preferences, go_router (verified via lock file) -- HIGH confidence
+- Flutter official internationalization guide (Context7: github.com/flutter/website, docs.flutter.dev/ui/internationalization) -- HIGH confidence
+- Flutter pubspec.yaml reference (Context7: github.com/flutter/website, tools/pubspec) -- HIGH confidence
+- Flutter breaking changes: synthetic package removal (docs.flutter.dev/release/breaking-changes/flutter-generate-i10n-source) -- HIGH confidence
+- Flutter stable flutter_localizations/pubspec.yaml (github.com/flutter/flutter) -- `intl: 0.20.2` pin verified -- HIGH confidence
+- pub.dev intl package page -- version 0.20.2 confirmed as latest -- HIGH confidence
+- Existing project codebase: pubspec.yaml, main.dart, notification_service.dart, home_screen.dart -- HIGH confidence

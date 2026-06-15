@@ -1,129 +1,148 @@
-# Research Summary: Drinky Drinky v1.2
+# Project Research Summary
 
-**Project:** Drinky Drinky — v1.2 Bug Fixes & Feature Depth
-**Researched:** 2026-06-10
+**Project:** Drinky Drinky v1.3 -- Multilingual Support
+**Domain:** Flutter l10n retrofit (adding ARB-based internationalization to existing app)
+**Researched:** 2026-06-15
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Drinky Drinky v1.2 adds target history, a hydration calculator, and 3 bug fixes — all using the existing stack with no new packages. This is the first real installation of the app, so `target_history` is added directly to the initial Drift schema with no migration path needed. The dominant risks are the onboarding redirect (wrong priority order, redirect loop if flag set too late) and the dual-write invariant (all target changes must go through a single method that writes to both `UserSettings` and `target_history`).
+Adding multilingual support (English, Italian, French, Spanish) to Drinky Drinky is a well-documented Flutter pattern with no novel technical challenges. The project uses Flutter's built-in `gen-l10n` ARB pipeline -- no third-party l10n packages needed. The only new dependency is `flutter_localizations` (SDK package). The infrastructure is minimal: one `l10n.yaml` config file, four ARB files (~75-85 string keys), and three lines added to `pubspec.yaml`.
+
+The primary complexity is not infrastructure but string extraction. The codebase has a mixed Italian/English baseline (~67 unique strings across 6 screens + 1 dialog + 1 service), and the hydration calculator uses Italian display strings as computation map keys -- a pattern that will crash when localized. This calculator refactor is the single highest-risk task and must happen before or during string extraction.
+
+The NotificationService singleton presents an architectural tension: it has no `BuildContext` but needs localized strings. The recommended approach uses `lookupAppLocalizations()` (a generated top-level function) with `platformDispatcher.locale` to resolve strings without touching the singleton's API or requiring call-site changes. iOS requires `CFBundleLocalizations` in Info.plist or locale detection silently fails.
 
 ## Key Findings
 
-### Stack Additions
+### Recommended Stack
 
-**No new packages required.** All v1.2 features are achievable with the existing dependency set (drift, shared_preferences, go_router, freezed, intl).
+No new pub.dev packages. One SDK dependency addition.
 
-**Drift schema (no migration needed — first real install):**
-```dart
-// target_history added to initial schema alongside existing tables
-// schemaVersion stays at 1; onCreate handles everything
-class TargetHistory extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get effectiveDate => text().unique()(); // YYYY-MM-DD
-  IntColumn get targetMl => integer()();
-}
-```
-Seed the first row in `beforeOpen` (or app init) when `target_history` is empty, using the default target (2000 ml).
+**Core additions:**
+- `flutter_localizations` (SDK package): provides Material/Cupertino widget translations (date pickers, dialogs, buttons)
+- `l10n.yaml` config: drives `flutter gen-l10n` with `synthetic-package: false` (required on Flutter 3.44.1), `nullable-getter: false`
+- `pubspec.yaml`: add `generate: true` under `flutter:` (required since Flutter 3.32 for gen-l10n to function)
 
-**First-launch detection:** add `drinky_calculatorShown` key to existing SharedPreferences + GoRouter redirect chain (identical pattern to existing `drinky_permissionScreenShown`). Set flag in calculator screen `initState`, not on button tap.
+**No change needed:** `intl ^0.20.2` already present, compatible with SDK's pin. `build_runner` unaffected -- gen-l10n is an independent codegen system.
 
----
+### Expected Features
 
-### Feature Constants (implementation-ready)
+**Must have (table stakes):**
+- All UI strings translated across 4 locales (en/it/fr/es)
+- System locale auto-detection with English fallback
+- Notification title/body localized
+- Plural forms for streak counter (ICU syntax)
+- Calendar month/day names locale-aware (via `intl` + `initializeDateFormatting()`)
+- Material widget localization (time picker, dialogs)
 
-**Hydration formula (EFSA-anchored):**
-- Male: **30 ml/kg** | Female: **28 ml/kg** | Other: **29 ml/kg**
-- Climate multipliers: Freddo/Mite = **1.00** | Caldo = **1.10** | Molto caldo = **1.20** | Afoso = **1.30**
-- Output: clamped 1,000–5,000 ml, rounded to nearest 50 ml
-- Calculator inputs (sex, weight, climate) are **NOT persisted** — local widget state only
-- Privacy disclaimer required on screen
+**Should have (differentiators):**
+- Non-nullable `AppLocalizations.of(context)` getter (cleaner code)
+- `context.l10n` extension shorthand
+- Notification channel name localized on Android
 
-**Target history schema:**
-```dart
-class TargetHistory extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get effectiveDate => text().unique()(); // YYYY-MM-DD
-  IntColumn get targetMl => integer()();
-}
-```
-- Query pattern: `WHERE effectiveDate <= :dateKey ORDER BY effectiveDate DESC LIMIT 1`
-- Seed row on v1→v2 upgrade: `effectiveDate = '2000-01-01'`, `targetMl = currentSettings.dailyTargetMl`
-- Upsert via `insertOnConflictUpdate` for same-day target changes
+**Defer (anti-features):**
+- In-app language picker (follow system locale)
+- Country-variant locales (en_US vs en_GB)
+- RTL support (none of the 4 languages need it)
+- Translation management platform (4 languages, ~80 keys, single dev)
 
-**SharedPreferences keys:**
-- `drinky_permissionScreenShown` — existing
-- `drinky_calculatorShown` — new; set in `initState` of calculator screen
+### Architecture Approach
 
----
+L10n integrates at three levels: (1) `MaterialApp.router` gets `localizationsDelegates` and `supportedLocales` from generated code, (2) all screens use `AppLocalizations.of(context)` (via `context.l10n` extension) for widget-tree strings, (3) `NotificationService` uses `lookupAppLocalizations(locale)` to resolve strings without `BuildContext`. No Riverpod providers, no routing changes, no database changes needed. The data layer, repositories, and providers are completely unaffected.
 
-### Architecture
+**Major components (new/modified):**
+1. `lib/l10n/` -- ARB source files + generated `AppLocalizations` classes
+2. `lib/l10n/l10n_extension.dart` -- `context.l10n` convenience extension
+3. `notification_service.dart` -- `_localizations()` helper using `lookupAppLocalizations` + `platformDispatcher.locale`
+4. `hydration_calculator_screen.dart` -- enum-based refactor to decouple computation keys from display labels
+5. `ios/Runner/Info.plist` -- `CFBundleLocalizations` array
+6. `android/app/build.gradle.kts` -- `resConfigs` for locale filtering
 
-**New components:**
-- `TargetHistoryDao` — separate from `UserSettingsDao`; append-only with range query
-- `effectiveTargetForDateProvider(dateKey)` — Riverpod provider for per-day target lookup
-- `HydrationCalculatorScreen` — pure stateless computation screen
-- `/calculator` GoRoute — top-level route with onboarding redirect guard
+### Critical Pitfalls
 
-**Provider graph changes (additive only, no breaking changes):**
-- `settingsProvider` unchanged — `UserSettings.dailyTargetMl` stays as current-target source for home screen and notifications
-- `effectiveTargetForDateProvider(dateKey)` — new; used by calendar and streak only
-- `calendarMonthTargetsProvider` — new; pre-fetches target history for visible month
+1. **Calculator Italian strings as map keys** -- `_sexFactors['Maschio']` crashes when display label changes to `'Male'`. Refactor to enum keys BEFORE string extraction.
+2. **NotificationService has no BuildContext** -- use `lookupAppLocalizations()` + `platformDispatcher.locale` internally; do NOT pass context or change the API signature.
+3. **`AppLocalizations.of(context)` above MaterialApp** -- crashes at startup. Use `onGenerateTitle` for app title; keep notification channel name hardcoded at init time.
+4. **iOS Info.plist missing `CFBundleLocalizations`** -- without it, iOS ignores the app's supported locales and defaults to English.
+5. **`initializeDateFormatting()` not called** -- `DateFormat` with non-English locale throws `LocaleDataException`. Must add to `main()` before `runApp()`.
 
-**Key integration rule:** All target changes (from Settings slider AND from "Use as target" button) MUST go through a single `updateTargetWithHistory()` method that writes to BOTH `UserSettings.dailyTargetMl` AND inserts into `target_history`. Never call bare `updateSettings()` for target updates.
+## Implications for Roadmap
 
-**Build order:**
-1. Data Foundation — schema v2 migration + `TargetHistoryDao` + shared dateKey validator; BUG-01, BUG-03 here
-2. Provider Layer + BUG-02 — `effectiveTargetForDateProvider`, updated `streakProvider`, midnight invalidation fix
-3. Hydration Calculator Screen — formula function, screen, GoRoute, onboarding redirect, Settings tile
-4. UI Integration — wire new providers into HomeScreen, HistoryScreen, SettingsScreen (today/tomorrow toggle)
-5. Validation — migration integration test, onboarding flow test, calendar regression test
+Based on research, suggested phase structure:
 
----
+### Phase 1: Infrastructure + Calculator Refactor
+**Rationale:** Everything else depends on l10n infrastructure existing. Calculator refactor is a prerequisite for safe string extraction (Pitfall 4).
+**Delivers:** Working gen-l10n pipeline, `context.l10n` extension, calculator using enum keys, `initializeDateFormatting()` in main
+**Addresses:** l10n.yaml, pubspec.yaml changes, flutter_localizations dep, MaterialApp wiring, BiologicalSex enum, climate label decoupling
+**Avoids:** Pitfalls 3 (context above MaterialApp), 4 (Italian map keys), 7 (synthetic-package), 8 (output-dir clash), 14 (missing flutter_localizations), 16 (initializeDateFormatting)
 
-### Critical Watch List
+### Phase 2: String Extraction + ARB Files
+**Rationale:** With infrastructure in place, systematically extract all ~67 strings to ARB. Template (English) first, then translations.
+**Delivers:** Complete `app_en.arb` template with all keys + metadata, `app_it.arb`, `app_fr.arb`, `app_es.arb` with translations, all screens using `context.l10n.*`
+**Addresses:** All table-stakes features (translated UI, plurals, parameterized strings, `_monthName()` replacement, table_calendar locale)
+**Avoids:** Pitfalls 2 (missed strings), 9 (const removal), 12 (string concatenation), 17 (mixed Italian/English baseline)
 
-| # | Pitfall | Severity |
-|---|---------|----------|
-| 1 | No initial seed row in `target_history` — all date queries return null, home/calendar crash or show 0 | CRITICAL |
-| 2 | Redirect loop — `drinky_calculatorShown` set on button tap instead of on screen display | CRITICAL |
-| 3 | ~~Migration schemaVersion bump~~ — N/A, first real install, no migration needed | ~~CRITICAL~~ |
-| 4 | Dual-write not enforced — bare `updateSettings()` skips `target_history`; home and calendar diverge | HIGH |
-| 5 | Streak broken retroactively — streak uses today's global target for all past days | HIGH |
-| 6 | No UNIQUE constraint on `effectiveDate` — same-day duplicates produce non-deterministic query results | HIGH |
-| 7 | Calculator "Use as Target" must use "apply from today" semantics during onboarding | MEDIUM |
+### Phase 3: NotificationService + Platform Config
+**Rationale:** Notification l10n is isolated from UI work. Platform config (iOS/Android) can be done in parallel.
+**Delivers:** Localized notification title/body, iOS CFBundleLocalizations, Android resConfigs, localized notification channel name
+**Addresses:** Notification l10n, platform declarations
+**Avoids:** Pitfalls 1 (singleton no context), 5 (iOS Info.plist), 6 (Android resConfigs)
 
----
+### Phase 4: Testing + Verification
+**Rationale:** After all strings are extracted and platforms configured, verify end-to-end across all 4 locales.
+**Delivers:** Updated widget tests with l10n helper, locale-specific test cases, manual verification checklist
+**Addresses:** Test infrastructure, French plural edge cases
+**Avoids:** Pitfalls 10 (French plurals), 15 (widget test breakage)
+
+### Phase Ordering Rationale
+
+- Phase 1 before Phase 2: cannot extract strings without gen-l10n infrastructure; calculator refactor prevents crashes during extraction
+- Phase 2 before Phase 3: notification strings are defined in ARB files created in Phase 2
+- Phase 3 before Phase 4: platform config affects locale detection behavior tested in Phase 4
+- Phases 2 and 3 could partially overlap since notification l10n is independent of screen string extraction
 
 ### Research Flags
 
-- **No migration needed:** `target_history` entra nello schema iniziale (`onCreate`). Nessun `onUpgrade`, nessun `schemaVersion` bump.
-- **BUG-01 may already be fixed:** architecture research found `deleteLastEntry` DAO may already filter by `dateKey`; verify before implementing
-- **Climate multipliers are opinionated estimates** — no authority publishes exact per-temperature-band percentages; add disclaimer text on screen
-- **Formula constants (30/28/29 ml/kg)** are EFSA-anchored but not published verbatim; conservative and defensible
+Phases likely needing deeper research during planning:
+- **Phase 2:** Large scope (~67 strings across 7 files). Needs a file-by-file extraction plan to avoid missed strings. The mixed Italian/English baseline adds complexity.
 
----
+Phases with standard patterns (skip research-phase):
+- **Phase 1:** Well-documented Flutter pattern; l10n.yaml config is mechanical
+- **Phase 3:** `lookupAppLocalizations` pattern verified in Flutter SDK source; Info.plist change is one-time
+- **Phase 4:** Standard Flutter testing patterns
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Drift migration API | HIGH | Verified via Context7 (drift.simonbinder.eu official docs) |
-| Stack additions | HIGH | No new packages; all patterns already in use |
-| Hydration formula | MEDIUM | EFSA-derived per-kg simplification; not published verbatim |
-| Climate multipliers | LOW-MEDIUM | Conservative estimates; no authoritative source |
-| Architecture / build order | HIGH | Traced through actual import graph and source files |
-| Pitfalls | HIGH | Verified against official Drift docs and existing codebase |
+| Stack | HIGH | Only 1 new SDK dep; all versions verified on pub.dev; no conflicts |
+| Features | HIGH | ~67 strings inventoried file-by-file; ARB patterns well-documented |
+| Architecture | HIGH | `lookupAppLocalizations` verified in Flutter SDK source code; data flow diagrams complete |
+| Pitfalls | HIGH | 20 pitfalls identified via direct codebase analysis + official docs |
 
 **Overall confidence:** HIGH
 
+### Gaps to Address
+
+- **Translation quality:** Research assumes human-written translations for all 4 locales. Who writes the Italian, French, and Spanish translations is not addressed. Plan for this during Phase 2.
+- **Notification channel name timing:** Channel is created in `initialize()` before MaterialApp exists. The `lookupAppLocalizations` approach works here too, but channel re-creation on language change needs manual testing on Android.
+- **`output-dir` discrepancy:** STACK.md omits `output-dir`, FEATURES.md uses `output-dir: lib/l10n/generated`, ARCHITECTURE.md uses `output-dir: lib/l10n/generated`. Recommend using `output-dir` to separate generated from source ARB files. Settle this in Phase 1.
+
 ## Sources
 
-- drift.simonbinder.eu — migration API, `createTable` in `onUpgrade`
-- EFSA (2010) — Scientific Opinion on Dietary Reference Values for water (AI: 2.5L men, 2.0L women)
-- GoRouter docs — redirect callback with StatefulShellRoute
-- Existing codebase: `app_router.dart`, `settings_repository.dart`, `user_settings_dao.dart`
+### Primary (HIGH confidence)
+- Flutter internationalization docs (Context7, docs.flutter.dev) -- ARB syntax, gen-l10n, MaterialApp wiring, locale resolution
+- Flutter SDK source (`gen_l10n.dart`, `gen_l10n_templates.dart`) -- verified `lookupAppLocalizations` generation
+- Flutter breaking changes: synthetic-package removal (docs.flutter.dev)
+- pub.dev package pages (intl, flutter_localizations) -- version verification
+- Direct codebase analysis -- all screens, services, config files inspected
+
+### Secondary (MEDIUM confidence)
+- CLDR plural rules (unicode.org) -- French 0/1 singular rule
+- table_calendar Context7 docs -- locale property behavior
+- Android notification channel re-creation behavior -- documented but edge cases need testing
 
 ---
-*Research completed: 2026-06-10*
+*Research completed: 2026-06-15*
 *Ready for roadmap: yes*

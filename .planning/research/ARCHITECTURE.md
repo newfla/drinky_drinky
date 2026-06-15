@@ -1,678 +1,654 @@
-# Architecture Research: Drinky Drinky v1.2
+# Architecture: Flutter gen-l10n Integration with Riverpod + NotificationService + GoRouter
 
-**Domain:** Bug fixes and feature depth for a Flutter hydration tracker
-**Researched:** 2026-06-10
-**Overall confidence:** HIGH (all recommendations derived from existing codebase patterns + verified Drift/GoRouter docs)
+**Domain:** Internationalization (i18n/l10n) for an existing Flutter app
+**Researched:** 2026-06-15
+**Confidence:** HIGH (verified via Flutter SDK source + official docs + Context7)
 
 ---
 
-## Target History Integration
+## 1. Infrastructure Setup
 
-### New Table & DAO
+### 1.1 l10n.yaml Configuration
 
-**New Drift table: `TargetHistory`**
+Create `l10n.yaml` at project root:
 
-File: `lib/data/database/tables/target_history_table.dart`
+```yaml
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+synthetic-package: false
+output-dir: lib/l10n/generated
+nullable-getter: false
+format: true
+preferred-supported-locales: [en]
+```
+
+**Key decisions:**
+
+| Option | Value | Why |
+|--------|-------|-----|
+| `synthetic-package` | `false` | The synthetic package approach (`package:flutter_gen`) was removed after Flutter 3.32. On Flutter 3.44.1, `synthetic-package: true` will not resolve. Setting `false` generates files into `lib/l10n/generated/` with explicit imports. |
+| `output-dir` | `lib/l10n/generated` | Separates generated code from hand-written ARB files |
+| `nullable-getter` | `false` | `AppLocalizations.of(context)` returns non-nullable `AppLocalizations` instead of `AppLocalizations?`. Eliminates `!` operators on every call site. Safe because `supportedLocales` + fallback guarantees a match |
+| `preferred-supported-locales` | `[en]` | English is the first element in `supportedLocales`, which makes it the fallback when no locale matches |
+| `template-arb-file` | `app_en.arb` | English as template ensures all keys exist in the fallback language; translators fill in the other ARB files |
+
+### 1.2 pubspec.yaml Additions
+
+```yaml
+dependencies:
+  flutter_localizations:
+    sdk: flutter
+  # intl: ^0.20.2  # Already present
+
+flutter:
+  generate: true   # Required for gen-l10n to run on `flutter pub get`
+```
+
+No new third-party packages required. `flutter_localizations` ships with the Flutter SDK. `intl` is already in the dependency graph.
+
+### 1.3 ARB File Structure
+
+```
+lib/l10n/
+  app_en.arb      # Template (English) -- all keys defined here with @metadata
+  app_it.arb      # Italian translations (keys + values only, no @metadata)
+  app_fr.arb      # French translations
+  app_es.arb      # Spanish translations
+  generated/      # Output from gen-l10n
+    app_localizations.dart
+    app_localizations_en.dart
+    app_localizations_it.dart
+    app_localizations_fr.dart
+    app_localizations_es.dart
+```
+
+### 1.4 Generated Code Structure
+
+`flutter gen-l10n` generates these key pieces:
+
+1. **`AppLocalizations`** -- abstract base class with `of(BuildContext)`, `delegate`, `localizationsDelegates`, `supportedLocales`, and all string getter/method signatures
+2. **`AppLocalizationsEn`**, **`AppLocalizationsIt`**, etc. -- concrete subclasses with translated strings
+3. **`_AppLocalizationsDelegate`** -- `LocalizationsDelegate<AppLocalizations>` that calls `lookupAppLocalizations(locale)` in its `load()` method
+4. **`lookupAppLocalizations(Locale locale)`** -- **top-level public function** that takes a `Locale` and returns the correct `AppLocalizations` subclass instance without any `BuildContext`
+
+**Verification:** The `lookupAppLocalizations` name was confirmed in the Flutter SDK source at `gen_l10n.dart` line 495: the function name is `lookup` + className (`lookupAppLocalizations` with the default class name). The `gen_l10n_templates.dart` file (lines 247-257) shows this as a top-level, non-private function in the generated output.
+
+---
+
+## 2. MaterialApp.router Integration
+
+### Current Code (main.dart, line 38)
 
 ```dart
-import 'package:drift/drift.dart';
-
-@TableIndex(name: 'idx_target_history_effective_date', columns: {#effectiveDate})
-class TargetHistory extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get effectiveDate => text()(); // 'YYYY-MM-DD'
-  IntColumn get targetMl => integer()();
-}
-```
-
-**Rationale for TEXT over DateTime:** Matches the existing `dateKey` pattern in `WaterEntries`. String comparison (`<=`) works correctly for ISO-8601 date strings in SQLite, which is exactly how the query "MAX(effectiveDate) <= X" will work.
-
-**New DAO: `TargetHistoryDao`** -- separate from `UserSettingsDao`
-
-File: `lib/data/database/daos/target_history_dao.dart`
-
-Why a separate DAO instead of adding methods to `UserSettingsDao`:
-1. `UserSettingsDao` operates on the single-row `UserSettings` table. Target history is a multi-row append-only log -- different access patterns.
-2. Keeps `UserSettingsDao` unchanged, reducing regression risk to settings functionality.
-3. The `TargetHistory` table has no foreign key relationship to `UserSettings`.
-
-DAO methods needed:
-
-```dart
-@DriftAccessor(tables: [TargetHistory])
-class TargetHistoryDao extends DatabaseAccessor<AppDatabase>
-    with _$TargetHistoryDaoMixin {
-  TargetHistoryDao(super.attachedDatabase);
-
-  /// Insert a new target history record.
-  Future<int> insertTarget(TargetHistoryCompanion entry) =>
-      into(targetHistory).insert(entry);
-
-  /// Get the effective target for a given date.
-  /// Returns the targetMl from the row with MAX(effectiveDate) <= dateKey.
-  /// Returns null if no target history exists (fallback to UserSettings.dailyTargetMl).
-  Future<int?> getTargetForDate(String dateKey) async {
-    final query = select(targetHistory)
-      ..where((t) => t.effectiveDate.isSmallerOrEqualValue(dateKey))
-      ..orderBy([(t) => OrderingTerm.desc(t.effectiveDate)])
-      ..limit(1);
-    final row = await query.getSingleOrNull();
-    return row?.targetMl;
-  }
-
-  /// Watch the effective target for a given date (reactive).
-  /// Used by HomeScreen for today's target.
-  Stream<int?> watchTargetForDate(String dateKey) {
-    final query = select(targetHistory)
-      ..where((t) => t.effectiveDate.isSmallerOrEqualValue(dateKey))
-      ..orderBy([(t) => OrderingTerm.desc(t.effectiveDate)])
-      ..limit(1);
-    return query.watchSingleOrNull().map((row) => row?.targetMl);
-  }
-
-  /// Get targets effective up to endDateKey (for calendar and streak).
-  /// Returns all rows where effectiveDate <= endDateKey, ordered DESC.
-  /// The caller walks backwards to resolve per-day targets.
-  Future<List<TargetHistoryData>> getTargetsUpTo(String endDateKey) async {
-    return (select(targetHistory)
-          ..where((t) => t.effectiveDate.isSmallerOrEqualValue(endDateKey))
-          ..orderBy([(t) => OrderingTerm.desc(t.effectiveDate)]))
-        .get();
-  }
-}
-```
-
-**Database registration and migration:**
-
-In `app_database.dart`:
-- Add `TargetHistory` to the `tables` list
-- Add `TargetHistoryDao` to the `daos` list
-- Bump `schemaVersion` from `1` to `2`
-- Add migration in `onUpgrade`:
-
-```dart
-@override
-int get schemaVersion => 2;
-
-@override
-MigrationStrategy get migration {
-  return MigrationStrategy(
-    onCreate: (Migrator m) async {
-      await m.createAll();
-      // ... existing seed logic ...
-    },
-    onUpgrade: (Migrator m, int from, int to) async {
-      if (from < 2) {
-        await m.createTable(targetHistory);
-        // Seed initial target_history row from current UserSettings.dailyTargetMl
-        final currentSettings = await (select(userSettings)
-              ..where((t) => t.id.equals(1)))
-            .getSingleOrNull();
-        final currentTarget = currentSettings?.dailyTargetMl ?? 2000;
-        final today = DateTime.now();
-        final todayKey = '${today.year}-'
-            '${today.month.toString().padLeft(2, '0')}-'
-            '${today.day.toString().padLeft(2, '0')}';
-        await into(targetHistory).insert(
-          TargetHistoryCompanion.insert(
-            effectiveDate: todayKey,
-            targetMl: currentTarget,
-          ),
-        );
-      }
-    },
-    beforeOpen: (details) async {
-      await customStatement('PRAGMA foreign_keys = ON');
-    },
-  );
-}
-```
-
-**Critical migration detail:** The seed step in `onUpgrade` copies the current `dailyTargetMl` from `UserSettings` into the first `target_history` row. This ensures existing users do not lose their target and the "get target for date" query works immediately for today. Without this seed, `getTargetForDate(today)` returns null for all existing users.
-
-### Provider Graph Changes
-
-**Current provider graph:**
-```
-appDatabaseProvider (keepAlive)
-  -> waterRepositoryProvider (keepAlive)
-       -> waterEntriesForDateProvider(dateKey)
-       -> totalMlForDateProvider(dateKey)
-       -> calendarMonthProvider(year, month)
-       -> streakProvider
-  -> settingsRepositoryProvider (keepAlive)
-       -> userSettingsProvider (keepAlive, stream)
-       -> drinkPresetsProvider (keepAlive, stream)
-```
-
-**New providers needed:**
-
-File: `lib/core/providers/stream_providers.dart` (add to existing file)
-
-```dart
-/// Watch the effective target for a given dateKey.
-/// Falls back to UserSettings.dailyTargetMl if no target_history row exists.
-@riverpod
-Stream<int> effectiveTargetForDate(Ref ref, String dateKey) async* {
-  final repo = ref.watch(settingsRepositoryProvider);
-  yield* repo.watchEffectiveTarget(dateKey);
-}
-```
-
-**Key design decision: `UserSettings.dailyTargetMl` remains the source of truth for the "current" target.** When the user changes the target (via slider or calculator), it updates `UserSettings.dailyTargetMl` AND inserts a `target_history` row. This means:
-
-1. `userSettingsProvider` continues to work unchanged for notifications, settings display, etc.
-2. `effectiveTargetForDateProvider(dateKey)` is used only where historical accuracy matters (HomeScreen progress ring, calendar green/red).
-3. The streak provider needs updating to use per-day targets.
-
-**No breaking changes to existing providers.** `userSettingsProvider` keeps emitting. New consumers opt-in to the historical target via `effectiveTargetForDateProvider`.
-
-**Provider changes needed:**
-
-| Provider | Change | Reason |
-|----------|--------|--------|
-| `userSettingsProvider` | NONE | Still emits current settings; notifications still use it |
-| `totalMlForDateProvider` | NONE | Still returns ml consumed; does not need target |
-| `effectiveTargetForDateProvider` | NEW (family) | Resolves "what was the target on day X?" |
-| `calendarMonthTargetsProvider` | NEW (family) | Returns Map<dateKey, targetMl> for an entire month |
-| `streakProvider` | MODIFY | Must compare each day's total against that day's effective target, not the current global target |
-| `calendarMonthProvider` | NONE (but consumer changes) | Still returns `Map<dateKey, totalMl>`; the target comparison happens in the widget |
-
-**Streak provider modification (the most complex change):**
-
-Currently `streakProvider` reads `settings.dailyTargetMl` once and compares all days against it. For v1.2, it must resolve the effective target per day.
-
-Recommended approach: one-shot query in streak provider. The streak provider already fetches all daily totals from `2020-01-01` to yesterday. Add a parallel fetch of all `target_history` rows, then for each day in the backward walk, resolve the effective target via the sorted history list.
-
-```dart
-@riverpod
-Stream<int> streak(Ref ref) async* {
-  final waterRepo = ref.watch(waterRepositoryProvider);
-  final settingsRepo = ref.watch(settingsRepositoryProvider);
-  final settings = ref.watch(userSettingsProvider).value;
-  if (settings == null) { yield 0; return; }
-
-  final yesterday = DateTime.now().subtract(const Duration(days: 1));
-  final yesterdayKey = _toDateKey(yesterday);
-
-  // Fetch all target history rows (sorted DESC by effectiveDate)
-  final targetHistory = await settingsRepo.getTargetHistory(yesterdayKey);
-
-  yield* waterRepo
-      .watchDailyTotalsInRange('2020-01-01', yesterdayKey)
-      .map((totals) {
-    int count = 0;
-    var current = yesterday;
-    while (true) {
-      final key = _toDateKey(current);
-      final total = totals[key] ?? 0;
-      final target = _resolveTarget(key, targetHistory, settings.dailyTargetMl);
-      if (target > 0 && total >= target) {
-        count++;
-        current = current.subtract(const Duration(days: 1));
-      } else {
-        break;
-      }
-    }
-    return count;
-  });
-}
-
-/// Pure function: find the effective target for [dateKey] from a DESC-sorted
-/// list of target history records. Falls back to [fallback] if no record applies.
-int _resolveTarget(String dateKey, List<TargetHistoryData> history, int fallback) {
-  for (final record in history) {
-    if (record.effectiveDate.compareTo(dateKey) <= 0) {
-      return record.targetMl;
-    }
-  }
-  return fallback;
-}
-```
-
-### Consumer Updates (HomeScreen, CalendarScreen)
-
-**HomeScreen changes:**
-
-File: `lib/presentation/screens/home_screen.dart`
-
-Current: `ref.watch(userSettingsProvider)` provides `settings.dailyTargetMl` for the progress ring.
-
-Change: Add a watch on `effectiveTargetForDateProvider(_dateKey)` for the progress ring target. The settings provider is still watched for other settings (notification interval, DND, etc.).
-
-```dart
-// In build():
-final settingsAsync = ref.watch(userSettingsProvider);
-final effectiveTargetAsync = ref.watch(effectiveTargetForDateProvider(_dateKey));
-// effectiveTargetAsync.value replaces settings.dailyTargetMl in:
-//   - Progress ring percentage calculation
-//   - Center text (X / Y L)
-//   - Goal-reached notification cancel logic
-```
-
-The goal-reached notification cancel logic also needs to use the effective target:
-
-```dart
-ref.listen<AsyncValue<int>>(
-  totalMlForDateProvider(_dateKey),
-  (previous, next) {
-    final prev = previous?.value ?? 0;
-    final curr = next.value ?? 0;
-    final target = ref.read(effectiveTargetForDateProvider(_dateKey)).value ?? 0;
-    if (target > 0 && prev < target && curr >= target) {
-      NotificationService.instance.cancelAll();
-    }
-  },
+MaterialApp.router(
+  title: 'Drinky Drinky',
+  theme: ...,
+  darkTheme: ...,
+  themeMode: ThemeMode.system,
+  routerConfig: router,
 );
 ```
 
-**CalendarScreen (HistoryScreen) changes:**
-
-File: `lib/presentation/screens/history_screen.dart`
-
-Current: `settings.dailyTargetMl` is used as a single int for all days in the calendar builders.
-
-Change: Add a new family provider that returns per-day targets for a month:
+### Modified Code
 
 ```dart
-/// Watch per-day targets for a calendar month.
-/// Returns Map<dateKey, targetMl> where every day in the month has an entry.
-@riverpod
-Future<Map<String, int>> calendarMonthTargets(Ref ref, int year, int month) async {
-  final repo = ref.watch(settingsRepositoryProvider);
-  final firstDay = DateTime(year, month, 1);
-  final lastDay = DateTime(year, month + 1, 0);
-  final startKey = _toDateKey(firstDay);
-  final endKey = _toDateKey(lastDay);
-  return repo.getTargetsForRange(startKey, endKey);
-}
+import 'package:drinky_drinky/l10n/generated/app_localizations.dart';
+
+MaterialApp.router(
+  title: 'Drinky Drinky',
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  // No localeResolutionCallback needed -- see Section 5
+  theme: ...,
+  darkTheme: ...,
+  themeMode: ThemeMode.system,
+  routerConfig: router,
+);
 ```
 
-In the widget, replace the single `dailyTarget` with per-day lookup:
+**What changes:**
+- Add 2 properties: `localizationsDelegates` and `supportedLocales`
+- Add 1 import
 
+**What does NOT change:**
+- `DynamicColorBuilder` wrapping stays the same
+- `ProviderScope` stays the same
+- `routerConfig` stays the same
+- No new Riverpod providers needed
+
+**Why `AppLocalizations.localizationsDelegates` (the generated convenience list):**
+It includes `AppLocalizations.delegate` + `GlobalMaterialLocalizations.delegate` + `GlobalCupertinoLocalizations.delegate` + `GlobalWidgetsLocalizations.delegate`. Complete -- no manual assembly needed.
+
+**Why `AppLocalizations.supportedLocales` (the generated convenience list):**
+Derived from ARB files present in `lib/l10n/`. Adding a new ARB file automatically adds a locale. No manual sync.
+
+---
+
+## 3. NotificationService -- Localized Strings Without BuildContext
+
+### The Problem
+
+`NotificationService` is a singleton accessed via `NotificationService.instance`. It schedules notifications in `scheduleWindow()`, which runs from 5 call sites:
+
+| Call Site | Has BuildContext? |
+|-----------|-------------------|
+| `HomeScreen._rescheduleNotifications()` (onResume) | Yes, but not passed |
+| `SettingsScreen` interval slider onChangeEnd | Yes, but not passed |
+| `SettingsScreen` DND toggle onChanged | Yes, but not passed |
+| `SettingsScreen._pickDndTime` | Yes, but not passed |
+| `PermissionScreen._onEnableReminders` | Yes, but not passed |
+
+None of these callers pass BuildContext to `scheduleWindow()`. The current hardcoded strings are:
 ```dart
-// Watch per-month targets
-final monthTargetsAsync = ref.watch(calendarMonthTargetsProvider(focused.year, focused.month));
-final monthTargets = monthTargetsAsync.value ?? <String, int>{};
-
-// In calendarBuilders, replace:
-//   total >= dailyTarget
-// with:
-//   final dayTarget = monthTargets[dateKey] ?? settings.dailyTargetMl;
-//   total >= dayTarget
+static const String _notifTitle = 'Drinky Drinky';
+static const String _notifBody = 'Time to drink water!';
 ```
 
-Day summary card also uses per-day target:
-```dart
-final dayTarget = monthTargets[dateKey] ?? settings.dailyTargetMl;
-'$dateLabel -- $total of $dayTarget ml'
-```
+### The Solution: `lookupAppLocalizations` + `platformDispatcher.locale`
 
-### Repository Layer
+The generated `lookupAppLocalizations(Locale)` function creates an `AppLocalizations` instance for any locale **without BuildContext**. Combined with `WidgetsBinding.instance.platformDispatcher.locale` (available after `WidgetsFlutterBinding.ensureInitialized()`), NotificationService can resolve localized strings internally.
 
-File: `lib/data/repositories/settings_repository.dart`
-
-Add methods to `SettingsRepository` (not a new repository -- keeps the dependency graph simple):
+**Implementation:**
 
 ```dart
-/// Insert a target history record. Called when user changes target.
-Future<void> insertTargetHistory(String effectiveDate, int targetMl) =>
-    _db.targetHistoryDao.insertTarget(
-      TargetHistoryCompanion.insert(
-        effectiveDate: effectiveDate,
-        targetMl: targetMl,
-      ),
+import 'package:flutter/widgets.dart';
+import '../../l10n/generated/app_localizations.dart';
+
+class NotificationService {
+  // ... existing code ...
+
+  /// Returns the AppLocalizations instance for the current system locale,
+  /// falling back to English if the system locale is not supported.
+  AppLocalizations _localizations() {
+    final systemLocale = WidgetsBinding.instance.platformDispatcher.locale;
+    final resolved = basicLocaleListResolution(
+      [systemLocale],
+      AppLocalizations.supportedLocales,
     );
-
-/// Watch effective target for a date (stream). Falls back to 2000ml default.
-Stream<int> watchEffectiveTarget(String dateKey) {
-  return _db.targetHistoryDao.watchTargetForDate(dateKey).map(
-    (target) => target ?? 2000,
-  );
-}
-
-/// Get target history for streak calculation (one-shot).
-Future<List<TargetHistoryData>> getTargetHistory(String upToDateKey) =>
-    _db.targetHistoryDao.getTargetsUpTo(upToDateKey);
-
-/// Get per-day targets for a date range. Returns Map<dateKey, targetMl>.
-Future<Map<String, int>> getTargetsForRange(String startKey, String endKey) async {
-  final history = await _db.targetHistoryDao.getTargetsUpTo(endKey);
-  final settings = await _db.userSettingsDao.getSettings();
-  final fallback = settings.dailyTargetMl;
-
-  final result = <String, int>{};
-  var current = DateTime.parse(startKey);
-  final end = DateTime.parse(endKey);
-
-  while (!current.isAfter(end)) {
-    final key = _toDateKey(current);
-    // Find first history entry where effectiveDate <= key (list is DESC sorted)
-    final effective = history
-        .where((h) => h.effectiveDate.compareTo(key) <= 0)
-        .firstOrNull;
-    result[key] = effective?.targetMl ?? fallback;
-    current = current.add(const Duration(days: 1));
+    return lookupAppLocalizations(resolved);
   }
-  return result;
-}
 
-/// Update the daily target and record it in target history.
-/// Combines UserSettings update + target_history insert in one call.
-Future<void> updateTargetWithHistory(
-  UserSettingsEntity currentSettings,
-  int newTargetMl,
-  String effectiveDate,
-) async {
-  await updateSettings(currentSettings.copyWith(dailyTargetMl: newTargetMl));
-  await insertTargetHistory(effectiveDate, newTargetMl);
-}
-```
+  Future<void> scheduleWindow(UserSettingsEntity settings) async {
+    await cancelAll();
+    if (!_initialized) return;
+    if (!(await permissionGranted())) return;
 
-A `_toDateKey` helper is needed in the repository (duplicate the 3-line function from stream_providers.dart, or extract to a shared utility).
+    // Resolve localized strings once per scheduling call
+    final l10n = _localizations();
 
-### "Apply from today / tomorrow" (TARGET-02)
-
-When the user changes the target in SettingsScreen:
-
-1. `UserSettings.dailyTargetMl` is updated immediately (existing behavior).
-2. A `target_history` row is inserted with `effectiveDate` = today (if "apply from today") or tomorrow (if "apply from tomorrow").
-3. UI: Add a `SegmentedButton` or toggle underneath the daily goal slider in SettingsScreen. Default to "from today" since that matches the current behavior.
-
-The "from tomorrow" case means the progress ring still shows today's old target, but tomorrow will use the new one. This is intuitive for end-of-day changes.
-
-**SettingsScreen slider `onChangeEnd` must call `updateTargetWithHistory` instead of plain `updateSettings`** so every target change is recorded in history.
-
----
-
-## HydrationCalculatorScreen
-
-### Navigation Integration (GoRouter)
-
-**Route: `/calculator` as a top-level route (outside StatefulShellRoute)**
-
-File: `lib/core/router/app_router.dart`
-
-Why top-level: The calculator should appear without the bottom NavigationBar during onboarding (first launch). When accessed from SettingsScreen, it can be pushed as a standard page transition. Top-level route handles both cases cleanly.
-
-```dart
-// Add to the routes list, alongside /permission:
-GoRoute(
-  path: '/calculator',
-  builder: (context, state) => const HydrationCalculatorScreen(),
-),
-```
-
-**First-launch redirect (CALC-02):**
-
-Use the GoRouter redirect -- this is where the existing onboarding guard (`drinky_permissionScreenShown`) already lives. Adding the calculator check to the same location keeps all onboarding logic in one place.
-
-The redirect flow is sequential and idempotent. On first launch:
-1. User hits `/` -> redirect sends to `/permission`
-2. User completes permission screen -> `context.go('/')` -> redirect checks permission (done), checks onboarding (not done) -> redirect sends to `/calculator`
-3. User completes calculator -> `context.go('/')` -> both checks pass -> user lands on Home
-
-```dart
-redirect: (BuildContext context, GoRouterState state) async {
-  if (state.matchedLocation == '/permission') return null;
-  if (state.matchedLocation == '/calculator') return null;
-
-  final prefs = await SharedPreferences.getInstance();
-  final permShown = prefs.getBool('drinky_permissionScreenShown') ?? false;
-  if (!permShown) return '/permission';
-
-  final onboardingDone = prefs.getBool('drinky_onboardingComplete') ?? false;
-  if (!onboardingDone) return '/calculator';
-
-  return null;
-},
-```
-
-**From SettingsScreen (CALC-03):**
-
-Add a ListTile in `_buildBody` under the "DAILY GOAL" section:
-
-```dart
-ListTile(
-  title: const Text('Hydration Calculator'),
-  subtitle: const Text('Get a personalized recommendation'),
-  trailing: const Icon(Icons.chevron_right),
-  onTap: () => context.push('/calculator'),
-),
-```
-
-Note: `push` (not `go`) is correct for the settings path -- it preserves the back stack so the user returns to Settings.
-
-### "Use as target" Flow (CALC-04)
-
-When the user taps "Use as target" on the calculator:
-
-1. Read the computed recommendation (an int, e.g., 2500).
-2. Read current settings via `ref.read(userSettingsProvider).value`.
-3. Call `ref.read(settingsRepositoryProvider).updateTargetWithHistory(currentSettings, recommended, todayKey)` -- updates both `UserSettings` and `target_history`.
-4. Set `drinky_onboardingComplete = true` in SharedPreferences.
-5. Navigate: If arrived via redirect (onboarding), use `context.go('/')`. If arrived via push (from settings), use `Navigator.pop(context)` or `context.pop()`.
-
-To distinguish onboarding vs settings navigation: pass an `extra` parameter in the GoRouter state, or check whether the `drinky_onboardingComplete` flag was already set before navigating.
-
-Simpler approach: always set the flag and always use `context.go('/')`. If the user came from settings, `go('/')` replaces the stack and lands on Home (acceptable because the user just changed their target, and seeing the Home progress ring with the new target is the right UX).
-
-**"Skip" / dismiss behavior on the calculator:**
-
-- During onboarding: set `drinky_onboardingComplete = true` and `context.go('/')`. The default target (2000ml) remains.
-- From settings: just pop. No flag change needed (it was already true).
-
-### Stateless Design (no persistence of calculator inputs)
-
-The calculator screen is fully stateless from a persistence perspective:
-- Sex, weight, and climate level are held in local widget state only.
-- No database table for calculator inputs.
-- No Riverpod provider for calculator state.
-- The only side effect is "Use as target" which writes to `UserSettings` + `target_history`.
-- The privacy disclaimer is a static text widget ("This calculation is performed locally on your device. No personal data is stored or transmitted.").
-
-**Screen structure:**
-
-File: `lib/presentation/screens/hydration_calculator_screen.dart`
-
-```
-HydrationCalculatorScreen (ConsumerStatefulWidget)
-  - State: sex (enum Male/Female), weightKg (double), climateLevel (int 1-5)
-  - Computed: recommendedMl (pure function of state)
-  - UI: SegmentedButton for sex, Slider for weight (40-150kg),
-         Slider for climate (1=temperate..5=very hot)
-  - Display: "Recommended: X ml/day"
-  - Buttons: "Use as target" (FilledButton), "Skip" (TextButton)
-  - Static privacy disclaimer text
-```
-
-**Calculation function (pure, testable):**
-
-File: `lib/domain/calculator.dart`
-
-```dart
-enum Sex { male, female }
-
-int calculateRecommendedIntake(Sex sex, double weightKg, int climateLevel) {
-  final basePerKg = sex == Sex.male ? 35.0 : 31.0;
-  final base = (weightKg * basePerKg).round();
-  // Climate: +0%/+5%/+10%/+15%/+20% for levels 1-5
-  final climateMultiplier = 1.0 + (climateLevel - 1) * 0.05;
-  final raw = (base * climateMultiplier).round();
-  // Round to nearest 50ml for a clean number
-  return ((raw + 25) ~/ 50) * 50;
-}
-```
-
-Place as a top-level function, trivially unit-testable.
-
----
-
-## Bug Fix Touch Points
-
-### BUG-01: deleteLastEntry
-
-**Status: Already fixed in the DAO.**
-
-The current `WaterEntryDao.deleteLastEntry(String dateKey)` (lines 35-44 of `water_entry_dao.dart`) correctly scopes the subquery to the given dateKey:
-
-```dart
-final lastEntry = await (select(waterEntries)
-      ..where((t) => t.dateKey.equals(dateKey))
-      ..orderBy([(t) => OrderingTerm.desc(t.loggedAt)])
-      ..limit(1))
-    .getSingleOrNull();
-if (lastEntry == null) return 0;
-return (delete(waterEntries)..where((t) => t.id.equals(lastEntry.id))).go();
-```
-
-The DELETE uses the primary key (`WHERE id = lastEntry.id`) which is inherently safe. The dateKey filter is on the SELECT that finds which entry to delete.
-
-**Action required:** Add a cross-date isolation test to prove the fix is effective. The existing test (`water_entry_dao_test.dart` line 59-81) tests same-date deletion but does not verify that entries from other dates are untouched.
-
-**Files to touch:**
-- `test/data/database/daos/water_entry_dao_test.dart` -- add cross-date test: insert entries on two dates, delete last entry for date A, verify date B entries are untouched.
-
-### BUG-02: _todayDateKey() midnight refresh
-
-**Status: Partially addressed.**
-
-The current `HomeScreen` has both an `AppLifecycleListener.onResume` and a `Timer.periodic(60s)` calling `_checkDateChange()`. This covers the HomeScreen dateKey.
-
-**Remaining gap:** When the date changes at midnight, `streakProvider` does not automatically re-evaluate because it does not depend on `_dateKey` (it uses `DateTime.now()` internally, but the provider only re-runs when a dependency changes).
-
-**Fix:** In `_checkDateChange()`, after updating `_dateKey`, invalidate the streak provider:
-
-```dart
-void _checkDateChange() {
-  final newKey = todayDateKey();
-  if (newKey != _dateKey && mounted) {
-    setState(() => _dateKey = newKey);
-    ref.invalidate(streakProvider); // force streak recalculation
+    // ... scheduling loop ...
+    await _plugin.zonedSchedule(
+      // ...
+      title: l10n.notificationTitle,
+      body: l10n.notificationBody,
+      // ...
+    );
   }
 }
 ```
 
-**Files to touch:**
-- `lib/presentation/screens/home_screen.dart` -- add `ref.invalidate(streakProvider)` in `_checkDateChange()`
+**Remove the hardcoded constants:**
+```dart
+// DELETE:
+// static const String _notifTitle = 'Drinky Drinky';
+// static const String _notifBody = 'Time to drink water!';
+```
 
-### BUG-03: dateKey validation
+### Why This Approach (Not Parameter Injection)
 
-**Status: Already implemented in WaterRepository.**
+The alternative approach is to change `scheduleWindow`'s signature to accept `title` and `body` parameters and have each call site pass `AppLocalizations.of(context).notificationTitle`. This was rejected:
 
-The current `WaterRepository.insertEntry` (lines 33-45 of `water_repository.dart`) has both regex validation AND semantic validation via `DateTime.tryParse()` + round-trip comparison. This correctly rejects `2024-02-30` because Dart rolls over invalid dates (`DateTime.tryParse('2024-02-30')` returns `2024-03-01`, and `'2024-03-01' != '2024-02-30'`).
+| Criterion | `lookupAppLocalizations` (chosen) | Parameter injection |
+|-----------|-----------------------------------|---------------------|
+| Call sites to change | 0 | 5 |
+| `scheduleWindow` signature | Unchanged | Breaking change |
+| Locale consistency | Uses exact same `basicLocaleListResolution` as Flutter framework | Depends on caller passing correct values |
+| Works without BuildContext | Yes (uses `platformDispatcher.locale`) | No -- requires every caller to have and pass context |
+| Testability | Can mock `platformDispatcher` | Must pass strings in tests |
 
-**Action required:** Extract the validation into a shared utility so the new `insertTargetHistory` path also validates `effectiveDate`.
+### Why This Works
 
-**Files to touch:**
-- `lib/domain/date_key_validator.dart` -- NEW shared validation function
-- `lib/data/repositories/water_repository.dart` -- replace inline validation with `validateDateKey(dateKey)` call
-- `lib/data/repositories/settings_repository.dart` -- call `validateDateKey(effectiveDate)` in `insertTargetHistory`
-- `test/domain/date_key_validator_test.dart` -- NEW unit tests (valid dates, Feb 29 leap/non-leap, month boundaries, roll-over dates like 2024-02-30, malformed strings)
+| Concern | Answer |
+|---------|--------|
+| Is `WidgetsBinding.instance` available when `scheduleWindow` runs? | YES -- `WidgetsFlutterBinding.ensureInitialized()` runs in `main()` before `NotificationService.instance.initialize()`. All `scheduleWindow` calls happen after initialization. |
+| Does `platformDispatcher.locale` reflect the real system locale? | YES -- it reads the OS preferred locale, updated in real time |
+| What if the system locale is not supported? | `basicLocaleListResolution` returns `supportedLocales[0]` (English) |
+| Are all 64 scheduled notifications in one language? | YES -- resolved once per `scheduleWindow` call. If the user changes system language, notifications reschedule on next `HomeScreen.onResume` |
+| Do we need a new Riverpod provider? | NO -- singleton pattern preserved, `lookupAppLocalizations` is a pure function call |
 
----
+### Why NOT Other Approaches
 
-## Build Order
+| Approach | Why Not |
+|----------|---------|
+| Pass `BuildContext` to `scheduleWindow` | 5+ call sites change; `BuildContext` across async gaps is fragile |
+| Store locale in SharedPreferences | Sync problem: stale after system language change until app writes new value |
+| Make NotificationService a Riverpod provider | PROJECT.md explicitly validates "NotificationService as singleton (not Riverpod)" as a good decision |
+| Use `Intl.defaultLocale` | Fragile -- depends on initialization order; `platformDispatcher.locale` is authoritative |
 
-Dependencies between components dictate this build order. Each step within a phase depends on the previous; phases can be built sequentially.
+### Edge Case: Language Change While Notifications Are Scheduled
 
-### Phase 1: Foundation (data layer, no UI changes)
-
-1. **`date_key_validator.dart`** (BUG-03) -- new shared utility, no dependencies.
-   - New: `lib/domain/date_key_validator.dart`
-   - New: `test/domain/date_key_validator_test.dart`
-   - Modify: `lib/data/repositories/water_repository.dart` (use shared validator)
-
-2. **`target_history_table.dart`** -- new Drift table definition.
-   - New: `lib/data/database/tables/target_history_table.dart`
-
-3. **`target_history_dao.dart`** -- new DAO with query methods.
-   - New: `lib/data/database/daos/target_history_dao.dart`
-
-4. **`app_database.dart`** -- register table + DAO, bump schema to 2, add migration with seed.
-   - Modify: `lib/data/database/app_database.dart`
-
-5. **Run `dart run build_runner build`** -- generates `.g.dart` for new table/DAO.
-
-6. **`settings_repository.dart`** -- add target history methods + `updateTargetWithHistory`.
-   - Modify: `lib/data/repositories/settings_repository.dart`
-
-7. **DAO + repository tests** -- test target_history_dao in isolation, test migration seed.
-   - New: `test/data/database/daos/target_history_dao_test.dart`
-   - Modify: `test/data/database/daos/water_entry_dao_test.dart` (add cross-date test for BUG-01)
-
-### Phase 2: Provider layer + bug fixes
-
-8. **`stream_providers.dart`** -- add `effectiveTargetForDateProvider`, `calendarMonthTargetsProvider`, modify `streakProvider`.
-   - Modify: `lib/core/providers/stream_providers.dart`
-
-9. **Run `dart run build_runner build`** -- regenerate provider `.g.dart` files.
-
-10. **BUG-02 fix** -- add `ref.invalidate(streakProvider)` in `_checkDateChange`.
-    - Modify: `lib/presentation/screens/home_screen.dart` (minimal, one-line addition)
-
-### Phase 3: Calculator screen
-
-11. **`calculator.dart`** -- pure calculation function.
-    - New: `lib/domain/calculator.dart`
-    - New: `test/domain/calculator_test.dart`
-
-12. **`hydration_calculator_screen.dart`** -- new screen widget.
-    - New: `lib/presentation/screens/hydration_calculator_screen.dart`
-
-13. **`app_router.dart`** -- add `/calculator` route and onboarding redirect guard.
-    - Modify: `lib/core/router/app_router.dart`
-
-14. **Run `dart run build_runner build`** -- regenerate router `.g.dart` if needed.
-
-### Phase 4: UI integration
-
-15. **HomeScreen** -- use `effectiveTargetForDateProvider(_dateKey)` for progress ring and goal-reached logic.
-    - Modify: `lib/presentation/screens/home_screen.dart`
-
-16. **HistoryScreen** -- watch `calendarMonthTargetsProvider` for per-day green/red.
-    - Modify: `lib/presentation/screens/history_screen.dart`
-
-17. **SettingsScreen** -- update target slider to call `updateTargetWithHistory`, add today/tomorrow toggle, add calculator access tile.
-    - Modify: `lib/presentation/screens/settings_screen.dart`
-
-### Phase 5: Validation
-
-18. **Migration integration test** -- verify schema v1 -> v2 upgrade with seed data.
-19. **Manual testing** -- change target, check calendar shows correct green/red per day.
-20. **Onboarding flow test** -- fresh install goes through permission -> calculator -> home.
+1. Already-scheduled notifications keep their original language text (pre-baked into OS notification queue)
+2. On next app resume, `HomeScreen.onResume` calls `scheduleWindow()`, which re-resolves `_localizations()` with the new system locale
+3. All 64 slots reschedule with updated text
+4. Acceptable: notifications update within one app-resume cycle
 
 ---
 
-## File-Level Change Map
+## 4. GoRouter -- L10n Impact Assessment
 
-| File | Change Type | Requirements |
-|------|------------|-------------|
-| `lib/domain/date_key_validator.dart` | NEW | BUG-03 |
-| `lib/domain/calculator.dart` | NEW | CALC-01 |
-| `lib/data/database/tables/target_history_table.dart` | NEW | TARGET-01 |
-| `lib/data/database/daos/target_history_dao.dart` | NEW | TARGET-01 |
-| `lib/data/database/app_database.dart` | MODIFY (schema v2, migration, table/DAO registration) | TARGET-01 |
-| `lib/data/repositories/settings_repository.dart` | MODIFY (add target history methods, updateTargetWithHistory) | TARGET-01/02/03/04, CALC-04 |
-| `lib/data/repositories/water_repository.dart` | MODIFY (use shared dateKey validator) | BUG-03 |
-| `lib/core/providers/stream_providers.dart` | MODIFY (new providers, streak update) | TARGET-03/04 |
-| `lib/core/router/app_router.dart` | MODIFY (add /calculator route, add onboarding redirect) | CALC-02/03 |
-| `lib/presentation/screens/hydration_calculator_screen.dart` | NEW | CALC-01/02/03/04 |
-| `lib/presentation/screens/home_screen.dart` | MODIFY (effective target, BUG-02 fix) | TARGET-03, BUG-02 |
-| `lib/presentation/screens/history_screen.dart` | MODIFY (per-day targets in calendar) | TARGET-04 |
-| `lib/presentation/screens/settings_screen.dart` | MODIFY (today/tomorrow toggle, calculator link, updateTargetWithHistory) | TARGET-02, CALC-03 |
-| `test/domain/date_key_validator_test.dart` | NEW | BUG-03 |
-| `test/domain/calculator_test.dart` | NEW | CALC-01 |
-| `test/data/database/daos/target_history_dao_test.dart` | NEW | TARGET-01 |
-| `test/data/database/daos/water_entry_dao_test.dart` | MODIFY (add cross-date test) | BUG-01 |
+### Does l10n Affect Routing?
 
-**Total: 10 modified files, 7 new files.**
+**NO.** GoRouter is unaffected by localization:
+
+| Aspect | Impact |
+|--------|--------|
+| Route paths (`/`, `/history`, `/settings`, `/permission`, `/calculator`) | None -- paths are internal identifiers, not user-visible |
+| Redirect logic | None -- redirects check SharedPreferences booleans, not locale |
+| Navigation transitions | None |
+| Deep linking | None (app does not use deep linking) |
+
+### Strings in app_router.dart That Need Localization
+
+The `NavigationBar` labels in `StatefulShellRoute.indexedStack` builder are hardcoded:
+
+```dart
+NavigationDestination(label: 'Home'),
+NavigationDestination(label: 'History'),
+NavigationDestination(label: 'Settings'),
+```
+
+These ARE user-visible and DO need localization. The builder callback receives a `BuildContext`, so standard `AppLocalizations.of(context)` works:
+
+```dart
+NavigationDestination(
+  icon: Icon(Icons.water_drop_outlined),
+  selectedIcon: Icon(Icons.water_drop),
+  label: AppLocalizations.of(context).tabHome,
+),
+```
+
+**This is a UI string change, not an architectural change.** The routing structure itself is untouched.
+
+---
+
+## 5. Locale Resolution Order
+
+### Flutter's Default Algorithm (`basicLocaleListResolution`)
+
+1. **Exact match** -- language + country + script (e.g., `fr_CA` matches `Locale('fr', 'CA')`)
+2. **Language match** -- language code only (e.g., `fr_CA` matches `Locale('fr')` when no `fr_CA` exists)
+3. **Fallback** -- `supportedLocales[0]` (first element in the list)
+
+### For Drinky Drinky
+
+Given `supportedLocales: [Locale('en'), Locale('it'), Locale('fr'), Locale('es')]`:
+
+| Device Language | Resolved Locale | Reason |
+|-----------------|-----------------|--------|
+| `it` (Italian) | `it` | Language match |
+| `it_CH` (Italian Switzerland) | `it` | Language match |
+| `en_US` | `en` | Language match |
+| `en_GB` | `en` | Language match |
+| `fr_FR` | `fr` | Language match |
+| `fr_CA` | `fr` | Language match |
+| `es_MX` | `es` | Language match |
+| `de_DE` (German) | `en` | No match -> fallback |
+| `ja_JP` (Japanese) | `en` | No match -> fallback |
+| `pt_BR` (Portuguese) | `en` | No match -> fallback |
+
+### No Custom `localeResolutionCallback` Needed
+
+The default algorithm is exactly right:
+- System locale -> supported locale -> English fallback
+- No per-user locale override (app follows system language)
+- No complex script/country logic (all 4 target languages use simple language codes)
+
+**Do NOT add `localeResolutionCallback` or `localeListResolutionCallback`.** Default behavior is correct and less code.
+
+### Consistency Between Widget Tree and NotificationService
+
+Both use the same resolution:
+- **Widget tree:** Flutter framework calls `basicLocaleListResolution` internally
+- **NotificationService:** `_localizations()` calls `basicLocaleListResolution` explicitly with the same `AppLocalizations.supportedLocales` list
+
+Same locale everywhere.
+
+---
+
+## 6. iOS Info.plist Requirement
+
+iOS requires supported locales in `Info.plist`. Without this, iOS may not report the correct locale to the app.
+
+Add to `ios/Runner/Info.plist`:
+
+```xml
+<key>CFBundleLocalizations</key>
+<array>
+  <string>en</string>
+  <string>it</string>
+  <string>fr</string>
+  <string>es</string>
+</array>
+```
+
+One-time change. Without it, Italian/French/Spanish iOS users may see English fallback.
+
+---
+
+## 7. Component Boundaries
+
+### New Components
+
+| Component | Path | Responsibility |
+|-----------|------|----------------|
+| l10n config | `l10n.yaml` (project root) | gen-l10n configuration |
+| ARB files (4) | `lib/l10n/app_{en,it,fr,es}.arb` | Source of truth for translatable strings |
+| Generated l10n classes | `lib/l10n/generated/` | Type-safe string accessors, delegate, `lookupAppLocalizations` |
+| Convenience extension | `lib/l10n/l10n_extension.dart` | `context.l10n` shorthand |
+
+### Modified Components
+
+| Component | Change |
+|-----------|--------|
+| `pubspec.yaml` | Add `flutter_localizations` dep + `flutter: generate: true` |
+| `main.dart` | Add `localizationsDelegates` + `supportedLocales` to `MaterialApp.router` |
+| `notification_service.dart` | Add `_localizations()` helper; replace hardcoded constants with `lookupAppLocalizations` call |
+| `app_router.dart` | Localize `NavigationDestination.label` strings |
+| `home_screen.dart` | Replace ~8 hardcoded strings |
+| `settings_screen.dart` | Replace ~12 hardcoded strings |
+| `history_screen.dart` | Replace ~6 strings + `_monthName()` with `DateFormat.MMMM(locale)` |
+| `hydration_calculator_screen.dart` | Replace ~15 hardcoded Italian strings; decouple `_sexFactors` keys from display labels |
+| `permission_screen.dart` | Replace ~5 hardcoded strings |
+| `preset_edit_dialog.dart` | Replace ~5 hardcoded strings |
+| `ios/Runner/Info.plist` | Add `CFBundleLocalizations` array |
+
+### Unmodified Components
+
+| Component | Why No Change |
+|-----------|---------------|
+| Drift database/DAOs | Data layer -- no user-facing strings |
+| Repositories | Data access -- no UI strings |
+| Entities/models (freezed) | Data structures |
+| Riverpod providers | Stream/state -- no rendering |
+| GoRouter route structure | Paths are internal identifiers |
+
+---
+
+## 8. Data Flow Diagrams
+
+### Widget String Resolution
+
+```
+Device OS (system locale)
+  -> Flutter Framework (basicLocaleListResolution)
+    -> MaterialApp.router (resolves to supported Locale)
+      -> Localizations InheritedWidget (loads AppLocalizations via delegate)
+        -> AppLocalizations.of(context) in any widget
+          -> Generated getter returns locale-specific string
+```
+
+### Notification String Resolution
+
+```
+Device OS (system locale)
+  -> WidgetsBinding.instance.platformDispatcher.locale
+    -> basicLocaleListResolution([systemLocale], AppLocalizations.supportedLocales)
+      -> lookupAppLocalizations(resolvedLocale)
+        -> AppLocalizations instance (e.g., AppLocalizationsIt)
+          -> l10n.notificationTitle / l10n.notificationBody
+            -> flutter_local_notifications.zonedSchedule(title: ..., body: ...)
+```
+
+---
+
+## 9. Build Order and Dependencies
+
+```
+1. pubspec.yaml changes (flutter_localizations, generate: true)
+     |
+2. l10n.yaml creation
+     |
+3. ARB files creation (app_en.arb first -- template, then stubs for it/fr/es)
+     |
+4. flutter gen-l10n (generates AppLocalizations + lookupAppLocalizations)
+     |
+5. l10n_extension.dart (context.l10n convenience)
+     |
+6. main.dart changes (localizationsDelegates, supportedLocales)
+     |   -- App boots with l10n infrastructure; still shows hardcoded strings
+     |
+7. NotificationService modification (lookupAppLocalizations, _localizations())
+     |   -- Notifications use localized strings; zero call-site changes
+     |
+8. Screen-by-screen string extraction (any order among screens)
+     |   -- Each screen: replace hardcoded strings with context.l10n.key
+     |
+9. iOS Info.plist update (CFBundleLocalizations)
+     |
+10. Translation completion (fill in app_it/fr/es.arb values)
+```
+
+Steps 1-6 form the infrastructure. Steps 7-8 can proceed in parallel. Step 9 can happen any time. Step 10 is incremental -- English serves as fallback for missing translations.
+
+---
+
+## 10. Patterns to Follow
+
+### Pattern 1: `context.l10n` Shorthand
+
+```dart
+// lib/l10n/l10n_extension.dart
+import 'generated/app_localizations.dart';
+import 'package:flutter/widgets.dart';
+
+extension AppLocalizationsX on BuildContext {
+  AppLocalizations get l10n => AppLocalizations.of(this);
+}
+
+// Usage:
+Text(context.l10n.dailyGoal)
+```
+
+With `nullable-getter: false`, no `!` needed.
+
+### Pattern 2: Parameterized Strings (ICU MessageFormat)
+
+```json
+{
+  "intakeAdded": "+{amount} ml added",
+  "@intakeAdded": {
+    "placeholders": { "amount": { "type": "int" } }
+  }
+}
+```
+
+```dart
+context.l10n.intakeAdded(250)  // "+250 ml added"
+```
+
+### Pattern 3: Plural Strings
+
+```json
+{
+  "dayStreak": "{count, plural, =0{No streak} =1{1 day streak} other{{count} day streak}}",
+  "@dayStreak": {
+    "placeholders": { "count": { "type": "int" } }
+  }
+}
+```
+
+### Pattern 4: Locale-Aware Date Formatting (Replace `_monthName`)
+
+`history_screen.dart` has a hand-rolled English-only `_monthName()` function. Replace with `intl.DateFormat`:
+
+```dart
+// Before (English only, hardcoded):
+String _monthName(int month) { ... }
+
+// After (locale-aware, uses intl already in deps):
+final locale = Localizations.localeOf(context).toString();
+final monthName = DateFormat.MMMM(locale).format(DateTime(2000, month));
+```
+
+### Pattern 5: table_calendar Locale
+
+```dart
+TableCalendar(
+  locale: Localizations.localeOf(context).languageCode,
+  // ...
+)
+```
+
+`table_calendar` uses `intl` internally; passing locale ensures month/day headers display correctly.
+
+### Pattern 6: Decouple Computation Keys from Display Labels
+
+`HydrationCalculatorScreen._sexFactors` uses Italian keys (`'Maschio'`, `'Femmina'`, `'Altro'`) that also serve as `SegmentedButton` values. When display strings change with locale, the lookup breaks.
+
+```dart
+// Fix: locale-independent keys for computation
+static const _sexFactors = {'male': 35.0, 'female': 31.0, 'other': 33.0};
+
+// SegmentedButton: internal key as value, translated string as label
+ButtonSegment(value: 'male', label: Text(context.l10n.sexMale)),
+ButtonSegment(value: 'female', label: Text(context.l10n.sexFemale)),
+ButtonSegment(value: 'other', label: Text(context.l10n.sexOther)),
+```
+
+---
+
+## 11. Anti-Patterns to Avoid
+
+### Anti-Pattern 1: Storing Locale in SharedPreferences
+
+**What:** Persisting the resolved locale and reading it in NotificationService.
+**Why bad:** Stale after system language change until app writes new value. `platformDispatcher.locale` is always current.
+**Instead:** Read `platformDispatcher.locale` directly.
+
+### Anti-Pattern 2: Creating a Riverpod Provider for Locale
+
+**What:** `@riverpod Locale currentLocale(...)` with NotificationService depending on it.
+**Why bad:** NotificationService is deliberately a singleton outside Riverpod (validated decision in PROJECT.md). Adding Riverpod dependency breaks the architectural boundary.
+**Instead:** Use `lookupAppLocalizations` directly in the singleton.
+
+### Anti-Pattern 3: Passing BuildContext to scheduleWindow
+
+**What:** Adding `BuildContext context` parameter to `scheduleWindow`.
+**Why bad:** 5+ call sites change; `BuildContext` across async gaps is fragile; conceptually wrong for a service that outlives any single widget.
+**Instead:** Use `platformDispatcher.locale` which is available after `ensureInitialized()`.
+
+### Anti-Pattern 4: Using `synthetic-package: true`
+
+**What:** Relying on `package:flutter_gen` import path.
+**Why bad:** Removed after Flutter 3.32. On 3.44.1 this import will not resolve.
+**Instead:** `synthetic-package: false` with explicit `output-dir`.
+
+### Anti-Pattern 5: Leaving `_sexFactors` Keys as Italian Strings
+
+**What:** `{'Maschio': 35.0, ...}` where the key IS the display label.
+**Why bad:** Computation breaks when display label changes with locale.
+**Instead:** Use locale-independent keys; ARB strings for display only.
+
+### Anti-Pattern 6: Hardcoding "OK", "Cancel", Unit Abbreviations
+
+**What:** Leaving strings like "Cancel", "ml", "kg" outside ARB files.
+**Why bad:** Even "Cancel" translates ("Annulla" in Italian, "Annuler" in French). Creates mixed-language UI.
+**Instead:** Extract ALL user-visible strings to ARB. If identical across locales, the ARB value is the same.
+
+---
+
+## 12. Complete String Inventory
+
+### notification_service.dart (2 strings)
+- `_notifTitle`: "Drinky Drinky"
+- `_notifBody`: "Time to drink water!"
+
+### app_router.dart (3 strings)
+- NavigationDestination labels: "Home", "History", "Settings"
+
+### home_screen.dart (~11 strings)
+- AppBar title: "Drinky Drinky"
+- "Goal reached!"
+- "{current} / {target} L" (progress text)
+- "Today's Intake"
+- "No drinks logged yet"
+- "Tap the + button to log your first drink today."
+- "+{amount} ml added" (SnackBar)
+- "UNDO"
+- "Add water" (FAB tooltip)
+- "+{amount} ml" (preset buttons)
+- "Custom amount" (hint text)
+- "Add" (button label)
+
+### settings_screen.dart (~14 strings)
+- "Settings" (AppBar)
+- "DAILY GOAL" / "QUICK-ADD PRESETS" / "NOTIFICATIONS" / "HYDRATION" (section labels)
+- "Applica da domani" (Italian)
+- "Le modifiche al target entrano in vigore domani" / "...oggi" (Italian)
+- "Preset {n}"
+- "{amount} ml" (preset subtitle)
+- "Notifications are disabled. Tap to open system Settings."
+- "Open"
+- "{minutes} min"
+- "Do Not Disturb" / "On" / "Off"
+- "Start time" / "End time"
+- "Ricalcola raccomandazione idratazione" (Italian)
+
+### history_screen.dart (~8 strings + month names)
+- "History" (AppBar)
+- "No history yet"
+- "Start logging water on the Home tab to see your history here."
+- "{count} day streak"
+- Semantic: "{month} {day}: goal met" / "goal not met"
+- Day summary: "{date} -- {total} of {target} ml"
+- "{date} -- No entries"
+- `_monthName()` (13 English month names -- replace with `DateFormat.MMMM`)
+
+### hydration_calculator_screen.dart (~17 strings, currently Italian)
+- "Calcolatore idratazione" (AppBar)
+- "Sesso" / "Maschio" / "Femmina" / "Altro"
+- "Peso" / "Peso (kg)"
+- "Inserisci un peso tra 1 e 300 kg" (validation error)
+- "Clima"
+- Climate labels: "Freddo" / "Mite" / "Caldo" / "Molto caldo" / "Afoso"
+- "La tua raccomandazione"
+- "Compila tutti i campi"
+- Privacy disclaimer (full paragraph)
+- "Usa come target"
+- "Salta"
+- "Errore durante l'aggiornamento del target. Riprova." (error SnackBar)
+- "Target aggiornato a {amount}" (success SnackBar)
+
+### permission_screen.dart (~5 strings)
+- "Stay hydrated with reminders"
+- "Drinky Drinky sends you gentle reminders..."
+- "Enable Reminders"
+- "Skip for now"
+- "Reminders enabled! You can adjust..."
+- "No problem -- you can enable reminders later..."
+
+### preset_edit_dialog.dart (~5 strings)
+- "Edit Preset {n}"
+- "Amount (ml)"
+- "Enter a value between 50 and 2000"
+- "Cancel"
+- "Confirm"
+
+### Shared error states (~2 strings)
+- "Something went wrong loading your data."
+- "Something went wrong loading your data. Please restart the app."
+
+**Total: ~67 unique translatable strings across all files.**
 
 ---
 
 ## Sources
 
-- Drift migration docs (Context7, `/websites/drift_simonbinder_eu`): `m.createTable()` for new tables in `onUpgrade`, `schemaVersion` bumping pattern -- HIGH confidence
-- GoRouter changelog (Context7, `/websites/pub_dev_packages_go_router`): ShellRoute redirect support since 14.1.0, StatefulShellRoute redirect since 14.2.0 -- HIGH confidence
-- Existing codebase: all file references and code patterns verified against actual source files in `lib/` and `test/` -- HIGH confidence
-- Dart `DateTime.tryParse` rollover behavior: `DateTime.tryParse('2024-02-30')` returns `2024-03-01`, making round-trip comparison a valid semantic check -- HIGH confidence
+- Flutter SDK source: `gen_l10n_templates.dart` -- verified locally at `/Users/flavio.bizzarri/fvm/versions/3.44.1/packages/flutter_tools/lib/src/localizations/gen_l10n_templates.dart`, lines 247-257 (lookupFunction template)
+- Flutter SDK source: `gen_l10n.dart` line 495 -- confirms `lookupAppLocalizations` naming convention (`'lookup$className'`)
+- Flutter official docs: https://docs.flutter.dev/ui/accessibility-and-internationalization/internationalization (via Context7 + WebFetch)
+- Flutter API: `basicLocaleListResolution` function (via Context7, `/websites/api_flutter_dev`)
+- Flutter breaking change doc: https://docs.flutter.dev/release/breaking-changes/flutter-generate-i10n-source (via Context7)
+- Project codebase: all files in `lib/` read directly
