@@ -29,7 +29,7 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get todaysIntake => 'Assunzione di oggi';
+  String get todaysIntake => 'Cronologia odierna';
 
   @override
   String get noDrinksLogged => 'Nessuna bevanda registrata';

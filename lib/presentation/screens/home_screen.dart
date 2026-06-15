@@ -137,10 +137,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               : colorScheme.primary,
           backgroundColor:
               colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          center: Text(
-            isGoalMet ? context.l10n.goalReached : context.l10n.currentIntake(_formatLiters(context, totalMl), _formatLiters(context, target)),
-            style: theme.textTheme.headlineMedium?.copyWith(
-              color: isGoalMet ? goalMetColor : null,
+          center: SizedBox(
+            width: 160,
+            child: Text(
+              isGoalMet ? context.l10n.goalReached : context.l10n.currentIntake(_formatLiters(context, totalMl), _formatLiters(context, target)),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                color: isGoalMet ? goalMetColor : null,
+              ),
             ),
           ),
         ),

@@ -11,7 +11,7 @@
 
   "currentIntake": "{current} / {target} L",
 
-  "todaysIntake": "Assunzione di oggi",
+  "todaysIntake": "Cronologia odierna",
 
   "noDrinksLogged": "Nessuna bevanda registrata",
   "noDrinksLoggedHint": "Tocca il pulsante + per registrare la tua prima bevanda di oggi.",
