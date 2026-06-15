@@ -21,12 +21,12 @@ Requirements for milestone v1.3 (Multilingual Support).
 
 ### Notifiche
 
-- [ ] **L10N-07**: `NotificationService` usa `lookupAppLocalizations(basicLocaleListResolution(platformDispatcher.locales, supportedLocales))` per ottenere titolo/corpo del reminder nella lingua corrente senza `BuildContext`
+- [x] **L10N-07**: `NotificationService` usa `lookupAppLocalizations(basicLocaleListResolution(platformDispatcher.locales, supportedLocales))` per ottenere titolo/corpo del reminder nella lingua corrente senza `BuildContext`
 
 ### Platform Config
 
-- [ ] **L10N-08**: iOS `Info.plist` aggiunge `CFBundleLocalizations` con `it`, `fr`, `es` (senza questa voce iOS non segnala il locale a Flutter anche se il device è impostato in italiano)
-- [ ] **L10N-09**: Android `build.gradle.kts` aggiunge `resConfigs("en", "it", "fr", "es")` per bundle splits corretti
+- [x] **L10N-08**: iOS `Info.plist` aggiunge `CFBundleLocalizations` con `it`, `fr`, `es` (senza questa voce iOS non segnala il locale a Flutter anche se il device è impostato in italiano)
+- [x] **L10N-09**: Android `build.gradle.kts` aggiunge `resConfigs("en", "it", "fr", "es")` per bundle splits corretti
 
 ## Future Requirements
 
@@ -62,9 +62,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | L10N-04 | Phase 13 | Complete |
 | L10N-05 | Phase 13 | Complete |
 | L10N-06 | Phase 13 | Complete |
-| L10N-07 | Phase 14 | Pending |
-| L10N-08 | Phase 14 | Pending |
-| L10N-09 | Phase 14 | Pending |
+| L10N-07 | Phase 14 | Complete |
+| L10N-08 | Phase 14 | Complete |
+| L10N-09 | Phase 14 | Complete |
 
 **Coverage:**
 
