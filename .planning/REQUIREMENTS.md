@@ -15,9 +15,9 @@ Requirements for milestone v1.3 (Multilingual Support).
 
 ### Estrazione stringhe UI
 
-- [ ] **L10N-04**: `HydrationCalculatorScreen` refactora `_sexFactors` e `_climateLabels` da Italian display-string keys a enum (`BiologicalSex` / `ClimateLevel`) — prerequisito anti-crash per tutte le lingue non-italiane
-- [ ] **L10N-05**: Tutte le stringhe visibili nelle 6 schermate (home, settings, history/calendar, calculator, permission screen, add-intake bottom sheet) estratte in `app_en.arb` come template canonico con chiavi semantiche e metadata `@key`
-- [ ] **L10N-06**: File `app_it.arb`, `app_fr.arb`, `app_es.arb` prodotti con traduzioni machine-generated; plurali ICU corretti (French: `one` category copre 0 e 1)
+- [x] **L10N-04**: `HydrationCalculatorScreen` refactora `_sexFactors` e `_climateLabels` da Italian display-string keys a enum (`BiologicalSex` / `ClimateLevel`) — prerequisito anti-crash per tutte le lingue non-italiane
+- [x] **L10N-05**: Tutte le stringhe visibili nelle 6 schermate (home, settings, history/calendar, calculator, permission screen, add-intake bottom sheet) estratte in `app_en.arb` come template canonico con chiavi semantiche e metadata `@key`
+- [x] **L10N-06**: File `app_it.arb`, `app_fr.arb`, `app_es.arb` prodotti con traduzioni machine-generated; plurali ICU corretti (French: `one` category copre 0 e 1)
 
 ### Notifiche
 
@@ -59,9 +59,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | L10N-01 | Phase 12 | Complete |
 | L10N-02 | Phase 12 | Complete |
 | L10N-03 | Phase 12 | Complete |
-| L10N-04 | Phase 13 | Pending |
-| L10N-05 | Phase 13 | Pending |
-| L10N-06 | Phase 13 | Pending |
+| L10N-04 | Phase 13 | Complete |
+| L10N-05 | Phase 13 | Complete |
+| L10N-06 | Phase 13 | Complete |
 | L10N-07 | Phase 14 | Pending |
 | L10N-08 | Phase 14 | Pending |
 | L10N-09 | Phase 14 | Pending |
