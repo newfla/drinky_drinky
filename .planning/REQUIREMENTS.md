@@ -56,22 +56,22 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| L10N-01 | — | Pending |
-| L10N-02 | — | Pending |
-| L10N-03 | — | Pending |
-| L10N-04 | — | Pending |
-| L10N-05 | — | Pending |
-| L10N-06 | — | Pending |
-| L10N-07 | — | Pending |
-| L10N-08 | — | Pending |
-| L10N-09 | — | Pending |
+| L10N-01 | Phase 12 | Pending |
+| L10N-02 | Phase 12 | Pending |
+| L10N-03 | Phase 12 | Pending |
+| L10N-04 | Phase 13 | Pending |
+| L10N-05 | Phase 13 | Pending |
+| L10N-06 | Phase 13 | Pending |
+| L10N-07 | Phase 14 | Pending |
+| L10N-08 | Phase 14 | Pending |
+| L10N-09 | Phase 14 | Pending |
 
 **Coverage:**
 
 - v1.3 requirements: 9 total
-- Mapped to phases: 0
-- Unmapped: 9 (roadmap pending)
+- Mapped to phases: 9
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-15*
-*Last updated: 2026-06-15 — initial definition for v1.3 Multilingual Support*
+*Last updated: 2026-06-15 — traceability updated with Phase 12-14 mappings*

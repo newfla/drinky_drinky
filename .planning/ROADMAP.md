@@ -5,6 +5,7 @@
 - ✅ **v1.0 MVP** — Phases 1-5 (shipped 2026-06-08)
 - ✅ **v1.1 Polish & UX** — Phases 6-8 (shipped 2026-06-08)
 - ✅ **v1.2 Bug Fixes & Feature Depth** — Phases 9-11 (shipped 2026-06-15)
+- **v1.3 Multilingual Support** — Phases 12-14
 
 ## Phases
 
@@ -43,6 +44,49 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 
 </details>
 
+### v1.3 Multilingual Support
+
+**Milestone Goal:** App follows system language — Italian, English, French, and Spanish; English as fallback for unsupported locales.
+
+- [ ] **Phase 12: L10n Infrastructure** - Gen-l10n pipeline, MaterialApp locale wiring, date formatting initialization
+- [ ] **Phase 13: String Extraction & Translation** - Calculator enum refactor, all UI strings to ARB, 4-language translation files
+- [ ] **Phase 14: Notification Localization & Platform Config** - NotificationService locale-aware strings, iOS/Android platform declarations
+
+## Phase Details
+
+### Phase 12: L10n Infrastructure
+**Goal**: App has a working localization pipeline that resolves the device locale and provides translated Material widgets
+**Depends on**: Phase 11 (v1.2 complete)
+**Requirements**: L10N-01, L10N-02, L10N-03
+**Success Criteria** (what must be TRUE):
+  1. `flutter gen-l10n` runs without errors and generates `AppLocalizations` class with `of(context)` accessor
+  2. App launched on a device set to Italian/French/Spanish shows localized Material widget text (date picker buttons, dialog actions)
+  3. App launched on an unsupported locale (e.g., German) falls back to English strings
+  4. `table_calendar` displays month and day names in the device's language
+**Plans**: TBD
+
+### Phase 13: String Extraction & Translation
+**Goal**: Every user-visible string in the app displays in the device's language (it/en/fr/es)
+**Depends on**: Phase 12
+**Requirements**: L10N-04, L10N-05, L10N-06
+**Success Criteria** (what must be TRUE):
+  1. Calculator screen displays sex/climate labels in the device's language without crashing (enum-based computation, not string-keyed)
+  2. All 6 screens (home, settings, history/calendar, calculator, permission screen, add-intake sheet) show fully translated text with no hardcoded Italian or English remnants
+  3. Plural forms render correctly in all 4 languages (e.g., French "0 jour" singular, streak counters)
+  4. `app_en.arb` serves as the canonical template with semantic keys and `@key` metadata for all extractable strings
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 14: Notification Localization & Platform Config
+**Goal**: Notification reminders arrive in the user's language and both iOS and Android correctly detect the app's supported locales
+**Depends on**: Phase 12
+**Requirements**: L10N-07, L10N-08, L10N-09
+**Success Criteria** (what must be TRUE):
+  1. Hydration reminder notification title and body text appear in the device's language (it/en/fr/es)
+  2. On iOS, switching device language to Italian/French/Spanish causes the app to follow the new locale (CFBundleLocalizations declared)
+  3. Android APK bundles only en/it/fr/es locale resources (resConfigs filtering active)
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -58,3 +102,6 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 | 9. Data Foundation & Bug Fixes | v1.2 | 2/2 | Complete    | 2026-06-10 |
 | 10. Target History Integration | v1.2 | 3/3 | Complete   | 2026-06-10 |
 | 11. Hydration Calculator | v1.2 | 1/1 | Complete    | 2026-06-15 |
+| 12. L10n Infrastructure | v1.3 | 0/0 | Not started | - |
+| 13. String Extraction & Translation | v1.3 | 0/0 | Not started | - |
+| 14. Notification Localization & Platform Config | v1.3 | 0/0 | Not started | - |

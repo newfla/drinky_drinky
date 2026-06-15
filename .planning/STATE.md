@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Multilingual Support
 status: planning
-last_updated: "2026-06-15T12:07:17.190Z"
+last_updated: "2026-06-15"
 last_activity: 2026-06-15
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
-**Current focus:** v1.3 Multilingual Support — defining requirements
+**Current focus:** v1.3 Multilingual Support — Phase 12 (L10n Infrastructure) ready to plan
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 12 of 14 (L10n Infrastructure)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-15 — Milestone v1.3 started
+Status: Ready to plan
+Last activity: 2026-06-15 — Roadmap created for v1.3 (Phases 12-14)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -64,11 +66,9 @@ Last activity: 2026-06-15 — Milestone v1.3 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Roadmap v1.2]: Phase 9 bundles BUG-01, BUG-03, TARGET-01 — schema migration is foundational for all target history work
-- [Roadmap v1.2]: Phase 10 includes BUG-02 (midnight reset) alongside TARGET-02/03/04 — all involve provider-layer date handling
-- [Roadmap v1.2]: Phase 11 (calculator) depends only on Phase 9 (needs target_history write), independent of Phase 10
-- [Research]: All target changes must go through a single updateTargetWithHistory() method — dual-write to settings + target_history
-- [Research]: Calculator inputs (sex/weight/climate) must NOT be persisted — privacy by design
+- [Research v1.3]: Calculator Italian display-string keys must be refactored to enums BEFORE string extraction (crash risk)
+- [Research v1.3]: NotificationService uses lookupAppLocalizations + platformDispatcher.locale (no BuildContext)
+- [Research v1.3]: synthetic-package: false required on Flutter 3.44.1; output-dir: lib/l10n/generated separates generated from source
 
 ### Pending Todos
 
@@ -77,7 +77,7 @@ None yet.
 ### Blockers/Concerns
 
 - [Phase 5]: Android OEM background killing may silently break notifications — requires physical device testing
-- [Tech debt]: REQUIREMENTS.md traceability table missing LOCALE-01, DEVICE-01, EXPORT-01, CHART-01, HEALTH-01 — clean up before v1.3
+- [Research v1.3]: iOS CFBundleLocalizations must be in Info.plist or locale detection silently fails
 
 ## Deferred Items
 
@@ -88,9 +88,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-06-15
-Stopped at: Phase 11 UAT complete (11/11 passed) — v1.2 milestone ready for archive
+Stopped at: Roadmap created for v1.3 — 3 phases (12-14) covering 9 requirements
 Resume file: None
-
-## Operator Next Steps
-
-- Start the next milestone with /gsd-new-milestone
