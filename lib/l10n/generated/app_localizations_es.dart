@@ -9,19 +9,19 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
-  String get tabHome => 'Home';
+  String get tabHome => 'Inicio';
 
   @override
-  String get tabHistory => 'History';
+  String get tabHistory => 'Historial';
 
   @override
-  String get tabSettings => 'Settings';
+  String get tabSettings => 'Ajustes';
 
   @override
   String get appTitle => 'Drinky Drinky';
 
   @override
-  String get goalReached => 'Goal reached!';
+  String get goalReached => '¡Meta alcanzada!';
 
   @override
   String currentIntake(String current, String target) {
@@ -29,25 +29,25 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get todaysIntake => 'Today\'s Intake';
+  String get todaysIntake => 'Consumo de hoy';
 
   @override
-  String get noDrinksLogged => 'No drinks logged yet';
+  String get noDrinksLogged => 'Sin bebidas registradas';
 
   @override
   String get noDrinksLoggedHint =>
-      'Tap the + button to log your first drink today.';
+      'Pulsa el botón + para registrar tu primera bebida de hoy.';
 
   @override
   String mlAdded(num amount) {
-    return '+$amount ml added';
+    return '+$amount ml añadidos';
   }
 
   @override
-  String get undo => 'UNDO';
+  String get undo => 'DESHACER';
 
   @override
-  String get addWaterTooltip => 'Add water';
+  String get addWaterTooltip => 'Añadir agua';
 
   @override
   String presetButtonLabel(num amount) {
@@ -55,45 +55,48 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get customAmountHint => 'Custom amount';
+  String get customAmountHint => 'Cantidad personalizada';
 
   @override
-  String get addButton => 'Add';
+  String get addButton => 'Añadir';
 
   @override
   String get errorLoadingDataRestart =>
-      'Something went wrong loading your data. Please restart the app.';
+      'Algo ha ido mal al cargar los datos. Reinicia la app.';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get settingsTitle => 'Ajustes';
 
   @override
-  String get sectionDailyGoal => 'DAILY GOAL';
+  String get sectionDailyGoal => 'META DIARIA';
 
   @override
-  String get sectionQuickAddPresets => 'QUICK-ADD PRESETS';
+  String get sectionQuickAddPresets => 'AÑADIR RÁPIDO';
 
   @override
-  String get sectionNotifications => 'NOTIFICATIONS';
+  String get sectionNotifications => 'NOTIFICACIONES';
 
   @override
-  String get sectionHydration => 'HYDRATION';
+  String get sectionHydration => 'HIDRATACIÓN';
 
   @override
-  String get recalculateHydration => 'Recalculate hydration recommendation';
+  String get recalculateHydration =>
+      'Recalcular la recomendación de hidratación';
 
   @override
-  String get applyFromTomorrow => 'Apply from tomorrow';
+  String get applyFromTomorrow => 'Aplicar desde mañana';
 
   @override
-  String get applyFromTomorrowSubtitle => 'Target changes take effect tomorrow';
+  String get applyFromTomorrowSubtitle =>
+      'Los cambios de meta entrarán en vigor mañana';
 
   @override
-  String get applyFromTodaySubtitle => 'Target changes take effect today';
+  String get applyFromTodaySubtitle =>
+      'Los cambios de meta entrarán en vigor hoy';
 
   @override
   String presetTitle(num number) {
-    return 'Preset $number';
+    return 'Preajuste $number';
   }
 
   @override
@@ -103,10 +106,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get notificationsDisabledBanner =>
-      'Notifications are disabled. Tap to open system Settings.';
+      'Las notificaciones están desactivadas. Pulsa para abrir los ajustes del sistema.';
 
   @override
-  String get openButton => 'Open';
+  String get openButton => 'Abrir';
 
   @override
   String intervalMinutes(num minutes) {
@@ -114,63 +117,63 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get doNotDisturb => 'Do Not Disturb';
+  String get doNotDisturb => 'No molestar';
 
   @override
-  String get toggleOn => 'On';
+  String get toggleOn => 'Activo';
 
   @override
-  String get toggleOff => 'Off';
+  String get toggleOff => 'Inactivo';
 
   @override
-  String get startTime => 'Start time';
+  String get startTime => 'Hora de inicio';
 
   @override
-  String get endTime => 'End time';
+  String get endTime => 'Hora de fin';
 
   @override
-  String get errorLoadingData => 'Something went wrong loading your data.';
+  String get errorLoadingData => 'Algo ha ido mal al cargar los datos.';
 
   @override
-  String get historyTitle => 'History';
+  String get historyTitle => 'Historial';
 
   @override
-  String get noHistoryYet => 'No history yet';
+  String get noHistoryYet => 'Sin historial';
 
   @override
   String get noHistoryYetHint =>
-      'Start logging water on the Home tab to see your history here.';
+      'Empieza a registrar agua en la pestaña Inicio para ver tu historial aquí.';
 
   @override
   String dayStreak(num count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count day streak',
-      one: '1 day streak',
-      zero: 'No streak',
+      other: '$count días consecutivos',
+      one: '1 día consecutivo',
+      zero: 'Sin racha',
     );
     return '$_temp0';
   }
 
   @override
   String daySummaryWithEntries(String date, num total, num target) {
-    return '$date -- $total of $target ml';
+    return '$date -- $total de $target ml';
   }
 
   @override
   String daySummaryNoEntries(String date) {
-    return '$date -- No entries';
+    return '$date -- Sin registros';
   }
 
   @override
   String calendarDayGoalMet(String month, num day) {
-    return '$month $day: goal met';
+    return '$month $day: meta alcanzada';
   }
 
   @override
   String calendarDayGoalNotMet(String month, num day) {
-    return '$month $day: goal not met';
+    return '$month $day: meta no alcanzada';
   }
 
   @override
@@ -179,111 +182,112 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get calculatorTitle => 'Hydration calculator';
+  String get calculatorTitle => 'Calculadora de hidratación';
 
   @override
-  String get sexLabel => 'Sex';
+  String get sexLabel => 'Sexo';
 
   @override
-  String get sexMale => 'Male';
+  String get sexMale => 'Hombre';
 
   @override
-  String get sexFemale => 'Female';
+  String get sexFemale => 'Mujer';
 
   @override
-  String get sexOther => 'Other';
+  String get sexOther => 'Otro';
 
   @override
-  String get weightLabel => 'Weight';
+  String get weightLabel => 'Peso';
 
   @override
-  String get weightInputLabel => 'Weight (kg)';
+  String get weightInputLabel => 'Peso (kg)';
 
   @override
   String get weightUnit => 'kg';
 
   @override
-  String get weightValidationError => 'Enter a weight between 1 and 300 kg';
+  String get weightValidationError => 'Introduce un peso entre 1 y 300 kg';
 
   @override
-  String get climateLabel => 'Climate';
+  String get climateLabel => 'Clima';
 
   @override
-  String get climateCold => 'Cold';
+  String get climateCold => 'Frío';
 
   @override
-  String get climateMild => 'Mild';
+  String get climateMild => 'Templado';
 
   @override
-  String get climateWarm => 'Warm';
+  String get climateWarm => 'Cálido';
 
   @override
-  String get climateVeryWarm => 'Very warm';
+  String get climateVeryWarm => 'Muy cálido';
 
   @override
-  String get climateHumid => 'Humid';
+  String get climateHumid => 'Húmedo';
 
   @override
-  String get yourRecommendation => 'Your recommendation';
+  String get yourRecommendation => 'Tu recomendación';
 
   @override
-  String get fillAllFields => 'Fill in all fields';
+  String get fillAllFields => 'Rellena todos los campos';
 
   @override
   String get privacyDisclaimer =>
-      'Your data (sex, weight, climate) is not saved or transmitted. The calculation happens entirely on your device.';
+      'Tus datos (sexo, peso, clima) no se guardan ni se transmiten. El cálculo se realiza íntegramente en tu dispositivo.';
 
   @override
-  String get useAsTarget => 'Use as target';
+  String get useAsTarget => 'Usar como meta';
 
   @override
-  String get skipButton => 'Skip';
+  String get skipButton => 'Omitir';
 
   @override
-  String get targetUpdateError => 'Error updating target. Try again.';
+  String get targetUpdateError =>
+      'Error al actualizar la meta. Inténtalo de nuevo.';
 
   @override
   String targetUpdated(String amount) {
-    return 'Target updated to $amount';
+    return 'Meta actualizada a $amount';
   }
 
   @override
-  String get permissionTitle => 'Stay hydrated with reminders';
+  String get permissionTitle => 'Mantente hidratado con recordatorios';
 
   @override
   String get permissionBody =>
-      'Drinky Drinky sends you gentle reminders to drink water throughout the day.';
+      'Drinky Drinky te envía suaves recordatorios para beber agua a lo largo del día.';
 
   @override
-  String get enableReminders => 'Enable Reminders';
+  String get enableReminders => 'Activar recordatorios';
 
   @override
-  String get skipForNow => 'Skip for now';
+  String get skipForNow => 'Omitir por ahora';
 
   @override
   String get remindersEnabled =>
-      'Reminders enabled! You can adjust them anytime in Settings.';
+      '¡Recordatorios activados! Puedes ajustarlos en cualquier momento en Ajustes.';
 
   @override
   String get remindersDeclined =>
-      'No problem -- you can enable reminders later in your device Settings.';
+      'Sin problema -- puedes activar los recordatorios más tarde en los ajustes de tu dispositivo.';
 
   @override
   String editPresetTitle(num number) {
-    return 'Edit Preset $number';
+    return 'Editar preajuste $number';
   }
 
   @override
-  String get amountInputLabel => 'Amount (ml)';
+  String get amountInputLabel => 'Cantidad (ml)';
 
   @override
-  String get presetValidationError => 'Enter a value between 50 and 2000';
+  String get presetValidationError => 'Introduce un valor entre 50 y 2000';
 
   @override
-  String get cancelButton => 'Cancel';
+  String get cancelButton => 'Cancelar';
 
   @override
-  String get confirmButton => 'Confirm';
+  String get confirmButton => 'Confirmar';
 
   @override
   String get mlUnit => 'ml';
