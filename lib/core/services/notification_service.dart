@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'dart:ui' show Locale, PlatformDispatcher;
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../domain/entities/user_settings_entity.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Singleton service wrapping [FlutterLocalNotificationsPlugin].
 ///
@@ -21,8 +23,6 @@ class NotificationService {
 
   static const String _channelId = 'hydration_reminders';
   static const String _channelName = 'Hydration Reminders';
-  static const String _notifTitle = 'Drinky Drinky';
-  static const String _notifBody = 'Time to drink water!';
 
   bool _initialized = false;
 
@@ -135,6 +135,24 @@ class NotificationService {
   }
 
   // ---------------------------------------------------------------------------
+  // Locale resolution
+  // ---------------------------------------------------------------------------
+
+  /// Resolves the device's primary locale to a supported AppLocalizations locale.
+  ///
+  /// Matches only on [Locale.languageCode] — same strategy as [localeListResolutionCallback]
+  /// in main.dart (D-01). Falls back to English for unsupported locales.
+  Locale _resolveLocale() {
+    final locales = PlatformDispatcher.instance.locales;
+    if (locales.isEmpty) return const Locale('en');
+    final primary = locales.first;
+    for (final supported in AppLocalizations.supportedLocales) {
+      if (supported.languageCode == primary.languageCode) return supported;
+    }
+    return const Locale('en');
+  }
+
+  // ---------------------------------------------------------------------------
   // Schedule rolling window (D-04)
   // ---------------------------------------------------------------------------
 
@@ -147,6 +165,8 @@ class NotificationService {
   /// - Does nothing if permission is not granted.
   Future<void> scheduleWindow(UserSettingsEntity settings) async {
     await cancelAll();
+
+    final l10n = lookupAppLocalizations(_resolveLocale());
 
     if (!_initialized) return;
     if (!(await permissionGranted())) return;
@@ -193,8 +213,8 @@ class NotificationService {
             scheduledDate: candidate,
             notificationDetails: _notificationDetails,
             androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-            title: _notifTitle,
-            body: _notifBody,
+            title: l10n.appTitle,
+            body: l10n.notificationBody,
             matchDateTimeComponents: null,
           );
           scheduled++;
