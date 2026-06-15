@@ -73,7 +73,9 @@ Full details: `.planning/milestones/v1.3-ROADMAP.md`
   1. When no intakes exist for today, the home screen placeholder text is horizontally centered with consistent lateral and vertical padding matching the rest of the UI
   2. On a fresh install, after logging the first water intake, navigating to the history screen shows today's intake data (not "Nessuna cronologia")
   3. After adding multiple intakes on a fresh install, the history screen timeline updates to reflect all entries without requiring app restart
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 15-01-PLAN.md — Fix home empty-state centering + history screen reactivity
 **UI hint**: yes
 
 ### Phase 16: Project README
@@ -83,7 +85,9 @@ Full details: `.planning/milestones/v1.3-ROADMAP.md`
 **Success Criteria** (what must be TRUE):
   1. README.md exists in the repository root and contains a project description, two home screen screenshots (one iOS, one Android), and build instructions
   2. The build instructions are sufficient for a developer with Flutter installed to clone and run the app
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 15-01-PLAN.md — Fix home empty-state centering + history screen reactivity
 
 ## Progress
 
@@ -103,5 +107,5 @@ Full details: `.planning/milestones/v1.3-ROADMAP.md`
 | 12. L10n Infrastructure | v1.3 | 2/2 | Complete | 2026-06-15 |
 | 13. String Extraction & Translation | v1.3 | 2/2 | Complete | 2026-06-15 |
 | 14. Notification Localization & Platform Config | v1.3 | 2/2 | Complete | 2026-06-15 |
-| 15. Home & History Fixes | v1.4 | 0/0 | Not started | - |
+| 15. Home & History Fixes | v1.4 | 0/1 | Not started | - |
 | 16. Project README | v1.4 | 0/0 | Not started | - |
