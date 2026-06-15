@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/providers/repository_providers.dart';
@@ -71,6 +72,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _presetsCard(context, presets),
           _sectionLabel(context, 'NOTIFICATIONS'),
           _notificationsCard(context, settings),
+          _sectionLabel(context, 'HYDRATION'),
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ListTile(
+              leading: const Icon(Icons.calculate_outlined),
+              title: const Text('Ricalcola raccomandazione idratazione'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/calculator', extra: false),
+            ),
+          ),
         ],
       ),
     );

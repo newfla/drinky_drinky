@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/history_screen.dart';
 import '../../presentation/screens/permission_screen.dart';
+import '../../presentation/screens/hydration_calculator_screen.dart';
 import '../../presentation/screens/settings_screen.dart';
 
 part 'app_router.g.dart';
@@ -21,12 +22,17 @@ GoRouter appRouter(Ref ref) {
     // Checks SharedPreferences once per navigation event; lightweight because
     // SharedPreferences caches results after the first disk read.
     redirect: (BuildContext context, GoRouterState state) async {
-      // Prevent redirect loop: if already on /permission, do not redirect again.
+      // Prevent redirect loop: if already on /permission or /calculator, do not redirect again.
       if (state.matchedLocation == '/permission') return null;
+      if (state.matchedLocation == '/calculator') return null;
 
       final prefs = await SharedPreferences.getInstance();
-      final shown = prefs.getBool('drinky_permissionScreenShown') ?? false;
-      if (!shown) return '/permission';
+      final permissionShown = prefs.getBool('drinky_permissionScreenShown') ?? false;
+      if (!permissionShown) return '/permission';
+
+      final calculatorShown = prefs.getBool('drinky_calculatorShown') ?? false;
+      if (!calculatorShown) return '/calculator';
+
       return null;
     },
     routes: [
@@ -35,6 +41,16 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/permission',
         builder: (context, state) => const PermissionScreen(),
+      ),
+
+      // /calculator is a TOP-LEVEL route so it renders without the bottom
+      // NavigationBar. isOnboarding=true when navigated by redirect guard;
+      // isOnboarding=false when pushed from Settings.
+      GoRoute(
+        path: '/calculator',
+        builder: (context, state) => HydrationCalculatorScreen(
+          isOnboarding: state.extra as bool? ?? true,
+        ),
       ),
 
       StatefulShellRoute.indexedStack(
