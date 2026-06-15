@@ -49,7 +49,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 **Milestone Goal:** App follows system language — Italian, English, French, and Spanish; English as fallback for unsupported locales.
 
 - [ ] **Phase 12: L10n Infrastructure** - Gen-l10n pipeline, MaterialApp locale wiring, date formatting initialization
-- [ ] **Phase 13: String Extraction & Translation** - Calculator enum refactor, all UI strings to ARB, 4-language translation files
+- [x] **Phase 13: String Extraction & Translation** - Calculator enum refactor, all UI strings to ARB, 4-language translation files (completed 2026-06-15)
 - [ ] **Phase 14: Notification Localization & Platform Config** - NotificationService locale-aware strings, iOS/Android platform declarations
 
 ## Phase Details
@@ -88,7 +88,7 @@ Plans:
 Plans:
 
 - [x] 13-01-PLAN.md — BiologicalSex/ClimateLevel enum refactor + widget string replacement with context.l10n across all screens
-- [ ] 13-02-PLAN.md — Complete app_it.arb, app_fr.arb, app_es.arb (79 keys each) + flutter gen-l10n regeneration
+- [x] 13-02-PLAN.md — Complete app_it.arb, app_fr.arb, app_es.arb (79 keys each) + flutter gen-l10n regeneration
 
 ### Phase 14: Notification Localization & Platform Config
 
@@ -123,5 +123,5 @@ Plans:
 | 10. Target History Integration | v1.2 | 3/3 | Complete   | 2026-06-10 |
 | 11. Hydration Calculator | v1.2 | 1/1 | Complete    | 2026-06-15 |
 | 12. L10n Infrastructure | v1.3 | 2/2 | Complete   | 2026-06-15 |
-| 13. String Extraction & Translation | v1.3 | 1/2 | In Progress|  |
+| 13. String Extraction & Translation | v1.3 | 2/2 | Complete   | 2026-06-15 |
 | 14. Notification Localization & Platform Config | v1.3 | 0/2 | Not started | - |
