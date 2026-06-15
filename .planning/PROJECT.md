@@ -8,14 +8,15 @@ A Flutter mobile app that helps users track their daily water intake and stay hy
 
 The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
 
-## Current Milestone: v1.2 Bug Fixes & Feature Depth
+## Current Milestone: v1.3 Multilingual Support
 
-**Goal:** Correggere i tre bug noti post-v1.1 e aggiungere due feature che approfondiscono l'esperienza: storico del target giornaliero e calcolatore idratazione con onboarding tutorial.
+**Goal:** L'app segue la lingua di sistema — italiano, inglese, francese e spagnolo; inglese come fallback per le lingue non supportate.
 
 **Target features:**
-- Bug fixes: filtro data su `deleteLastEntry`, aggiornamento `_todayDateKey()` a mezzanotte, validazione semantica di `dateKey`
-- Target storico per giornata: nuovo Drift table `target_history`; setting "applica da oggi / da domani"; calendario e home usano il target della giornata corretta
-- Calcolatore idratazione / onboarding tutorial: schermata al primo avvio (richiamabile dai Settings), calcolo locale (sesso + peso + clima), disclaimer privacy, bottone "Usa come target"
+- Setup infrastruttura l10n Flutter (flutter_localizations, intl ARB, codegen)
+- Traduzione di tutte le stringhe UI (home, settings, calendar, calculator, onboarding/permission screen)
+- Traduzione dei testi delle notifiche push
+- Locale detection automatica da sistema, fallback a inglese
 
 ## Shipped
 
@@ -52,7 +53,10 @@ The user always knows how close they are to their daily hydration goal and gets 
 
 ### Active
 
-(none — all v1.2 requirements shipped)
+- [ ] L10n infrastructure: flutter_localizations + intl ARB + codegen — v1.3
+- [ ] All UI strings extracted and translated (it/en/fr/es) — v1.3
+- [ ] Notification strings translated and locale-aware — v1.3
+- [ ] System locale detection with English fallback — v1.3
 
 ### Out of Scope
 
@@ -128,4 +132,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-15 — v1.2 milestone complete (all 3 phases shipped: data foundation, target history integration, hydration calculator).*
+*Last updated: 2026-06-15 — v1.3 milestone started (multilingual support: it/en/fr/es, system locale, EN fallback).*
