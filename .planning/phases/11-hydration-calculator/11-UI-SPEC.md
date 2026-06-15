@@ -42,7 +42,6 @@ Declared values (must be multiples of 4):
 | 3xl | 64px | Not used in this phase |
 
 Exceptions:
-- 12px (`SizedBox(height: 12)`) between primary CTA and secondary action -- established pattern from `permission_screen.dart` line 64.
 - Touch targets: all tappable elements (buttons, segmented button segments) must be at least 48px tall per Material 3 guidelines.
 
 Source: Existing patterns from `permission_screen.dart` (32px horizontal padding, 32px/16px/48px vertical gaps) and `settings_screen.dart` (16px card margins, 8px vertical card spacing).
@@ -57,10 +56,10 @@ All values reference Material 3 `TextTheme` roles, which the app already uses. N
 |------|-----------------|--------------|--------|-------------|---------------------|
 | Display | `headlineLarge` | 32dp | 400 (regular) | 1.25 | Recommendation result (e.g., "2 350 ml") |
 | Heading | `headlineSmall` | 24dp | 400 (regular) | 1.33 | Screen title equivalent in body (calculator heading text) |
-| Body | `bodyLarge` | 16dp | 400 (regular) | 1.5 | Form labels, privacy disclaimer, descriptive text |
+| Body | `bodyLarge` | 16dp | 400 (regular) | 1.5 | Form labels, privacy disclaimer, descriptive text, placeholder text |
 | Label | `labelLarge` | 14dp | 500 (medium) | 1.43 | Climate slider label, section labels, button text |
 
-Weight constraint: only 400 (regular) and 500 (medium) are used. Exception: `FontWeight.w600` (semibold) on the recommendation value for emphasis.
+Weight constraint: only 400 (regular) and 500 (medium) are used. No exceptions.
 
 Source: Existing screen patterns -- `permission_screen.dart` uses `headlineSmall` + `bodyLarge`; `home_screen.dart` uses `headlineMedium` + `bodyLarge` + `labelLarge`.
 
@@ -75,7 +74,7 @@ The app uses Material 3 dynamic color (`DynamicColorBuilder`) with `Colors.blue`
 | Dominant (60%) | `colorScheme.surface` | Scaffold background |
 | Secondary (30%) | `colorScheme.surfaceContainerLow` | Card surfaces (if recommendation is in a Card) |
 | Accent (10%) | `colorScheme.primary` | Reserved for: (1) "Usa come target" FilledButton, (2) SegmentedButton selected state, (3) Slider active track, (4) result value text color on recommendation display |
-| On-surface muted | `colorScheme.onSurfaceVariant` | Privacy disclaimer text, secondary descriptive text |
+| On-surface muted | `colorScheme.onSurfaceVariant` | Privacy disclaimer text, secondary descriptive text, incomplete-state placeholder text |
 | Error | `colorScheme.error` | Weight input validation error text (via TextFormField errorText) |
 
 Accent reserved for: "Usa come target" FilledButton, SegmentedButton selected segment, Slider active track and thumb, recommendation value text emphasis. No other elements use accent color.
@@ -93,10 +92,10 @@ These are the specific Material 3 widgets used in this phase. All are built-in F
 | Sex selector | `SegmentedButton<String>` | 3 segments: "Maschio", "Femmina", "Altro". `multiSelectionEnabled: false`. No preselection -- starts with empty selection (`selected: {}`), "Usa come target" disabled until sex is chosen. | D-06, discretion |
 | Climate selector | `Slider` | `min: 0`, `max: 4`, `divisions: 4`. Label text below slider: `['Freddo', 'Mite', 'Caldo', 'Molto caldo', 'Afoso'][value.round()]`. Default value: 1 (Mite). | D-07 |
 | Weight input | `TextFormField` | `keyboardType: TextInputType.number`, `inputFormatters: [FilteringTextInputFormatter.digitsOnly]`, `decoration: InputDecoration(labelText: 'Peso (kg)', suffixText: 'kg')`. Validation: `int.tryParse()`, range 1--300, error text "Inserisci un peso tra 1 e 300 kg". | D-08, discretion |
-| Recommendation display | `Text` with `headlineLarge` | Shows result like "2 350 ml" (space-separated thousands per Italian locale). Styled with `colorScheme.primary` color and `FontWeight.w600`. Wrapped in a centered column with a "La tua raccomandazione" label above. Visible only when all inputs are valid. | D-08, discretion |
+| Recommendation display | `Text` with `headlineLarge` | Shows result like "2 350 ml" (space-separated thousands per Italian locale). Styled with `colorScheme.primary` color and `FontWeight.w500`. Wrapped in a centered column with a "La tua raccomandazione" label above. Visible only when all inputs are valid. | D-08, discretion |
 | Primary CTA | `FilledButton` | Full width (`SizedBox(width: double.infinity)`). Label: "Usa come target". Enabled only when sex selected AND weight valid (1--300). | D-08, D-09 |
-| Skip action | `TextButton` | Label: "Salta". Only visible during first-launch context (not from Settings). Positioned below "Usa come target" with 12px gap. | D-10 |
-| Privacy disclaimer | `Text` with `bodySmall` | Text: "I tuoi dati (sesso, peso, clima) non vengono salvati ne' trasmessi. Il calcolo avviene interamente sul tuo dispositivo." Styled with `colorScheme.onSurfaceVariant`. Positioned between the form and the buttons. | CALC-01, discretion |
+| Skip action | `TextButton` | Label: "Salta". Only visible during first-launch context (not from Settings). Positioned below "Usa come target" with 8px gap. | D-10 |
+| Privacy disclaimer | `Text` with `bodyLarge` | Text: "I tuoi dati (sesso, peso, clima) non vengono salvati ne' trasmessi. Il calcolo avviene interamente sul tuo dispositivo." Styled with `colorScheme.onSurfaceVariant`. Positioned between the form and the buttons. | CALC-01, discretion |
 | AppBar | `AppBar` | Title: "Calcolatore idratazione". During first-launch: no back button (`automaticallyImplyLeading: false`). From Settings: standard back button. | discretion |
 | SnackBar | `SnackBar` | Floating behavior. Text: "Target aggiornato a {N} ml" (e.g., "Target aggiornato a 2 350 ml"). Duration: 4 seconds. | D-09, D-11 |
 | Settings tile | `ListTile` | Title: "Ricalcola raccomandazione idratazione". Leading: `Icon(Icons.calculate_outlined)`. `onTap: () => context.push('/calculator')`. Added to Settings in a new "HYDRATION" section. | CALC-03, D-03 |
@@ -140,18 +139,20 @@ Structure: `Scaffold` > `SafeArea` > `SingleChildScrollView` > `Padding(horizont
 |                                                    |
 |  "La tua raccomandazione" (bodyLarge, centered)    |
 |  [8px]                                             |
-|  "2 350 ml"  (headlineLarge, primary, w600)        |
+|  "2 350 ml"  (headlineLarge, primary, w500)        |
 |  --- or if inputs incomplete: ---                  |
-|  "Compila tutti i campi" (bodyMedium, muted)       |
+|  "Compila tutti i campi" (bodyLarge,               |
+|   colorScheme.onSurfaceVariant)                    |
 |                                                    |
 |  [48px]                                            |
 |                                                    |
-|  "I tuoi dati..." (bodySmall, muted, centered)     |
+|  "I tuoi dati..." (bodyLarge,                      |
+|   colorScheme.onSurfaceVariant, centered)          |
 |                                                    |
 |  [24px]                                            |
 |                                                    |
 |  [====== Usa come target ======] FilledButton      |
-|  [12px]                                            |
+|  [8px]                                             |
 |  [         Salta         ] TextButton              |
 |  (only in first-launch context)                    |
 |                                                    |
@@ -182,8 +183,8 @@ Card(
 
 | Interaction | Behavior |
 |-------------|----------|
-| Sex not selected | SegmentedButton shows no segment highlighted. "Usa come target" is disabled (greyed out). Recommendation area shows "Compila tutti i campi". |
-| Weight empty or invalid | TextFormField shows error text "Inserisci un peso tra 1 e 300 kg" on blur or after first submit attempt. "Usa come target" disabled. Recommendation area shows "Compila tutti i campi". |
+| Sex not selected | SegmentedButton shows no segment highlighted. "Usa come target" is disabled (greyed out). Recommendation area shows "Compila tutti i campi" in `bodyLarge` with `colorScheme.onSurfaceVariant`. |
+| Weight empty or invalid | TextFormField shows error text "Inserisci un peso tra 1 e 300 kg" on blur or after first submit attempt. "Usa come target" disabled. Recommendation area shows "Compila tutti i campi" in `bodyLarge` with `colorScheme.onSurfaceVariant`. |
 | All inputs valid | Recommendation updates live on every change. "Usa come target" becomes enabled. Result displays with primary color emphasis. |
 | "Usa come target" pressed (onboarding) | Call `updateTargetWithHistory(recommendedMl)`. Set `drinky_calculatorShown = true`. Show SnackBar. Navigate `context.go('/')`. |
 | "Usa come target" pressed (Settings) | Call `updateTargetWithHistory(recommendedMl)`. Show SnackBar. Navigate `context.pop()`. |
@@ -228,7 +229,7 @@ Note: Existing app uses mixed EN/IT -- section labels are EN ("DAILY GOAL", "NOT
 
 | Context | What user sees |
 |---------|----------------|
-| Calculator opened (all contexts) | Form is displayed with no preselection on sex, empty weight field, climate defaulted to "Mite" (index 1). Recommendation area shows "Compila tutti i campi" in muted text. "Usa come target" is disabled. |
+| Calculator opened (all contexts) | Form is displayed with no preselection on sex, empty weight field, climate defaulted to "Mite" (index 1). Recommendation area shows "Compila tutti i campi" in `bodyLarge` with `colorScheme.onSurfaceVariant`. "Usa come target" is disabled. |
 
 There is no data-dependent empty state -- the calculator is always a fresh form. No entries or historical data are loaded.
 
@@ -264,7 +265,7 @@ None in this phase. "Usa come target" overwrites the existing daily target, but 
 - SegmentedButton segments must have semantic labels (Material 3 handles this automatically via the `Text` child widget).
 - Slider must have a semantic label: `Slider(semanticFormatterCallback: (value) => ['Freddo', 'Mite', 'Caldo', 'Molto caldo', 'Afoso'][value.round()])`.
 - TextFormField has explicit `labelText` for screen reader association.
-- Privacy disclaimer text uses `bodySmall` (12dp minimum) -- sufficient for readability.
+- Privacy disclaimer text uses `bodyLarge` (16dp) -- well above minimum readability threshold. De-emphasized via `colorScheme.onSurfaceVariant` color rather than reduced size.
 - All interactive elements meet 48dp minimum touch target.
 - Color is not the sole differentiator for any state -- disabled buttons also change opacity and text.
 
