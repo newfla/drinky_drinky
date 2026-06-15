@@ -44,20 +44,15 @@ The user always knows how close they are to their daily hydration goal and gets 
 - ✓ Home screen FAB opens add-intake modal bottom sheet; quick-add buttons removed from home (INTAKE-01) — v1.1
 - ✓ Add-intake sheet shows 3 configurable presets and a custom ml text field with 1-9999 validation (INTAKE-02/03/04) — v1.1
 - ✓ App icon uses a water glass motif across all iOS/Android sizes with opaque iOS background (ICON-01) — v1.1
+- ✓ **BUG-01**: `deleteLastEntry` adds today's date filter — Phase 9 (v1.2)
+- ✓ **BUG-02**: `_todayDateKey()` updates at midnight via keepAlive Notifier — Phase 10 (v1.2)
+- ✓ **BUG-03**: `dateKey` validated for format AND semantic correctness — Phase 9 (v1.2)
+- ✓ **TARGET-01/02/03/04**: Target history in Drift, per-day targets on home/calendar, "Applica da oggi/domani" setting — Phase 9–10 (v1.2)
+- ✓ **CALC-01/02/03/04**: Hydration calculator (sex/weight/climate), first-launch onboarding, Settings entry, "Usa come target" — Phase 11 (v1.2)
 
 ### Active
 
-- [ ] **BUG-01**: `deleteLastEntry` aggiunge filtro sulla data odierna per evitare cancellazione cross-day — v1.2
-- [ ] **BUG-02**: `_todayDateKey()` si aggiorna correttamente a mezzanotte senza richiedere restart dell'app — v1.2
-- [ ] **BUG-03**: `dateKey` valida sia il formato sia la semantica della data (niente 2024-02-30) — v1.2
-- [ ] **TARGET-01**: Storico modifiche al target salvato in Drift con data effettiva — v1.2
-- [ ] **TARGET-02**: Nuovo setting "Applica target da oggi / da domani" — v1.2
-- [ ] **TARGET-03**: Home screen usa il target della giornata corrente dallo storico — v1.2
-- [ ] **TARGET-04**: Calendario usa il target della giornata appropriata per verde/rosso — v1.2
-- [ ] **CALC-01**: Schermata calcolatore idratazione con input sesso, peso, clima (5 livelli) e disclaimer privacy — v1.2
-- [ ] **CALC-02**: Calcolatore mostrato automaticamente al primo avvio (prima della home) — v1.2
-- [ ] **CALC-03**: Calcolatore richiamabile dai Settings — v1.2
-- [ ] **CALC-04**: Bottone "Usa come target" per applicare la raccomandazione direttamente — v1.2
+(none — all v1.2 requirements shipped)
 
 ### Out of Scope
 
@@ -73,18 +68,18 @@ The user always knows how close they are to their daily hydration goal and gets 
 
 ## Context
 
-**Current state (Phase 9 complete):**
+**Current state (v1.2 complete — all 3 phases shipped):**
 - Stack: Flutter 3.44.1, Riverpod 3.x (code-gen), Drift 2.33.0 (SQLite), flutter_local_notifications 21.0.0
 - Target platforms: iOS and Android
 - Fully offline — no backend, no user accounts, no sync
-- Phase 9 complete: `target_history` Drift table in initial schema, full `TargetHistoryDao`, BUG-01/BUG-03 confirmed by tests
-- 22 DAO/unit tests passing; flutter analyze clean
+- All v1.2 requirements shipped: 3 bug fixes + target history integration + hydration calculator onboarding
+- UAT passed for Phases 9, 10, 11; flutter analyze clean
 
 **Known issues / tech debt:**
-- `_todayDateKey()` midnight reset — **in scope v1.2 Phase 10** (BUG-02)
 - Android OEM background killing (Samsung/Xiaomi) may silently suppress notifications — requires physical device testing; **deferred**
 - Timeline sort order is oldest-first (ASC) in code; UI-SPEC specified newest-first — accepted as-is
 - Material You dynamic color on Android 12+ (THEME-01) verified by code; device wallpaper color extraction skipped in UAT (iOS/Android <12 device used)
+- REQUIREMENTS.md traceability table missing entries for LOCALE-01, DEVICE-01, EXPORT-01, CHART-01, HEALTH-01 — clean up before v1.3
 
 ## Constraints
 
@@ -111,6 +106,8 @@ The user always knows how close they are to their daily hydration goal and gets 
 | image ^4.8.0 over ^4.9.0 (v1.1) | xml package conflict between image 4.9.x (xml ^7) and flutter_local_notifications 21.x (xml ^6.5) | ✓ Necessary — 4.8.0 provides all needed APIs |
 | Pure-Dart tool script for icon generation (v1.1) | Build-time PNG generation avoids dart:ui dependency; can run on CI without Flutter engine | ✓ Good — dart run tool/generate_icon.dart works everywhere |
 | Presentation-layer .take(3) over DAO migration for 4→3 presets (v1.1) | Zero migration risk for existing users; DB still holds 4 presets but UI shows 3 | ✓ Good — avoids a migration path for a cosmetic constraint |
+| `isOnboarding` constructor parameter over `GoRouter.canPop()` (v1.2 Phase 11) | `canPop()` returns false after GoRouter redirect-initiated navigation, making onboarding vs Settings context detection unreliable | ✓ Good — deterministic; passed via `state.extra` (null defaults to `true` for redirects, Settings push explicit `extra: false`) |
+| Privacy-by-design for calculator inputs (v1.2 Phase 11) | Sex/weight/climate held only in ephemeral widget state; never written to SharedPreferences or Drift | ✓ Good — CALC-04 satisfied without any special deletion logic; widget disposal is sufficient |
 | Callback pattern for bottom sheet (v1.1) | Sheet receives presets + onAdd callback; no direct provider access — keeps sheet stateless and testable | ✓ Good — clean separation; Navigator.pop before onAdd ensures sheet closes before SnackBar |
 
 ## Evolution
@@ -131,4 +128,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-10 — v1.2 milestone started (Bug Fixes & Feature Depth — target history, hydration calculator, 3 bug fixes).*
+*Last updated: 2026-06-15 — v1.2 milestone complete (all 3 phases shipped: data foundation, target history integration, hydration calculator).*

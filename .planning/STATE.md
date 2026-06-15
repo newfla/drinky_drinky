@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Bug Fixes & Feature Depth
 status: completed
-stopped_at: Phase 11 planned — 1 plan ready for execution
-last_updated: "2026-06-15T10:39:27.006Z"
-last_activity: 2026-06-10 -- Phase 10 complete (verified PASS)
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-06-15T11:48:02.139Z"
+last_activity: 2026-06-15
 progress:
   total_phases: 3
   completed_phases: 3
@@ -18,25 +18,25 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-10)
+See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
-**Current focus:** Phase 11 — Hydration Calculator
+**Current focus:** v1.2 milestone complete — ready for /gsd-complete-milestone
 
 ## Current Position
 
-Phase: 11 (hydration-calculator) — COMPLETE
-Plan: 1 of 1
+Phase: 11
+Plan: Not started
 Status: Phase 11 complete — all plans executed
-Last activity: 2026-06-15 -- Phase 11 plan 01 executed (dart analyze zero errors)
+Last activity: 2026-06-15
 
-Progress: [██████████] 100%
+Progress: [████████████████████] 10/10 plans (100%)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 13 (from v1.0 + v1.1)
+- Total plans completed: 14 (from v1.0 + v1.1)
 - Average duration: 12min
 - Total execution time: 0.4 hours
 
@@ -53,6 +53,7 @@ Progress: [██████████] 100%
 | 07 | 1/1 | - | - |
 | 08 | 1/1 | - | - |
 | 09 | 2 | - | - |
+| 11 | 1 | - | - |
 
 **Recent Trend:**
 
@@ -79,7 +80,7 @@ None yet.
 ### Blockers/Concerns
 
 - [Phase 5]: Android OEM background killing may silently break notifications — requires physical device testing
-- [Research]: BUG-01 may already be fixed in current code — verify before implementing
+- [Tech debt]: REQUIREMENTS.md traceability table missing LOCALE-01, DEVICE-01, EXPORT-01, CHART-01, HEALTH-01 — clean up before v1.3
 
 ## Deferred Items
 
@@ -90,10 +91,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-06-15
-Stopped at: Completed 11-01-PLAN.md
+Stopped at: Phase 11 UAT complete (11/11 passed) — v1.2 milestone ready for archive
 Resume file: None
 
 ## Operator Next Steps
 
-- Phase 11 complete — all hydration calculator functionality implemented
-- Verify on device: onboarding flow (permission → calculator → home), Settings HYDRATION tile
+- Run /gsd-complete-milestone to archive v1.2 and prepare for next milestone

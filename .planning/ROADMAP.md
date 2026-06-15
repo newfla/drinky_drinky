@@ -38,7 +38,7 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 
 - [x] **Phase 9: Data Foundation & Bug Fixes** - Drift schema v2 migration, target_history table, dateKey validation, delete-entry date filter (completed 2026-06-10)
 - [x] **Phase 10: Target History Integration** - Per-day target in home/calendar, today/tomorrow setting, midnight reset fix (completed 2026-06-10)
-- [ ] **Phase 11: Hydration Calculator** - Calculator screen with onboarding redirect, Settings tile, "Use as target" button
+- [x] **Phase 11: Hydration Calculator** - Calculator screen with onboarding redirect, Settings tile, "Use as target" button (completed 2026-06-15)
 
 ## Phase Details
 
@@ -94,10 +94,10 @@ Plans:
   4. "Use as target" button applies the recommendation as the daily target by writing to target_history
   5. Calculator inputs (sex, weight, climate) are never persisted to disk or transmitted — privacy disclaimer is visible on screen
 
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 
-- [ ] 11-01-PLAN.md — Calculator screen, GoRouter redirect gate, and Settings tile integration
+- [x] 11-01-PLAN.md — Calculator screen, GoRouter redirect gate, and Settings tile integration
 
 **UI hint**: yes
 
@@ -115,4 +115,4 @@ Plans:
 | 8. App Icon | v1.1 | 1/1 | Complete | 2026-06-08 |
 | 9. Data Foundation & Bug Fixes | v1.2 | 2/2 | Complete    | 2026-06-10 |
 | 10. Target History Integration | v1.2 | 3/3 | Complete   | 2026-06-10 |
-| 11. Hydration Calculator | v1.2 | 0/1 | Not started | - |
+| 11. Hydration Calculator | v1.2 | 1/1 | Complete    | 2026-06-15 |

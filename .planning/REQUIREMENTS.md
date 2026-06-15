@@ -22,10 +22,10 @@ Requirements for milestone v1.2 (Bug Fixes & Feature Depth).
 
 ### Hydration Calculator
 
-- [ ] **CALC-01**: Schermata calcolatore con input sesso (M/F/Altro), peso (kg, campo numerico), clima (5 opzioni: Freddo/Mite/Caldo/Molto caldo/Afoso), formula locale (nessun dato trasmesso), output raccomandazione in ml arrotondato ai 50ml, disclaimer privacy esplicito
-- [ ] **CALC-02**: Calcolatore mostrato automaticamente al primo avvio dell'app (dopo il permission screen esistente, prima della home)
-- [ ] **CALC-03**: Calcolatore richiamabile dai Settings tramite tile dedicata ("Ricalcola raccomandazione idratazione")
-- [ ] **CALC-04**: Bottone "Usa come target" applica la raccomandazione come target della giornata corrente (writing to `target_history`); sesso/peso/clima NON vengono salvati
+- [x] **CALC-01**: Schermata calcolatore con input sesso (M/F/Altro), peso (kg, campo numerico), clima (5 opzioni: Freddo/Mite/Caldo/Molto caldo/Afoso), formula locale (nessun dato trasmesso), output raccomandazione in ml arrotondato ai 50ml, disclaimer privacy esplicito
+- [x] **CALC-02**: Calcolatore mostrato automaticamente al primo avvio dell'app (dopo il permission screen esistente, prima della home)
+- [x] **CALC-03**: Calcolatore richiamabile dai Settings tramite tile dedicata ("Ricalcola raccomandazione idratazione")
+- [x] **CALC-04**: Bottone "Usa come target" applica la raccomandazione come target della giornata corrente (writing to `target_history`); sesso/peso/clima NON vengono salvati
 
 ## Future Requirements
 
@@ -72,10 +72,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TARGET-02 | Phase 10 | Pending |
 | TARGET-03 | Phase 10 | Pending |
 | TARGET-04 | Phase 10 | Pending |
-| CALC-01 | Phase 11 | Pending |
-| CALC-02 | Phase 11 | Pending |
-| CALC-03 | Phase 11 | Pending |
-| CALC-04 | Phase 11 | Pending |
+| CALC-01 | Phase 11 | Complete |
+| CALC-02 | Phase 11 | Complete |
+| CALC-03 | Phase 11 | Complete |
+| CALC-04 | Phase 11 | Complete |
 
 **Coverage:**
 
