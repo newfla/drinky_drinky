@@ -114,5 +114,7 @@
   "cancelButton": "Annuler",
   "confirmButton": "Confirmer",
 
-  "mlUnit": "ml"
+  "mlUnit": "ml",
+
+  "notificationBody": "C'est l'heure de boire de l'eau ! 💧"
 }

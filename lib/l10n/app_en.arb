@@ -482,5 +482,10 @@
   "mlUnit": "ml",
   "@mlUnit": {
     "description": "Suffix text for millilitre unit, used in input fields across the app"
+  },
+
+  "notificationBody": "Time to drink water! 💧",
+  "@notificationBody": {
+    "description": "Body text of the hydration reminder push notification"
   }
 }
