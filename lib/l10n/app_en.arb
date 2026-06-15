@@ -1,0 +1,486 @@
+{
+  "@@locale": "en",
+
+  "tabHome": "Home",
+  "@tabHome": {
+    "description": "Bottom navigation bar label for the Home tab"
+  },
+
+  "tabHistory": "History",
+  "@tabHistory": {
+    "description": "Bottom navigation bar label for the History tab"
+  },
+
+  "tabSettings": "Settings",
+  "@tabSettings": {
+    "description": "Bottom navigation bar label for the Settings tab"
+  },
+
+  "appTitle": "Drinky Drinky",
+  "@appTitle": {
+    "description": "App name shown in the Home screen AppBar"
+  },
+
+  "goalReached": "Goal reached!",
+  "@goalReached": {
+    "description": "Text shown in the circular progress indicator when the daily water goal has been met"
+  },
+
+  "currentIntake": "{current} / {target} L",
+  "@currentIntake": {
+    "description": "Current vs target intake shown in the circular progress indicator on the Home screen",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+
+  "todaysIntake": "Today's Intake",
+  "@todaysIntake": {
+    "description": "Section header above the drink log list on the Home screen"
+  },
+
+  "noDrinksLogged": "No drinks logged yet",
+  "@noDrinksLogged": {
+    "description": "Empty state primary text on the Home screen when no drinks have been logged today"
+  },
+
+  "noDrinksLoggedHint": "Tap the + button to log your first drink today.",
+  "@noDrinksLoggedHint": {
+    "description": "Empty state secondary hint text on the Home screen"
+  },
+
+  "mlAdded": "+{amount} ml added",
+  "@mlAdded": {
+    "description": "SnackBar message shown after logging a drink on the Home screen",
+    "placeholders": {
+      "amount": {
+        "type": "num"
+      }
+    }
+  },
+
+  "undo": "UNDO",
+  "@undo": {
+    "description": "SnackBar action label to undo the last drink log on the Home screen"
+  },
+
+  "addWaterTooltip": "Add water",
+  "@addWaterTooltip": {
+    "description": "Tooltip for the floating action button on the Home screen"
+  },
+
+  "presetButtonLabel": "+{amount} ml",
+  "@presetButtonLabel": {
+    "description": "Label on quick-add preset buttons in the intake bottom sheet",
+    "placeholders": {
+      "amount": {
+        "type": "num"
+      }
+    }
+  },
+
+  "customAmountHint": "Custom amount",
+  "@customAmountHint": {
+    "description": "Hint text in the custom amount text field in the intake bottom sheet"
+  },
+
+  "addButton": "Add",
+  "@addButton": {
+    "description": "Primary action button label in the intake bottom sheet"
+  },
+
+  "errorLoadingDataRestart": "Something went wrong loading your data. Please restart the app.",
+  "@errorLoadingDataRestart": {
+    "description": "Error message on the Home screen when settings fail to load, prompting a restart"
+  },
+
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "AppBar title on the Settings screen"
+  },
+
+  "sectionDailyGoal": "DAILY GOAL",
+  "@sectionDailyGoal": {
+    "description": "Section label for the daily goal card on the Settings screen"
+  },
+
+  "sectionQuickAddPresets": "QUICK-ADD PRESETS",
+  "@sectionQuickAddPresets": {
+    "description": "Section label for the quick-add presets card on the Settings screen"
+  },
+
+  "sectionNotifications": "NOTIFICATIONS",
+  "@sectionNotifications": {
+    "description": "Section label for the notifications card on the Settings screen"
+  },
+
+  "sectionHydration": "HYDRATION",
+  "@sectionHydration": {
+    "description": "Section label for the hydration card on the Settings screen"
+  },
+
+  "recalculateHydration": "Recalculate hydration recommendation",
+  "@recalculateHydration": {
+    "description": "List tile title in the Hydration section of the Settings screen that opens the calculator"
+  },
+
+  "applyFromTomorrow": "Apply from tomorrow",
+  "@applyFromTomorrow": {
+    "description": "SwitchListTile title for the apply-from-tomorrow toggle in the daily goal card on the Settings screen"
+  },
+
+  "applyFromTomorrowSubtitle": "Target changes take effect tomorrow",
+  "@applyFromTomorrowSubtitle": {
+    "description": "SwitchListTile subtitle when apply-from-tomorrow is enabled on the Settings screen"
+  },
+
+  "applyFromTodaySubtitle": "Target changes take effect today",
+  "@applyFromTodaySubtitle": {
+    "description": "SwitchListTile subtitle when apply-from-tomorrow is disabled on the Settings screen"
+  },
+
+  "presetTitle": "Preset {number}",
+  "@presetTitle": {
+    "description": "List tile title for each preset in the quick-add presets card on the Settings screen",
+    "placeholders": {
+      "number": {
+        "type": "num"
+      }
+    }
+  },
+
+  "amountMl": "{amount} ml",
+  "@amountMl": {
+    "description": "List tile subtitle showing the amount in ml for each preset on the Settings screen",
+    "placeholders": {
+      "amount": {
+        "type": "num"
+      }
+    }
+  },
+
+  "notificationsDisabledBanner": "Notifications are disabled. Tap to open system Settings.",
+  "@notificationsDisabledBanner": {
+    "description": "Banner text shown in the notifications card when notification permission is denied"
+  },
+
+  "openButton": "Open",
+  "@openButton": {
+    "description": "Button label in the notifications-disabled banner to open system settings"
+  },
+
+  "intervalMinutes": "{minutes} min",
+  "@intervalMinutes": {
+    "description": "Label showing the selected notification interval in minutes on the Settings screen",
+    "placeholders": {
+      "minutes": {
+        "type": "num"
+      }
+    }
+  },
+
+  "doNotDisturb": "Do Not Disturb",
+  "@doNotDisturb": {
+    "description": "SwitchListTile title for the Do Not Disturb toggle in the notifications card"
+  },
+
+  "toggleOn": "On",
+  "@toggleOn": {
+    "description": "SwitchListTile subtitle when Do Not Disturb is enabled on the Settings screen"
+  },
+
+  "toggleOff": "Off",
+  "@toggleOff": {
+    "description": "SwitchListTile subtitle when Do Not Disturb is disabled on the Settings screen"
+  },
+
+  "startTime": "Start time",
+  "@startTime": {
+    "description": "List tile title for the DND start time picker on the Settings screen"
+  },
+
+  "endTime": "End time",
+  "@endTime": {
+    "description": "List tile title for the DND end time picker on the Settings screen"
+  },
+
+  "errorLoadingData": "Something went wrong loading your data.",
+  "@errorLoadingData": {
+    "description": "Generic error message shown on the Settings screen and History screen when data fails to load"
+  },
+
+  "historyTitle": "History",
+  "@historyTitle": {
+    "description": "AppBar title on the History screen"
+  },
+
+  "noHistoryYet": "No history yet",
+  "@noHistoryYet": {
+    "description": "Empty state primary text on the History screen when no drinks have ever been logged"
+  },
+
+  "noHistoryYetHint": "Start logging water on the Home tab to see your history here.",
+  "@noHistoryYetHint": {
+    "description": "Empty state secondary hint text on the History screen"
+  },
+
+  "dayStreak": "{count, plural, =0{No streak} =1{1 day streak} other{{count} day streak}}",
+  "@dayStreak": {
+    "description": "Streak label in the streak card on the History screen; uses ICU plural with explicit =0 for zero case",
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+
+  "daySummaryWithEntries": "{date} -- {total} of {target} ml",
+  "@daySummaryWithEntries": {
+    "description": "Day summary text shown below the calendar when a day with entries is tapped on the History screen",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "total": {
+        "type": "num"
+      },
+      "target": {
+        "type": "num"
+      }
+    }
+  },
+
+  "daySummaryNoEntries": "{date} -- No entries",
+  "@daySummaryNoEntries": {
+    "description": "Day summary text shown below the calendar when a day with no entries is tapped on the History screen",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "calendarDayGoalMet": "{month} {day}: goal met",
+  "@calendarDayGoalMet": {
+    "description": "Semantic label for a calendar day cell where the water goal was met",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "day": {
+        "type": "num"
+      }
+    }
+  },
+
+  "calendarDayGoalNotMet": "{month} {day}: goal not met",
+  "@calendarDayGoalNotMet": {
+    "description": "Semantic label for a calendar day cell where the water goal was not met",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "day": {
+        "type": "num"
+      }
+    }
+  },
+
+  "calendarDay": "{month} {day}",
+  "@calendarDay": {
+    "description": "Semantic label for a calendar day cell with no hydration data (today ring only)",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "day": {
+        "type": "num"
+      }
+    }
+  },
+
+  "calculatorTitle": "Hydration calculator",
+  "@calculatorTitle": {
+    "description": "AppBar title on the Hydration Calculator screen"
+  },
+
+  "sexLabel": "Sex",
+  "@sexLabel": {
+    "description": "Section label above the sex segmented button on the Hydration Calculator screen"
+  },
+
+  "sexMale": "Male",
+  "@sexMale": {
+    "description": "Male option in the sex segmented button on the Hydration Calculator screen"
+  },
+
+  "sexFemale": "Female",
+  "@sexFemale": {
+    "description": "Female option in the sex segmented button on the Hydration Calculator screen"
+  },
+
+  "sexOther": "Other",
+  "@sexOther": {
+    "description": "Other option in the sex segmented button on the Hydration Calculator screen"
+  },
+
+  "weightLabel": "Weight",
+  "@weightLabel": {
+    "description": "Section label above the weight text field on the Hydration Calculator screen"
+  },
+
+  "weightInputLabel": "Weight (kg)",
+  "@weightInputLabel": {
+    "description": "Input field label for the weight text field on the Hydration Calculator screen"
+  },
+
+  "weightUnit": "kg",
+  "@weightUnit": {
+    "description": "Suffix text for the weight input field on the Hydration Calculator screen"
+  },
+
+  "weightValidationError": "Enter a weight between 1 and 300 kg",
+  "@weightValidationError": {
+    "description": "Validation error shown when the weight field contains an invalid value on the Hydration Calculator screen"
+  },
+
+  "climateLabel": "Climate",
+  "@climateLabel": {
+    "description": "Section label above the climate slider on the Hydration Calculator screen"
+  },
+
+  "climateCold": "Cold",
+  "@climateCold": {
+    "description": "Climate slider label for the coldest climate option on the Hydration Calculator screen"
+  },
+
+  "climateMild": "Mild",
+  "@climateMild": {
+    "description": "Climate slider label for the mild climate option on the Hydration Calculator screen"
+  },
+
+  "climateWarm": "Warm",
+  "@climateWarm": {
+    "description": "Climate slider label for the warm climate option on the Hydration Calculator screen"
+  },
+
+  "climateVeryWarm": "Very warm",
+  "@climateVeryWarm": {
+    "description": "Climate slider label for the very warm climate option on the Hydration Calculator screen"
+  },
+
+  "climateHumid": "Humid",
+  "@climateHumid": {
+    "description": "Climate slider label for the humid climate option on the Hydration Calculator screen"
+  },
+
+  "yourRecommendation": "Your recommendation",
+  "@yourRecommendation": {
+    "description": "Label above the computed recommendation value on the Hydration Calculator screen"
+  },
+
+  "fillAllFields": "Fill in all fields",
+  "@fillAllFields": {
+    "description": "Placeholder text shown instead of the recommendation when not all fields are filled on the Hydration Calculator screen"
+  },
+
+  "privacyDisclaimer": "Your data (sex, weight, climate) is not saved or transmitted. The calculation happens entirely on your device.",
+  "@privacyDisclaimer": {
+    "description": "Privacy disclaimer text at the bottom of the Hydration Calculator screen"
+  },
+
+  "useAsTarget": "Use as target",
+  "@useAsTarget": {
+    "description": "Primary action button label on the Hydration Calculator screen to apply the recommendation as the daily goal"
+  },
+
+  "skipButton": "Skip",
+  "@skipButton": {
+    "description": "Secondary button label shown during onboarding on the Hydration Calculator screen to skip setting a goal"
+  },
+
+  "targetUpdateError": "Error updating target. Try again.",
+  "@targetUpdateError": {
+    "description": "SnackBar error message shown when saving the recommended target fails on the Hydration Calculator screen"
+  },
+
+  "targetUpdated": "Target updated to {amount}",
+  "@targetUpdated": {
+    "description": "SnackBar success message shown after the daily target is updated on the Hydration Calculator screen",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+
+  "permissionTitle": "Stay hydrated with reminders",
+  "@permissionTitle": {
+    "description": "Headline text on the Permission screen"
+  },
+
+  "permissionBody": "Drinky Drinky sends you gentle reminders to drink water throughout the day.",
+  "@permissionBody": {
+    "description": "Body text on the Permission screen explaining what reminders do"
+  },
+
+  "enableReminders": "Enable Reminders",
+  "@enableReminders": {
+    "description": "Primary action button label on the Permission screen to request notification permission"
+  },
+
+  "skipForNow": "Skip for now",
+  "@skipForNow": {
+    "description": "Secondary button label on the Permission screen to defer notification permission"
+  },
+
+  "remindersEnabled": "Reminders enabled! You can adjust them anytime in Settings.",
+  "@remindersEnabled": {
+    "description": "SnackBar message shown after the user grants notification permission on the Permission screen"
+  },
+
+  "remindersDeclined": "No problem -- you can enable reminders later in your device Settings.",
+  "@remindersDeclined": {
+    "description": "SnackBar message shown after the user declines notification permission on the Permission screen"
+  },
+
+  "editPresetTitle": "Edit Preset {number}",
+  "@editPresetTitle": {
+    "description": "AlertDialog title in the preset edit dialog",
+    "placeholders": {
+      "number": {
+        "type": "num"
+      }
+    }
+  },
+
+  "amountInputLabel": "Amount (ml)",
+  "@amountInputLabel": {
+    "description": "Input field label in the preset edit dialog"
+  },
+
+  "presetValidationError": "Enter a value between 50 and 2000",
+  "@presetValidationError": {
+    "description": "Validation error text in the preset edit dialog when the value is out of range"
+  },
+
+  "cancelButton": "Cancel",
+  "@cancelButton": {
+    "description": "Cancel action button in the preset edit dialog"
+  },
+
+  "confirmButton": "Confirm",
+  "@confirmButton": {
+    "description": "Confirm action button in the preset edit dialog"
+  },
+
+  "mlUnit": "ml",
+  "@mlUnit": {
+    "description": "Suffix text for millilitre unit, used in input fields across the app"
+  }
+}
