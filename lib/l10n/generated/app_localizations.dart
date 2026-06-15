@@ -575,6 +575,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ml'**
   String get mlUnit;
+
+  /// Body text of the hydration reminder push notification
+  ///
+  /// In en, this message translates to:
+  /// **'Time to drink water! 💧'**
+  String get notificationBody;
 }
 
 class _AppLocalizationsDelegate

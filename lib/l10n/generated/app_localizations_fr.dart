@@ -292,4 +292,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get mlUnit => 'ml';
+
+  @override
+  String get notificationBody => 'C\'est l\'heure de boire de l\'eau ! 💧';
 }

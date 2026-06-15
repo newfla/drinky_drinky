@@ -291,4 +291,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get mlUnit => 'ml';
+
+  @override
+  String get notificationBody => '¡Es hora de beber agua! 💧';
 }
