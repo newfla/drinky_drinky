@@ -54,11 +54,11 @@ The user always knows how close they are to their daily hydration goal and gets 
 - ✓ **L10N-01/02/03**: Gen-l10n pipeline (flutter_localizations, l10n.yaml, synthetic-package: false), MaterialApp locale wiring, initializeDateFormatting — Phase 12 (v1.3)
 - ✓ **L10N-04/05/06**: BiologicalSex/ClimateLevel enum refactor, 79-key ARB extraction, Italian/French/Spanish translations with ICU plurals — Phase 13 (v1.3)
 - ✓ **L10N-07/08/09**: Localized notifications via PlatformDispatcher + lookupAppLocalizations, iOS CFBundleLocalizations, Android resourceConfigurations — Phase 14 (v1.3)
+- ✓ **POLISH-01**: Home empty-state placeholder text centered with 32px horizontal padding — Phase 15 (v1.4)
+- ✓ **BUG-04**: History screen reactively updates when first water entry is logged on fresh install — Phase 15 (v1.4)
 
 ### Active
 
-- [ ] POLISH-01: Placeholder home centrato con margini corretti — v1.4
-- [ ] BUG-04: "Nessuna cronologia" su fresh install dopo il primo intake — v1.4
 - [ ] DOC-01: README.md con screenshot home iOS + Android — v1.4
 
 ### Out of Scope
@@ -121,6 +121,7 @@ The user always knows how close they are to their daily hydration goal and gets 
 | BiologicalSex/ClimateLevel enums over Italian string keys (v1.3) | Calculator used Italian display strings as map keys; switching locale crashed with null deref. Enums are locale-agnostic by definition | ✓ Good — prerequisite for crash-free locale switching; pattern: computation on enums, display on translated strings |
 | Primary-only locale resolution (v1.3) | `locales.first` with English fallback — consistent across UI (localeListResolutionCallback in main.dart) and NotificationService (_resolveLocale). Simpler than basicLocaleListResolution and avoids sub-locale edge cases | ✓ Good — consistent behavior confirmed in Phase 13 UAT; notification locale matches UI locale |
 | PlatformDispatcher + lookupAppLocalizations for NotificationService (v1.3) | Service runs without BuildContext (it's a singleton). PlatformDispatcher.instance.locales is the only locale source available outside widget tree | ✓ Good — dart:ui import, no widget dependency; try/catch English fallback covers edge cases |
+| Stream provider over initState Future for HistoryScreen (v1.4) | StatefulShellRoute.indexedStack keeps screens alive; initState runs only once per session, so a one-time Future never re-evaluates after the first entry is logged. Stream provider (Drift watchSingle + @riverpod) eliminates the stale-state class of bug | ✓ Good — history screen now reactive; removed 3 local state vars and the entire initState override |
 
 ## Evolution
 
@@ -140,4 +141,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-15 — v1.4 milestone started (polish & bug fixes: placeholder home, cronologia fresh install, README).*
+*Last updated: 2026-06-15 — Phase 15 complete (POLISH-01 + BUG-04 shipped; DOC-01 README remains).*
