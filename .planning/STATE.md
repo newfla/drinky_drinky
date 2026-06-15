@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Bug Fixes & Feature Depth
 status: Awaiting next milestone
-stopped_at: Phase 11 UAT complete (11/11 passed) — v1.2 milestone ready for archive
+stopped_at: v1.2 milestone archived — RETROSPECTIVE.md updated, git tag v1.2 pending
 last_updated: "2026-06-15T11:50:17.122Z"
 last_activity: 2026-06-15 — Milestone v1.2 completed and archived
 progress:
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
-**Current focus:** v1.2 milestone complete — ready for /gsd-complete-milestone
+**Current focus:** v1.2 archived — start next milestone with /gsd-new-milestone
 
 ## Current Position
 

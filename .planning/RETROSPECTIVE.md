@@ -111,6 +111,62 @@
 
 ---
 
+## Milestone: v1.2 — Bug Fixes & Feature Depth
+
+**Shipped:** 2026-06-15
+**Phases:** 3 (9-11) | **Plans:** 6 | **Duration:** 5 days (2026-06-10 → 2026-06-15)
+**Files changed:** 62 | **Insertions:** ~10,145 | **Deletions:** ~1,279 | **Commits:** 54
+
+### What Was Built
+
+- 3 targeted bug fixes: cross-day deleteLastEntry filter, midnight date-key reset via keepAlive Notifier, semantic dateKey validation (YYYY-MM-DD regex + DateTime.tryParse)
+- Drift `target_history` table with dual-write via `updateTargetWithHistory()` and Drift schema migration v2
+- `applyFromTomorrow` toggle in Settings — per-change effective date (today vs tomorrow)
+- Home screen and calendar consuming per-day effective targets from `target_history`
+- `todayDateKeyProvider` with Timer-based midnight invalidation and `keepAlive(ref)` lifecycle
+- `HydrationCalculatorScreen` — sex (SegmentedButton), weight (validated TextField), climate (Slider/5 steps), live recommendation formula, privacy disclaimer
+- First-launch calculator onboarding via GoRouter redirect chain (`drinky_calculatorShown` SharedPreferences key)
+- Settings entry ("Ricalcola raccomandazione idratazione") that pushes the same screen in non-onboarding mode
+- "Usa come target" writes recommendation to `target_history` via existing dual-write path; inputs never persisted
+
+### What Worked
+
+- **Single dual-write method (`updateTargetWithHistory`):** Centralizing all target changes through one repository method made it trivial to wire the calculator's "Usa come target" button — it just called the existing API. No special-casing or alternative write paths.
+- **`isOnboarding` constructor parameter over `canPop()`:** GoRouter's `canPop()` is unreliable after redirect-initiated navigation (redirect replaces the stack). Passing `isOnboarding` via `state.extra` was deterministic and required zero runtime conditions.
+- **Privacy-by-design without extra work:** Holding calculator inputs in ephemeral widget state (`_selectedSex`, `_weightController`, `_climateValue`) meant no deletion logic — widget disposal is sufficient. CALC-04 was satisfied without any persistence footprint.
+- **Schema migration path established:** Drift migration v2 (adding `target_history` + seeding defaults) worked cleanly. The pattern is now validated for future schema evolution.
+- **Phase-in-phase UAT (11 tests, all pass):** The calculator had a rich test matrix (onboarding vs settings, Usa/Salta, weight validation, live calculation) and all 11 scenarios passed on first human test run.
+
+### What Was Inefficient
+
+- **REQUIREMENTS.md checkboxes left stale from Phase 10:** BUG-02, TARGET-02, TARGET-03, TARGET-04 were still unchecked at milestone close despite being shipped. Required a manual fix before archiving. The per-phase transition step should include a requirements checkbox audit.
+- **Schema migration v2 needed two iterations:** The first migration attempt missed year-padding for dates seeded from `DateTime.now()`. A second fix commit (`e2e76af`) resolved it. The pattern of testing migrations against real SQLite earlier in the verify cycle would catch this faster.
+- **gsd-tools commit helper brittle when files are unstaged:** The CLI commit helper failed mid-session because files hadn't been staged. Fell back to manual `git add` + `git commit`. The helper should either auto-stage or give a clearer error.
+
+### Patterns Established
+
+- `isOnboarding: state.extra as bool? ?? true` — pass context through GoRoute `state.extra`; null → redirect default (true), explicit false → Settings push
+- `keepAlive(ref)` + `Timer`-based invalidation — self-scheduling midnight reset without AppLifecycleListener
+- Redirect loop prevention: `if (state.matchedLocation == '/calculator') return null;` guards before the redirect check
+- `SegmentedButton<String>` with `emptySelectionAllowed: true` — unselected-by-default multi-option input
+- `FilteringTextInputFormatter.digitsOnly` + range validation in `_computeRecommendation()` — no separate form key needed for a single numeric field
+- Privacy-by-design: ephemeral widget state only; no SharedPreferences or Drift keys; widget disposal = data erasure
+
+### Key Lessons
+
+1. **Audit requirements checkboxes at phase transition, not milestone close.** Stale checkboxes in REQUIREMENTS.md were only discovered during milestone archival. A one-line check at `/gsd-transition` time would catch this per phase.
+2. **Test schema migrations against a real SQLite file before verify.** The year-padding bug in migration v2 was only caught by the verify agent reading the migrated DB. Running `dart run tool/migrate_check.dart` (or equivalent) as part of plan execution would catch this earlier.
+3. **GoRouter `canPop()` is unreliable after redirect navigation.** Redirect-initiated navigation replaces the back stack, so `canPop()` returns false in both onboarding and deep-link contexts. Always pass explicit context via `state.extra` when routing behavior depends on the navigation origin.
+4. **Dual-write centralisation pays forward.** Writing `updateTargetWithHistory()` once in Phase 9/10 meant the Phase 11 calculator required zero data-layer changes — it just called an existing method. Centralise early.
+
+### Cost Observations
+
+- Model: Claude Sonnet 4.6 (orchestrator); executor subagents via worktrees
+- Sessions: multiple sessions across 5 days (2026-06-10 → 2026-06-15)
+- Notable: Phase 11 (1 plan, 240-line screen) executed cleanly in one wave. The combination of UI-SPEC + research + CONTEXT.md meant the executor had enough signal to produce correct `isOnboarding` handling without iteration.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -119,6 +175,7 @@
 |-----------|----------|--------|------------|
 | v1.0 | 5 days | 5 | Baseline — first milestone |
 | v1.1 | 1 day | 3 | Narrow polish phases; worktree executor; icon via pure-Dart CLI |
+| v1.2 | 5 days | 3 | Bug fixes + feature depth; schema migration; onboarding screen chain |
 
 ### Cumulative Quality
 
@@ -126,6 +183,7 @@
 |-----------|------------|-----------------|------------------|
 | v1.0 | 11 passing | 0 issues | 2 (1 major fixed, 1 cosmetic fixed) |
 | v1.1 | 12 passing | 0 issues | 0 (UAT passed; Material You skipped/N/A on test device) |
+| v1.2 | 12 passing | 0 issues | 0 (UAT 11/11 passed; schema migration verified) |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -133,3 +191,5 @@
 2. Build the data layer first; everything downstream becomes simpler when streams just work
 3. Close human UAT in-phase; open human_needed status creates mandatory cleanup at milestone close
 4. Worktree artifacts may bleed to main — check `git status` on main before any merge
+5. Audit requirements checkboxes at phase transition, not milestone close
+6. Centralise write paths early — a single dual-write method made a later onboarding feature require zero data-layer changes
