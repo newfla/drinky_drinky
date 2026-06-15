@@ -84,4 +84,9 @@ class WaterRepository {
   /// Returns null if no entries exist (new user) per D-05.
   Future<String?> getEarliestDateKey() =>
       _db.waterEntryDao.getEarliestDateKey();
+
+  /// Watch the earliest dateKey as a reactive stream. Pass-through to DAO.
+  /// Returns null if no entries exist (new user).
+  Stream<String?> watchEarliestDateKey() =>
+      _db.waterEntryDao.watchEarliestDateKey();
 }

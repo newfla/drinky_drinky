@@ -200,21 +200,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildEmptyState(ThemeData theme) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            context.l10n.noDrinksLogged,
-            style: theme.textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            context.l10n.noDrinksLoggedHint,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              context.l10n.noDrinksLogged,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge,
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              context.l10n.noDrinksLoggedHint,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

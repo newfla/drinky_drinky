@@ -39,6 +39,15 @@ Stream<int> totalMlForDate(Ref ref, String dateKey) {
   return repo.watchTotalForDate(dateKey);
 }
 
+/// Watch the earliest dateKey across all water entries.
+/// Returns null when no entries have ever been logged (new user).
+/// Used by HistoryScreen to reactively switch between empty state and calendar.
+@riverpod
+Stream<String?> earliestDateKey(Ref ref) {
+  final repo = ref.watch(waterRepositoryProvider);
+  return repo.watchEarliestDateKey();
+}
+
 /// Watch user settings as a reactive stream.
 @Riverpod(keepAlive: true)
 Stream<UserSettingsEntity> userSettings(Ref ref) {

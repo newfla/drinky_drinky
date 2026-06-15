@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-import '../../core/providers/repository_providers.dart';
 import '../../core/providers/stream_providers.dart';
 import '../../domain/entities/target_history_entry.dart';
 import '../../l10n/l10n_extensions.dart';
@@ -39,268 +38,239 @@ class HistoryScreen extends ConsumerStatefulWidget {
 }
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
-  /// Earliest date with any water entry. Null until [getEarliestDateKey] resolves.
-  DateTime? _firstDay;
-
   /// Currently selected day (for the day summary card). Null = no selection.
   DateTime? _selectedDay;
 
-  /// True while getEarliestDateKey() is in flight.
-  bool _loading = true;
-
-  /// True if there are absolutely no entries (firstDay came back null).
-  bool _noEntries = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // D-11: initiate the one-time future to determine the calendar's firstDay.
-    // Use ref.read (not ref.watch) for the one-time async call.
-    ref.read(waterRepositoryProvider).getEarliestDateKey().then((dateKey) {
-      if (!mounted) return;
-      setState(() {
-        if (dateKey != null) {
-          _firstDay = DateTime.parse(dateKey);
-          _noEntries = false;
-        } else {
-          // No entries yet -- fall back to 2020-01-01 (D-11) and mark empty.
-          _firstDay = DateTime(2020, 1, 1);
-          _noEntries = true;
-        }
-        _loading = false;
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Show a full-screen spinner while getEarliestDateKey() is loading (D-11).
-    if (_loading) {
-      return Scaffold(
-        appBar: AppBar(title: Text(context.l10n.historyTitle)),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    // Empty state: no entries have ever been logged.
-    if (_noEntries) {
-      return Scaffold(
-        appBar: AppBar(title: Text(context.l10n.historyTitle)),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  context.l10n.noHistoryYet,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  context.l10n.noHistoryYetHint,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Watch the focused month from the keepAlive provider (D-09).
-    final focused = ref.watch(focusedMonthProvider);
-    // Watch all target history for per-day target evaluation (D-10).
-    final targetsAsync = ref.watch(allTargetHistoryProvider);
+    final earliestAsync = ref.watch(earliestDateKeyProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.historyTitle)),
-      body: targetsAsync.when(
+      body: earliestAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(context.l10n.errorLoadingData),
         ),
-        data: (targets) {
-          // Watch per-month totals for the focused month (D-06, D-07).
-          final monthTotals =
-              ref.watch(calendarMonthProvider(focused.year, focused.month)).value ??
-                  <String, int>{};
-
-          // Watch streak (D-06, D-08). Default to 0 while loading.
-          final streak = ref.watch(streakProvider).value ?? 0;
-
-          final theme = Theme.of(context);
-          final colorScheme = theme.colorScheme;
-          final streakColor = theme.brightness == Brightness.dark
-              ? Colors.orange.shade400
-              : Colors.orange.shade700;
-
-          // Clamp focusedDay to [firstDay, lastDay] to prevent TableCalendar
-          // assertion errors (Pitfall 3).
-          final lastDay =
-              DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
-          final clampedFocused = focused.isBefore(_firstDay!)
-              ? _firstDay!
-              : focused.isAfter(lastDay)
-                  ? lastDay
-                  : focused;
-
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // lg top padding
-                const SizedBox(height: 24),
-
-                // ---- StreakCard ----
-                Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.local_fire_department,
-                          size: 32,
-                          color: streakColor,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.l10n.dayStreak(streak),
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
+        data: (earliestDateKey) {
+          // Empty state: no entries have ever been logged.
+          if (earliestDateKey == null) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      context.l10n.noHistoryYet,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Text(
+                      context.l10n.noHistoryYetHint,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
                 ),
+              ),
+            );
+          }
 
-                // lg spacing between StreakCard and calendar
-                const SizedBox(height: 24),
+          final firstDay = DateTime.parse(earliestDateKey);
 
-                // ---- TableCalendar ----
-                TableCalendar<Object>(
-                  locale: Localizations.localeOf(context).toString(),
-                  firstDay: _firstDay!,
-                  lastDay: lastDay,
-                  focusedDay: clampedFocused,
-                  calendarFormat: CalendarFormat.month,
-                  availableCalendarFormats: const {CalendarFormat.month: 'Month'},
-                  startingDayOfWeek: StartingDayOfWeek.monday,
-                  headerStyle: const HeaderStyle(
-                    formatButtonVisible: false,
-                    titleCentered: true,
-                  ),
-                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                  onDaySelected: (selectedDay, focusedDay) {
-                    // Only allow selection for days not in the future.
-                    if (selectedDay.isAfter(DateTime.now())) return;
-                    setState(() {
-                      _selectedDay = selectedDay;
-                    });
-                    // Also update the focused month provider (Pitfall 4: only
-                    // use year/month, not the day component).
-                    ref.read(focusedMonthProvider.notifier).set(focusedDay);
-                  },
-                  onPageChanged: (focusedDay) {
-                    // D-09: persist the focused month across tab switches.
-                    ref
-                        .read(focusedMonthProvider.notifier)
-                        .set(focusedDay);
-                  },
-                  calendarBuilders: CalendarBuilders(
-                    defaultBuilder: (context, day, focusedDay) {
-                      // No decoration for future days.
-                      if (day.isAfter(DateTime.now())) return null;
-                      final dateKey = _toDateKey(day);
-                      final total = monthTotals[dateKey];
-                      // No data = no decoration (UI-SPEC rule 4).
-                      if (total == null) return null;
-                      final dailyTarget = _findActiveTarget(targets, dateKey);
-                      if (total >= dailyTarget && dailyTarget > 0) {
-                        return _buildDayCell(
-                          context,
-                          day,
-                          metGoal: true,
-                          isToday: false,
-                        );
-                      }
-                      if (total > 0 && total < dailyTarget) {
-                        return _buildDayCell(
-                          context,
-                          day,
-                          metGoal: false,
-                          isToday: false,
-                        );
-                      }
-                      // total == 0 with an entry somehow — treat as no data.
-                      return null;
-                    },
-                    todayBuilder: (context, day, focusedDay) {
-                      final dateKey = _toDateKey(day);
-                      final total = monthTotals[dateKey];
-                      if (total == null) {
-                        // Today with no data: show only the today ring (no fill).
-                        return _buildDayCell(
-                          context,
-                          day,
-                          metGoal: null,
-                          isToday: true,
-                        );
-                      }
-                      final dailyTarget = _findActiveTarget(targets, dateKey);
-                      if (total >= dailyTarget && dailyTarget > 0) {
-                        return _buildDayCell(
-                          context,
-                          day,
-                          metGoal: true,
-                          isToday: true,
-                        );
-                      }
-                      if (total > 0) {
-                        return _buildDayCell(
-                          context,
-                          day,
-                          metGoal: false,
-                          isToday: true,
-                        );
-                      }
-                      // zero entries — today ring only
-                      return _buildDayCell(
-                        context,
-                        day,
-                        metGoal: null,
-                        isToday: true,
-                      );
-                    },
-                  ),
-                ),
+          // Watch the focused month from the keepAlive provider (D-09).
+          final focused = ref.watch(focusedMonthProvider);
+          // Watch all target history for per-day target evaluation (D-10).
+          final targetsAsync = ref.watch(allTargetHistoryProvider);
 
-                // md spacing between calendar and day summary
-                const SizedBox(height: 16),
-
-                // ---- DaySummaryArea ----
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: _selectedDay == null
-                      ? const SizedBox.shrink(key: ValueKey('empty'))
-                      : _buildDaySummary(
-                          context,
-                          _selectedDay!,
-                          monthTotals,
-                          targets,
-                        ),
-                ),
-
-                // Bottom padding so the summary card isn't flush to the edge.
-                const SizedBox(height: 24),
-              ],
+          return targetsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(
+              child: Text(context.l10n.errorLoadingData),
             ),
+            data: (targets) {
+              // Watch per-month totals for the focused month (D-06, D-07).
+              final monthTotals =
+                  ref.watch(calendarMonthProvider(focused.year, focused.month)).value ??
+                      <String, int>{};
+
+              // Watch streak (D-06, D-08). Default to 0 while loading.
+              final streak = ref.watch(streakProvider).value ?? 0;
+
+              final theme = Theme.of(context);
+              final colorScheme = theme.colorScheme;
+              final streakColor = theme.brightness == Brightness.dark
+                  ? Colors.orange.shade400
+                  : Colors.orange.shade700;
+
+              // Clamp focusedDay to [firstDay, lastDay] to prevent TableCalendar
+              // assertion errors (Pitfall 3).
+              final lastDay =
+                  DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
+              final clampedFocused = focused.isBefore(firstDay)
+                  ? firstDay
+                  : focused.isAfter(lastDay)
+                      ? lastDay
+                      : focused;
+
+              return SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // lg top padding
+                    const SizedBox(height: 24),
+
+                    // ---- StreakCard ----
+                    Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.local_fire_department,
+                              size: 32,
+                              color: streakColor,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              context.l10n.dayStreak(streak),
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // lg spacing between StreakCard and calendar
+                    const SizedBox(height: 24),
+
+                    // ---- TableCalendar ----
+                    TableCalendar<Object>(
+                      locale: Localizations.localeOf(context).toString(),
+                      firstDay: firstDay,
+                      lastDay: lastDay,
+                      focusedDay: clampedFocused,
+                      calendarFormat: CalendarFormat.month,
+                      availableCalendarFormats: const {CalendarFormat.month: 'Month'},
+                      startingDayOfWeek: StartingDayOfWeek.monday,
+                      headerStyle: const HeaderStyle(
+                        formatButtonVisible: false,
+                        titleCentered: true,
+                      ),
+                      selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                      onDaySelected: (selectedDay, focusedDay) {
+                        // Only allow selection for days not in the future.
+                        if (selectedDay.isAfter(DateTime.now())) return;
+                        setState(() {
+                          _selectedDay = selectedDay;
+                        });
+                        // Also update the focused month provider (Pitfall 4: only
+                        // use year/month, not the day component).
+                        ref.read(focusedMonthProvider.notifier).set(focusedDay);
+                      },
+                      onPageChanged: (focusedDay) {
+                        // D-09: persist the focused month across tab switches.
+                        ref
+                            .read(focusedMonthProvider.notifier)
+                            .set(focusedDay);
+                      },
+                      calendarBuilders: CalendarBuilders(
+                        defaultBuilder: (context, day, focusedDay) {
+                          // No decoration for future days.
+                          if (day.isAfter(DateTime.now())) return null;
+                          final dateKey = _toDateKey(day);
+                          final total = monthTotals[dateKey];
+                          // No data = no decoration (UI-SPEC rule 4).
+                          if (total == null) return null;
+                          final dailyTarget = _findActiveTarget(targets, dateKey);
+                          if (total >= dailyTarget && dailyTarget > 0) {
+                            return _buildDayCell(
+                              context,
+                              day,
+                              metGoal: true,
+                              isToday: false,
+                            );
+                          }
+                          if (total > 0 && total < dailyTarget) {
+                            return _buildDayCell(
+                              context,
+                              day,
+                              metGoal: false,
+                              isToday: false,
+                            );
+                          }
+                          // total == 0 with an entry somehow — treat as no data.
+                          return null;
+                        },
+                        todayBuilder: (context, day, focusedDay) {
+                          final dateKey = _toDateKey(day);
+                          final total = monthTotals[dateKey];
+                          if (total == null) {
+                            // Today with no data: show only the today ring (no fill).
+                            return _buildDayCell(
+                              context,
+                              day,
+                              metGoal: null,
+                              isToday: true,
+                            );
+                          }
+                          final dailyTarget = _findActiveTarget(targets, dateKey);
+                          if (total >= dailyTarget && dailyTarget > 0) {
+                            return _buildDayCell(
+                              context,
+                              day,
+                              metGoal: true,
+                              isToday: true,
+                            );
+                          }
+                          if (total > 0) {
+                            return _buildDayCell(
+                              context,
+                              day,
+                              metGoal: false,
+                              isToday: true,
+                            );
+                          }
+                          // zero entries — today ring only
+                          return _buildDayCell(
+                            context,
+                            day,
+                            metGoal: null,
+                            isToday: true,
+                          );
+                        },
+                      ),
+                    ),
+
+                    // md spacing between calendar and day summary
+                    const SizedBox(height: 16),
+
+                    // ---- DaySummaryArea ----
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: _selectedDay == null
+                          ? const SizedBox.shrink(key: ValueKey('empty'))
+                          : _buildDaySummary(
+                              context,
+                              _selectedDay!,
+                              monthTotals,
+                              targets,
+                            ),
+                    ),
+
+                    // Bottom padding so the summary card isn't flush to the edge.
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              );
+            },
           );
         },
       ),

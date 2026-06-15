@@ -213,6 +213,50 @@ final class TotalMlForDateFamily extends $Family
   String toString() => r'totalMlForDateProvider';
 }
 
+/// Watch the earliest dateKey across all water entries.
+/// Returns null when no entries have ever been logged (new user).
+/// Used by HistoryScreen to reactively switch between empty state and calendar.
+
+@ProviderFor(earliestDateKey)
+final earliestDateKeyProvider = EarliestDateKeyProvider._();
+
+/// Watch the earliest dateKey across all water entries.
+/// Returns null when no entries have ever been logged (new user).
+/// Used by HistoryScreen to reactively switch between empty state and calendar.
+
+final class EarliestDateKeyProvider
+    extends $FunctionalProvider<AsyncValue<String?>, String?, Stream<String?>>
+    with $FutureModifier<String?>, $StreamProvider<String?> {
+  /// Watch the earliest dateKey across all water entries.
+  /// Returns null when no entries have ever been logged (new user).
+  /// Used by HistoryScreen to reactively switch between empty state and calendar.
+  EarliestDateKeyProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'earliestDateKeyProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$earliestDateKeyHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<String?> create(Ref ref) {
+    return earliestDateKey(ref);
+  }
+}
+
+String _$earliestDateKeyHash() => r'7312e319019e40b23fae61fa2fbcb5ef5b0d232c';
+
 /// Watch user settings as a reactive stream.
 
 @ProviderFor(userSettings)
@@ -589,7 +633,7 @@ final class TodayDateKeyProvider
   }
 }
 
-String _$todayDateKeyHash() => r'93852a8c2eaf7fe46432d8fcfae24e47b0ebd405';
+String _$todayDateKeyHash() => r'a965231d76ae0d5aea2a3288bc0be627b061ebe0';
 
 /// Provides today's date key (YYYY-MM-DD) as a keepAlive Notifier that
 /// automatically updates state at midnight without polling (D-01, D-02,

@@ -67,4 +67,13 @@ class WaterEntryDao extends DatabaseAccessor<AppDatabase>
         .getSingleOrNull();
     return result?.dateKey;
   }
+
+  /// Watch the earliest dateKey as a reactive stream.
+  /// Returns null when the table is empty (new user). SQL MIN on an empty
+  /// table always yields one row with NULL, so watchSingle() is correct here.
+  Stream<String?> watchEarliestDateKey() {
+    final minDateKey = waterEntries.dateKey.min();
+    final query = selectOnly(waterEntries)..addColumns([minDateKey]);
+    return query.watchSingle().map((row) => row.read(minDateKey));
+  }
 }
