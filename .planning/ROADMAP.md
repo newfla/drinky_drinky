@@ -50,7 +50,7 @@ Full details: `.planning/milestones/v1.2-ROADMAP.md`
 
 - [ ] **Phase 12: L10n Infrastructure** - Gen-l10n pipeline, MaterialApp locale wiring, date formatting initialization
 - [x] **Phase 13: String Extraction & Translation** - Calculator enum refactor, all UI strings to ARB, 4-language translation files (completed 2026-06-15)
-- [ ] **Phase 14: Notification Localization & Platform Config** - NotificationService locale-aware strings, iOS/Android platform declarations
+- [x] **Phase 14: Notification Localization & Platform Config** - NotificationService locale-aware strings, iOS/Android platform declarations (completed 2026-06-15)
 
 ## Phase Details
 
@@ -104,8 +104,8 @@ Plans:
 **Plans**: 2 plans
 Plans:
 
-- [ ] 14-01-PLAN.md — L10n pipeline setup (pubspec, l10n.yaml, MaterialApp wiring, initializeDateFormatting, TableCalendar locale, context extension)
-- [ ] 14-02-PLAN.md — Complete app_en.arb (~73 English strings) + flutter gen-l10n generation
+- [x] 14-01-PLAN.md — L10n pipeline setup (pubspec, l10n.yaml, MaterialApp wiring, initializeDateFormatting, TableCalendar locale, context extension)
+- [x] 14-02-PLAN.md — Complete app_en.arb (~73 English strings) + flutter gen-l10n generation
 
 ## Progress
 
@@ -124,4 +124,4 @@ Plans:
 | 11. Hydration Calculator | v1.2 | 1/1 | Complete    | 2026-06-15 |
 | 12. L10n Infrastructure | v1.3 | 2/2 | Complete   | 2026-06-15 |
 | 13. String Extraction & Translation | v1.3 | 2/2 | Complete    | 2026-06-15 |
-| 14. Notification Localization & Platform Config | v1.3 | 0/2 | Not started | - |
+| 14. Notification Localization & Platform Config | v1.3 | 2/2 | Complete   | 2026-06-15 |
