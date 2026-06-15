@@ -32,7 +32,13 @@ class _HydrationCalculatorScreenState
     BiologicalSex.other: 33.0,
   };
 
-  static const _climateMultipliers = [1.0, 1.05, 1.1, 1.2, 1.3];
+  static const _climateMultipliers = {
+    ClimateLevel.cold: 1.0,
+    ClimateLevel.mild: 1.05,
+    ClimateLevel.warm: 1.1,
+    ClimateLevel.veryWarm: 1.2,
+    ClimateLevel.humid: 1.3,
+  };
 
   @override
   void initState() {
@@ -55,7 +61,8 @@ class _HydrationCalculatorScreenState
     if (weight == null || weight <= 0 || weight > 300) return null;
 
     final sexFactor = _sexFactors[_selectedSex!]!;
-    final climateMultiplier = _climateMultipliers[_climateValue.round()];
+    final climateLevel = ClimateLevel.values[_climateValue.round()];
+    final climateMultiplier = _climateMultipliers[climateLevel]!;
     final raw = weight * sexFactor * climateMultiplier;
     final rounded = (raw / 50).round() * 50;
     return rounded.clamp(1000, 4000);
@@ -71,7 +78,7 @@ class _HydrationCalculatorScreenState
 
   String _formatMl(BuildContext context, int ml) {
     final locale = Localizations.localeOf(context).toString();
-    return '${NumberFormat.decimalPattern(locale).format(ml)} ml';
+    return '${NumberFormat.decimalPattern(locale).format(ml)} ${context.l10n.mlUnit}';
   }
 
   Future<void> _onUseAsTarget(int recommendedMl) async {

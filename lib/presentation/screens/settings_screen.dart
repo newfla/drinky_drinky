@@ -342,7 +342,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return '${hour.toString().padLeft(2, '0')}:'
           '${minute.toString().padLeft(2, '0')}';
     } else {
-      final period = hour >= 12 ? 'PM' : 'AM';
+      final localizations = MaterialLocalizations.of(context);
+      final period = hour >= 12 ? localizations.postMeridiemAbbreviation : localizations.anteMeridiemAbbreviation;
       final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
       return '$displayHour:${minute.toString().padLeft(2, '0')} $period';
     }

@@ -138,7 +138,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           backgroundColor:
               colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           center: Text(
-            totalMl == target ? context.l10n.goalReached : context.l10n.currentIntake(_formatLiters(context, totalMl), _formatLiters(context, target)),
+            isGoalMet ? context.l10n.goalReached : context.l10n.currentIntake(_formatLiters(context, totalMl), _formatLiters(context, target)),
             style: theme.textTheme.headlineMedium?.copyWith(
               color: isGoalMet ? goalMetColor : null,
             ),

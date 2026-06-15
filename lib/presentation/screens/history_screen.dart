@@ -381,7 +381,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final dateKey = _toDateKey(day);
     final total = monthTotals[dateKey];
     final dailyTarget = _findActiveTarget(targets, dateKey);
-    final dateLabel = '${DateFormat.MMMM(locale).format(day)} ${day.day}, ${day.year}';
+    final dateLabel = DateFormat.yMMMMd(locale).format(day);
     final String contentLabel;
     if (total != null && total > 0) {
       contentLabel = context.l10n.daySummaryWithEntries(dateLabel, total, dailyTarget);
