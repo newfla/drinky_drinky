@@ -9,9 +9,9 @@ Requirements for milestone v1.3 (Multilingual Support).
 
 ### Infrastruttura l10n
 
-- [ ] **L10N-01**: App carica le traduzioni via Flutter gen-l10n (`flutter_localizations` SDK dep, `l10n.yaml` con `synthetic-package: false`, `generate: true` in `pubspec.yaml`)
-- [ ] **L10N-02**: `MaterialApp.router` dichiara `localizationsDelegates` e `supportedLocales` per it/en/fr/es; lingua di sistema seguita automaticamente con EN fallback via `basicLocaleListResolution`
-- [ ] **L10N-03**: `initializeDateFormatting()` chiamata in `main()` per le 4 lingue (table_calendar usa intl per i nomi dei mesi)
+- [x] **L10N-01**: App carica le traduzioni via Flutter gen-l10n (`flutter_localizations` SDK dep, `l10n.yaml` con `synthetic-package: false`, `generate: true` in `pubspec.yaml`)
+- [x] **L10N-02**: `MaterialApp.router` dichiara `localizationsDelegates` e `supportedLocales` per it/en/fr/es; lingua di sistema seguita automaticamente con EN fallback via `basicLocaleListResolution`
+- [x] **L10N-03**: `initializeDateFormatting()` chiamata in `main()` per le 4 lingue (table_calendar usa intl per i nomi dei mesi)
 
 ### Estrazione stringhe UI
 
@@ -56,9 +56,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| L10N-01 | Phase 12 | Pending |
-| L10N-02 | Phase 12 | Pending |
-| L10N-03 | Phase 12 | Pending |
+| L10N-01 | Phase 12 | Complete |
+| L10N-02 | Phase 12 | Complete |
+| L10N-03 | Phase 12 | Complete |
 | L10N-04 | Phase 13 | Pending |
 | L10N-05 | Phase 13 | Pending |
 | L10N-06 | Phase 13 | Pending |
