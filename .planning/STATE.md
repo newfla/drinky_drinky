@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Polish & Bug Fixes
 status: planning
-last_updated: "2026-06-15T16:29:29.450Z"
+last_updated: "2026-06-15"
 last_activity: 2026-06-15
 progress:
-  total_phases: 0
+  total_phases: 2
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
-**Current focus:** Planning next milestone
+**Current focus:** v1.4 Phase 15 — Home & History Fixes
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-06-15 — Milestone v1.4 started
+Phase: 15 of 16 (Home & History Fixes)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-06-15 — Roadmap created for v1.4
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -69,9 +71,8 @@ Last activity: 2026-06-15 — Milestone v1.4 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Research v1.3]: Calculator Italian display-string keys must be refactored to enums BEFORE string extraction (crash risk)
-- [Research v1.3]: NotificationService uses lookupAppLocalizations + platformDispatcher.locale (no BuildContext)
-- [Research v1.3]: synthetic-package: false required on Flutter 3.44.1; output-dir: lib/l10n/generated separates generated from source
+- [Roadmap v1.4]: POLISH-01 + BUG-04 grouped into Phase 15 (both are Flutter UI/provider code changes)
+- [Roadmap v1.4]: DOC-01 in Phase 16 (depends on Phase 15 — screenshots need fixed UI)
 
 ### Pending Todos
 
@@ -93,6 +94,6 @@ Items acknowledged and deferred at milestone close on 2026-06-15:
 
 ## Session Continuity
 
-Last session: 2026-06-15T14:20:25.933Z
-Stopped at: Phase 13 context gathered
-Resume file: .planning/phases/13-string-extraction-translation/13-CONTEXT.md
+Last session: 2026-06-15
+Stopped at: Roadmap created for v1.4 milestone
+Resume file: None

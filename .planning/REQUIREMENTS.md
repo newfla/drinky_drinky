@@ -9,7 +9,7 @@ Requirements for milestone v1.4 (Polish & Bug Fixes).
 
 ### UI Polish
 
-- [ ] **POLISH-01**: Il testo placeholder nella home ("tocca il pulsante…") ha padding laterale/verticale consistente con il resto dell'UI e il testo è centrato orizzontalmente
+- [ ] **POLISH-01**: Il testo placeholder nella home ("tocca il pulsante...") ha padding laterale/verticale consistente con il resto dell'UI e il testo è centrato orizzontalmente
 
 ### Bug Fix
 
@@ -43,15 +43,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| POLISH-01 | TBD | Pending |
-| BUG-04 | TBD | Pending |
-| DOC-01 | TBD | Pending |
+| POLISH-01 | Phase 15 | Pending |
+| BUG-04 | Phase 15 | Pending |
+| DOC-01 | Phase 16 | Pending |
 
 **Coverage:**
 
 - v1.4 requirements: 3 total
-- Mapped to phases: 0
-- Unmapped: 3
+- Mapped to phases: 3
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-15*
