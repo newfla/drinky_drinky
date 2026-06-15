@@ -176,7 +176,8 @@ No new providers, repositories, entities, or database tables needed.
 ```dart
 // Source: Verified pattern from existing permission_screen.dart and home_screen.dart
 class HydrationCalculatorScreen extends ConsumerStatefulWidget {
-  const HydrationCalculatorScreen({super.key});
+  final bool isOnboarding;
+  const HydrationCalculatorScreen({super.key, required this.isOnboarding});
 
   @override
   ConsumerState<HydrationCalculatorScreen> createState() =>
@@ -267,21 +268,25 @@ SegmentedButton<String>(
 
 **What:** The calculator screen behaves differently based on how it was opened (first-launch vs Settings).
 **When to use:** When the same screen serves two navigation contexts with different exit behaviors.
+**Approach:** Use a `final bool isOnboarding` constructor parameter. GoRouter redirect uses `go` semantics which replaces the navigation stack, making `canPop()` unreliable for distinguishing contexts. The constructor parameter is deterministic: the route builder passes `isOnboarding: true` for redirect-initiated navigation and `isOnboarding: false` when pushed from Settings.
 **Example:**
 ```dart
-// Source: GoRouter canPop() API -- determines if there's a route to pop back to
-// During onboarding (context.go('/calculator')): canPop() returns false
-// From Settings (context.push('/calculator')): canPop() returns true
-final isOnboarding = !GoRouter.of(context).canPop();
+// Source: Resolved from Open Question Q2 -- canPop() is unreliable after GoRouter redirect
+// The GoRoute builder passes isOnboarding explicitly based on route extras
+class HydrationCalculatorScreen extends ConsumerStatefulWidget {
+  final bool isOnboarding;
+  const HydrationCalculatorScreen({super.key, required this.isOnboarding});
+  // ...
+}
 
-// AppBar: no back button during onboarding
+// In the build method, use widget.isOnboarding directly:
 AppBar(
   title: const Text('Calcolatore idratazione'),
-  automaticallyImplyLeading: !isOnboarding,  // hides back button during onboarding
+  automaticallyImplyLeading: !widget.isOnboarding,  // hides back button during onboarding
 )
 
 // On "Usa come target":
-if (isOnboarding) {
+if (widget.isOnboarding) {
   // Set flag + go to home
   final prefs = await SharedPreferences.getInstance();
   await prefs.setBool('drinky_calculatorShown', true);
@@ -290,6 +295,16 @@ if (isOnboarding) {
   // Settings context: pop back
   context.pop();
 }
+
+// In GoRoute builder -- pass isOnboarding via state.extra:
+GoRoute(
+  path: '/calculator',
+  builder: (context, state) => HydrationCalculatorScreen(
+    isOnboarding: state.extra as bool? ?? true,
+  ),
+)
+// Redirect sets extra implicitly (defaults to true since extra is null after redirect).
+// Settings tile: context.push('/calculator', extra: false)
 ```
 
 ### Anti-Patterns to Avoid
@@ -298,6 +313,7 @@ if (isOnboarding) {
 - **Creating a Riverpod provider for form state:** The inputs are ephemeral widget-local state. A provider would survive widget disposal, risk accidental persistence, and add unnecessary complexity.
 - **Using context.go('/') from Settings:** This would destroy the navigation stack. Settings context must use `context.pop()` to return to the Settings tab.
 - **Forgetting to set drinky_calculatorShown on all exit paths:** Both "Usa come target" AND "Salta" must set the flag. Missing it causes an infinite redirect loop on next launch.
+- **Using canPop() for onboarding detection:** GoRouter redirect uses `go` semantics which replaces the navigation stack. `canPop()` returns `false` both after a redirect AND potentially after certain push scenarios depending on GoRouter version. Use the `isOnboarding` constructor parameter instead -- it is deterministic.
 
 ## Don't Hand-Roll
 
@@ -305,7 +321,7 @@ if (isOnboarding) {
 |---------|-------------|-------------|-----|
 | Number formatting with thousands separator | Manual string manipulation | `NumberFormat.decimalPattern(locale)` from `intl` | Handles locale-specific separators (space for Italian/French, comma for English) |
 | Digit-only input filtering | Manual onChanged validation | `FilteringTextInputFormatter.digitsOnly` | Prevents non-numeric characters at the keyboard level; cleaner than post-hoc filtering |
-| Onboarding context detection | Boolean constructor parameter | `GoRouter.of(context).canPop()` | Automatically correct based on navigation state; no need to pass context through constructors |
+| Onboarding context detection | `GoRouter.of(context).canPop()` | `isOnboarding` constructor parameter passed from GoRoute builder | canPop() is unreliable after GoRouter redirect (go semantics replace the stack); constructor parameter is deterministic and version-independent |
 | Target write + history | Direct DAO calls | `settingsRepository.updateTargetWithHistory(ml)` | Already handles dual-write to user_settings + target_history with applyFromTomorrow logic |
 
 **Key insight:** This phase has zero new infrastructure -- every integration point (router, SharedPreferences, SettingsRepository, theme system) already exists and has been validated in prior phases. The only new code is the screen widget itself and minor additions to two existing files.
@@ -389,10 +405,11 @@ int? computeRecommendation({
 }
 ```
 
-### "Usa come target" Handler (Onboarding Context)
+### "Usa come target" Handler (using isOnboarding constructor parameter)
 
 ```dart
 // Source: CONTEXT.md D-09, permission_screen.dart async pattern (lines 76-113)
+// Uses widget.isOnboarding (constructor parameter) instead of canPop()
 Future<void> _onUseAsTarget(int recommendedMl) async {
   final repo = ref.read(settingsRepositoryProvider);
   try {
@@ -410,9 +427,7 @@ Future<void> _onUseAsTarget(int recommendedMl) async {
 
   if (!mounted) return;
 
-  final isOnboarding = !GoRouter.of(context).canPop();
-
-  if (isOnboarding) {
+  if (widget.isOnboarding) {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('drinky_calculatorShown', true);
     if (!mounted) return;
@@ -428,7 +443,7 @@ Future<void> _onUseAsTarget(int recommendedMl) async {
       ),
     );
 
-  if (isOnboarding) {
+  if (widget.isOnboarding) {
     context.go('/');
   } else {
     context.pop();
@@ -460,7 +475,7 @@ Card(
     leading: const Icon(Icons.calculate_outlined),
     title: const Text('Ricalcola raccomandazione idratazione'),
     trailing: const Icon(Icons.chevron_right),
-    onTap: () => context.push('/calculator'),
+    onTap: () => context.push('/calculator', extra: false),
   ),
 ),
 ```
@@ -480,21 +495,21 @@ Card(
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | `GoRouter.of(context).canPop()` reliably distinguishes onboarding (go) from Settings (push) context | Architecture Patterns, Pattern 4 | If canPop() behaves differently than expected, the screen would need a constructor parameter to distinguish contexts. Low risk -- canPop() is a well-documented GoRouter API. |
+| A1 | `isOnboarding` constructor parameter deterministically distinguishes onboarding (redirect) from Settings (push) context | Architecture Patterns, Pattern 4 | No risk -- the GoRoute builder controls the parameter value at the call site. This replaces the earlier canPop() assumption which was unreliable due to GoRouter redirect using `go` semantics. |
 | A2 | Italian locale (`it_IT`) uses space as thousands separator in `NumberFormat.decimalPattern()` | Code Examples, Number Formatting | If the locale uses a period instead, the display "2.350 ml" is still correct and readable. Very low impact. |
 | A3 | `SegmentedButton` allows `selected: {}` (empty Set) when `emptySelectionAllowed: true` without visual glitches | Pattern 3 | If visual issues occur, fallback is to preselect "Maschio" as default (D-06 allows Claude's discretion on this). |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Number formatting locale behavior**
    - What we know: `NumberFormat.decimalPattern(locale)` formats with locale-appropriate thousands separators. HomeScreen already uses `NumberFormat.decimalPatternDigits` for liter display.
-   - What's unclear: Whether the device locale will always resolve to Italian (the app UI is in Italian but locale depends on device settings).
-   - Recommendation: Use the device locale via `Localizations.localeOf(context)` -- same pattern as home_screen. The formatting will be correct for whatever locale the device is set to.
+   - What was unclear: Whether the device locale will always resolve to Italian (the app UI is in Italian but locale depends on device settings).
+   - **RESOLVED:** Use the device locale via `Localizations.localeOf(context)` -- same pattern as home_screen. The formatting will be correct for whatever locale the device is set to. Alternatively, since the recommendation value is always an integer, `'$recommendedMl ml'` (simple string interpolation) is also acceptable -- the value is already rounded and clamped before display.
 
 2. **canPop() behavior on first navigation after redirect**
    - What we know: `GoRouter.of(context).canPop()` checks if there is a route to pop back to. During onboarding, the redirect uses `context.go('/calculator')` which replaces the stack.
-   - What's unclear: Whether `canPop()` returns `false` after a redirect to `/calculator` (since redirects use `go` semantics internally).
-   - Recommendation: Test this during implementation. If `canPop()` is unreliable, fall back to a constructor parameter `isOnboarding: true/false` passed from the GoRoute builder, or use a query parameter in the route.
+   - What was unclear: Whether `canPop()` returns `false` after a redirect to `/calculator` (since redirects use `go` semantics internally).
+   - **RESOLVED:** Adopt the `isOnboarding` constructor parameter approach. GoRouter redirect uses `go` semantics which replaces the navigation stack, so `canPop()` returns `false` after redirect AND `canPop()` behavior may differ per GoRouter version when used after a push. The constructor parameter is deterministic: the GoRoute builder passes `isOnboarding: true` for redirect-triggered navigation (via `state.extra as bool? ?? true` -- extra is null after redirect, defaults to true) and `isOnboarding: false` when pushed from Settings (via `context.push('/calculator', extra: false)`).
 
 ## Security Domain
 
