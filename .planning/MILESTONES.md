@@ -1,5 +1,18 @@
 # Milestones
 
+## v1.4 Polish & Bug Fixes (Shipped: 2026-06-15)
+
+**Phases completed:** 2 phases, 2 plans, 3 tasks
+
+**Key accomplishments:**
+
+- Home empty-state centered with 32px horizontal padding — `textAlign: center` on both Text widgets (POLISH-01)
+- History screen refactored from one-shot `initState` Future to Drift `watchEarliestDateKey()` stream provider — reacts instantly when first intake is logged on fresh install (BUG-04)
+- Project README replacing Flutter placeholder — 12-item feature list, iOS/Android screenshot table, 4-step build instructions including code-gen step (DOC-01)
+- iOS and Android home screen screenshots committed to `docs/images/`
+
+---
+
 ## v1.3 Multilingual Support (Shipped: 2026-06-15)
 
 **Phases completed:** 3 phases (12-14), 6 plans, 9 requirements

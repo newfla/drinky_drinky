@@ -220,6 +220,52 @@
 
 ---
 
+## Milestone: v1.4 — Polish & Bug Fixes
+
+**Shipped:** 2026-06-15
+**Phases:** 2 (15-16) | **Plans:** 2 | **Duration:** <1 day (2026-06-15)
+**Files changed:** 10 (non-planning) | **Dart LOC at close:** ~8,944
+
+### What Was Built
+
+- Home empty-state centered: `Padding(horizontal: 32)` wrapper + `textAlign: TextAlign.center` on both Text widgets (POLISH-01)
+- History screen refactored from one-shot `initState` Future to Drift `watchEarliestDateKey()` stream provider — reacts instantly when first intake is logged on fresh install (BUG-04)
+- `watchEarliestDateKey()` Drift query using `selectOnly + waterEntries.dateKey.min() + watchSingle()` — SQL MIN on empty table returns one NULL row, so `watchSingle()` is correct
+- Project README replacing Flutter placeholder: description, 12-item feature list, iOS/Android screenshot table, 4-step build instructions with build_runner step (DOC-01)
+- `docs/images/` directory with iOS and Android home screen screenshots
+
+### What Worked
+
+- **Stream provider over initState Future:** Replacing the one-shot `initState` Future with a Drift stream provider was the correct fix class for BUG-04. The `StatefulShellRoute.indexedStack` keeps HistoryScreen alive in memory, so any approach that doesn't use a reactive stream will stale. The fix also eliminated 3 local state variables and the entire `initState` override — net code reduction.
+- **Code review catching factual errors in documentation:** CR-01 (iOS 13+ vs actual Xcode target of iOS 16.0) was found by the code reviewer reading the Xcode project file. A wrong version claim in a README misleads contributors. Having the reviewer cross-check claims against the actual build config is the right use of that gate.
+- **Human checkpoint for screenshot delivery:** The D-01 decision (developer provides screenshots manually after execution, README uses placeholder paths) worked cleanly. The plan paused at a checkpoint, screenshots were added, then milestone close resumed. No workarounds or extra phases needed.
+
+### What Was Inefficient
+
+- **VERIFICATION.md `human_needed` status not updated in-phase:** For the second time (after v1.3), the VERIFICATION.md was left with `status: human_needed` after the screenshots were added. The pre-close audit flagged it, requiring a manual `Edit` to patch the status. Lesson from v1.3 still not applied — this pattern is now reliably recurring.
+- **Italic note stripped by linter between commits:** The screenshot table italic note was added in one commit, then silently removed by a linter in the next, then re-added. No workflow gate caught the intermediate state. For Markdown files, the linter should either be configured to preserve italic notes or the review step should diff README.md explicitly.
+- **Missing Android screenshot at first checkpoint approval:** The user said "approved" at the checkpoint before adding the Android screenshot, so the `audit-open` at milestone close flagged a verification gap. The human-verify checkpoint template should make it clearer that screenshot files must be present before typing "approved" — the `how-to-verify` section already listed it, but the user read past it.
+
+### Patterns Established
+
+- `watchSingle()` on a MIN aggregate query — Drift `selectOnly + addColumns + watchSingle()` pattern for streaming a single scalar from a table (returns one NULL row on empty, not zero rows)
+- `docs/images/` convention for GitHub README screenshots — separate from `assets/` which Flutter bundles into the app
+- Human-verify checkpoint for binary assets (screenshots, recorded demos) that cannot be generated programmatically — placeholder paths in code, developer drops files in, paths just work
+
+### Key Lessons
+
+1. **Update VERIFICATION.md when the human task completes — not at milestone close.** This is the third milestone where `human_needed` status was left stale after UAT/human tasks completed. The lesson from v1.2 (audit requirements at phase transition) and v1.3 (patch verification status inline) applies again. Enforce this at phase completion, not archival.
+2. **Human-verify checkpoints need explicit file-presence checks.** Adding a `<verify><automated>test -f ...</automated></verify>` check to the checkpoint itself (not just the instructions) would have blocked the "approved" signal until the file existed — exactly what the automated verify block does in the plan.
+3. **Code review of documentation is valuable.** Two of the four review findings (CR-01 iOS version mismatch, WR-03 minSdk clarification) would have misled a developer reading only the README. Reviewing claims against build config files is the correct depth for a documentation-only phase.
+
+### Cost Observations
+
+- Model: Claude Sonnet 4.6 (orchestrator + executor inline)
+- Sessions: same-day close (all work on 2026-06-15)
+- Notable: This was the first milestone with a documentation-only phase (Phase 16). Code review on Markdown worked well; the reviewer found a real factual error (iOS version) that would have persisted otherwise. Documentation phases are worth reviewing even when no code changes.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -230,6 +276,7 @@
 | v1.1 | 1 day | 3 | Narrow polish phases; worktree executor; icon via pure-Dart CLI |
 | v1.2 | 5 days | 3 | Bug fixes + feature depth; schema migration; onboarding screen chain |
 | v1.3 | 1 day | 3 | l10n pipeline; ARB + codegen; enum refactor; platform locale config |
+| v1.4 | <1 day | 2 | Targeted bug fixes; first documentation-only phase; human-verify checkpoint for screenshots |
 
 ### Cumulative Quality
 
@@ -239,6 +286,7 @@
 | v1.1 | 12 passing | 0 issues | 0 (UAT passed; Material You skipped/N/A on test device) |
 | v1.2 | 12 passing | 0 issues | 0 (UAT 11/11 passed; schema migration verified) |
 | v1.3 | 12 passing | 0 issues | 3 inline fixes during Phase 13 UAT + 2 code review blockers in Phase 14 (all resolved) |
+| v1.4 | 12 passing | 0 issues | 1 code review blocker (iOS version claim), 3 warnings (all fixed pre-commit) |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -250,3 +298,5 @@
 6. Centralise write paths early — a single dual-write method made a later onboarding feature require zero data-layer changes
 7. Lock cross-cutting design decisions in discuss-phase; enum-vs-string and locale-resolution-strategy must be consistent across all phases that touch the same subsystem
 8. Generated code churn (ARB implementations, Drift DAOs) inflates file/LOC stats — measure hand-written delta separately when assessing complexity
+9. Update VERIFICATION.md status when human tasks complete — not at milestone close (recurring across v1.1, v1.3, v1.4)
+10. Code review of documentation catches real errors — wrong version claims, missing dependency constraints, absent required content

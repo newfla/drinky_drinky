@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Polish & Bug Fixes
-status: executing
+status: Awaiting next milestone
 stopped_at: Phase 16 planned — ready for execution
-last_updated: "2026-06-15T18:07:48.839Z"
-last_activity: 2026-06-15
+last_updated: "2026-06-15T18:11:31.233Z"
+last_activity: 2026-06-15 — Milestone v1.4 completed and archived
 progress:
   total_phases: 2
   completed_phases: 2
@@ -25,13 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-15)
 
 ## Current Position
 
-Phase: 16
-Plan: Not started
-Next: Phase 16 (README with screenshots)
-Status: Executing Phase 16
-Last activity: 2026-06-15
-
-Progress: [█████░░░░░] 50%
+Phase: Milestone v1.4 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-15 — Milestone v1.4 completed and archived
 
 ## Performance Metrics
 
@@ -101,3 +98,7 @@ Items acknowledged and deferred at milestone close on 2026-06-15:
 Last session: 2026-06-15T17:51:06.346Z
 Stopped at: Phase 16 planned — ready for execution
 Resume file: .planning/phases/16-project-readme/16-01-PLAN.md
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
