@@ -1,3 +1,118 @@
 {
-  "@@locale": "fr"
+  "@@locale": "fr",
+
+  "tabHome": "Accueil",
+  "tabHistory": "Historique",
+  "tabSettings": "Paramètres",
+
+  "appTitle": "Drinky Drinky",
+
+  "goalReached": "Objectif atteint !",
+
+  "currentIntake": "{current} / {target} L",
+
+  "todaysIntake": "Consommation du jour",
+
+  "noDrinksLogged": "Aucune boisson enregistrée",
+  "noDrinksLoggedHint": "Appuie sur le bouton + pour enregistrer ta première boisson aujourd'hui.",
+
+  "mlAdded": "+{amount} ml ajoutés",
+
+  "undo": "ANNULER",
+
+  "addWaterTooltip": "Ajouter de l'eau",
+
+  "presetButtonLabel": "+{amount} ml",
+
+  "customAmountHint": "Quantité personnalisée",
+
+  "addButton": "Ajouter",
+
+  "errorLoadingDataRestart": "Une erreur s'est produite lors du chargement des données. Redémarre l'application.",
+
+  "settingsTitle": "Paramètres",
+
+  "sectionDailyGoal": "OBJECTIF QUOTIDIEN",
+  "sectionQuickAddPresets": "AJOUTS RAPIDES",
+  "sectionNotifications": "NOTIFICATIONS",
+  "sectionHydration": "HYDRATATION",
+
+  "recalculateHydration": "Recalculer la recommandation d'hydratation",
+
+  "applyFromTomorrow": "Appliquer à partir de demain",
+  "applyFromTomorrowSubtitle": "Les modifications de l'objectif prendront effet demain",
+  "applyFromTodaySubtitle": "Les modifications de l'objectif prendront effet aujourd'hui",
+
+  "presetTitle": "Préréglage {number}",
+  "amountMl": "{amount} ml",
+
+  "notificationsDisabledBanner": "Les notifications sont désactivées. Appuie pour ouvrir les paramètres système.",
+  "openButton": "Ouvrir",
+
+  "intervalMinutes": "{minutes} min",
+
+  "doNotDisturb": "Ne pas déranger",
+  "toggleOn": "Activé",
+  "toggleOff": "Désactivé",
+
+  "startTime": "Heure de début",
+  "endTime": "Heure de fin",
+
+  "errorLoadingData": "Une erreur s'est produite lors du chargement des données.",
+
+  "historyTitle": "Historique",
+
+  "noHistoryYet": "Aucun historique",
+  "noHistoryYetHint": "Commence à enregistrer de l'eau dans l'onglet Accueil pour voir ton historique ici.",
+
+  "dayStreak": "{count, plural, =0{Aucune série} =1{1 jour consécutif} other{{count} jours consécutifs}}",
+
+  "daySummaryWithEntries": "{date} -- {total} sur {target} ml",
+  "daySummaryNoEntries": "{date} -- Aucune entrée",
+
+  "calendarDayGoalMet": "{month} {day} : objectif atteint",
+  "calendarDayGoalNotMet": "{month} {day} : objectif non atteint",
+  "calendarDay": "{month} {day}",
+
+  "calculatorTitle": "Calculateur d'hydratation",
+
+  "sexLabel": "Sexe",
+  "sexMale": "Homme",
+  "sexFemale": "Femme",
+  "sexOther": "Autre",
+
+  "weightLabel": "Poids",
+  "weightInputLabel": "Poids (kg)",
+  "weightUnit": "kg",
+  "weightValidationError": "Saisis un poids entre 1 et 300 kg",
+
+  "climateLabel": "Climat",
+  "climateCold": "Froid",
+  "climateMild": "Doux",
+  "climateWarm": "Chaud",
+  "climateVeryWarm": "Très chaud",
+  "climateHumid": "Humide",
+
+  "yourRecommendation": "Ta recommandation",
+  "fillAllFields": "Remplis tous les champs",
+  "privacyDisclaimer": "Tes données (sexe, poids, climat) ne sont ni sauvegardées ni transmises. Le calcul s'effectue entièrement sur ton appareil.",
+  "useAsTarget": "Utiliser comme objectif",
+  "skipButton": "Ignorer",
+  "targetUpdateError": "Erreur lors de la mise à jour de l'objectif. Réessaie.",
+  "targetUpdated": "Objectif mis à jour à {amount}",
+
+  "permissionTitle": "Reste hydraté avec des rappels",
+  "permissionBody": "Drinky Drinky t'envoie de doux rappels pour boire de l'eau tout au long de la journée.",
+  "enableReminders": "Activer les rappels",
+  "skipForNow": "Ignorer pour l'instant",
+  "remindersEnabled": "Rappels activés ! Tu peux les régler à tout moment dans les Paramètres.",
+  "remindersDeclined": "Pas de problème -- tu pourras activer les rappels plus tard dans les paramètres de ton appareil.",
+
+  "editPresetTitle": "Modifier le préréglage {number}",
+  "amountInputLabel": "Quantité (ml)",
+  "presetValidationError": "Saisis une valeur entre 50 et 2000",
+  "cancelButton": "Annuler",
+  "confirmButton": "Confirmer",
+
+  "mlUnit": "ml"
 }
