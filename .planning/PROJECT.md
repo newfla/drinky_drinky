@@ -8,20 +8,12 @@ A Flutter mobile app that helps users track their daily water intake and stay hy
 
 The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
 
-## Current Milestone: v1.3 Multilingual Support
-
-**Goal:** L'app segue la lingua di sistema — italiano, inglese, francese e spagnolo; inglese come fallback per le lingue non supportate.
-
-**Target features:**
-- Setup infrastruttura l10n Flutter (flutter_localizations, intl ARB, codegen)
-- Traduzione di tutte le stringhe UI (home, settings, calendar, calculator, onboarding/permission screen)
-- Traduzione dei testi delle notifiche push
-- Locale detection automatica da sistema, fallback a inglese
-
 ## Shipped
 
 - ✅ **v1.0 MVP** — Phases 1-5 (2026-06-08)
 - ✅ **v1.1 Polish & UX** — Phases 6-8 (2026-06-08)
+- ✅ **v1.2 Bug Fixes & Feature Depth** — Phases 9-11 (2026-06-15)
+- ✅ **v1.3 Multilingual Support** — Phases 12-14 (2026-06-15)
 
 ## Requirements
 
@@ -50,13 +42,13 @@ The user always knows how close they are to their daily hydration goal and gets 
 - ✓ **BUG-03**: `dateKey` validated for format AND semantic correctness — Phase 9 (v1.2)
 - ✓ **TARGET-01/02/03/04**: Target history in Drift, per-day targets on home/calendar, "Applica da oggi/domani" setting — Phase 9–10 (v1.2)
 - ✓ **CALC-01/02/03/04**: Hydration calculator (sex/weight/climate), first-launch onboarding, Settings entry, "Usa come target" — Phase 11 (v1.2)
+- ✓ **L10N-01/02/03**: Gen-l10n pipeline (flutter_localizations, l10n.yaml, synthetic-package: false), MaterialApp locale wiring, initializeDateFormatting — Phase 12 (v1.3)
+- ✓ **L10N-04/05/06**: BiologicalSex/ClimateLevel enum refactor, 79-key ARB extraction, Italian/French/Spanish translations with ICU plurals — Phase 13 (v1.3)
+- ✓ **L10N-07/08/09**: Localized notifications via PlatformDispatcher + lookupAppLocalizations, iOS CFBundleLocalizations, Android resourceConfigurations — Phase 14 (v1.3)
 
 ### Active
 
-- [ ] L10n infrastructure: flutter_localizations + intl ARB + codegen — v1.3
-- [ ] All UI strings extracted and translated (it/en/fr/es) — v1.3
-- [ ] Notification strings translated and locale-aware — v1.3
-- [ ] System locale detection with English fallback — v1.3
+*(No active requirements — planning next milestone)*
 
 ### Out of Scope
 
@@ -72,18 +64,19 @@ The user always knows how close they are to their daily hydration goal and gets 
 
 ## Context
 
-**Current state (v1.2 complete — all 3 phases shipped):**
-- Stack: Flutter 3.44.1, Riverpod 3.x (code-gen), Drift 2.33.0 (SQLite), flutter_local_notifications 21.0.0
+**Current state (v1.3 complete — 14 phases shipped):**
+- Stack: Flutter 3.44.1, Riverpod 3.x (code-gen), Drift 2.33.0 (SQLite), flutter_local_notifications 21.0.0, flutter_localizations (SDK), intl 0.20.2
 - Target platforms: iOS and Android
 - Fully offline — no backend, no user accounts, no sync
-- All v1.2 requirements shipped: 3 bug fixes + target history integration + hydration calculator onboarding
-- UAT passed for Phases 9, 10, 11; flutter analyze clean
+- All v1.3 requirements shipped: gen-l10n pipeline, 79-key ARB with 4 locales, localized notifications, iOS/Android platform locale declarations
+- UAT passed for Phases 12, 13, 14; all 4 locales (en/it/fr/es) verified at runtime
 
 **Known issues / tech debt:**
 - Android OEM background killing (Samsung/Xiaomi) may silently suppress notifications — requires physical device testing; **deferred**
 - Timeline sort order is oldest-first (ASC) in code; UI-SPEC specified newest-first — accepted as-is
-- Material You dynamic color on Android 12+ (THEME-01) verified by code; device wallpaper color extraction skipped in UAT (iOS/Android <12 device used)
-- REQUIREMENTS.md traceability table missing entries for LOCALE-01, DEVICE-01, EXPORT-01, CHART-01, HEALTH-01 — clean up before v1.3
+- Material You dynamic color on Android 12+ (THEME-01) verified by code; device wallpaper color extraction skipped in UAT
+- ARB translations (it/fr/es) are machine-generated — native speaker review recommended before wide distribution (L10N-FUTURE-01)
+- `minSdk = 26` in build.gradle.kts vs CLAUDE.md documented minimum of 24 — pre-existing from Phase 1 scaffold, no functional impact
 
 ## Constraints
 
@@ -113,6 +106,10 @@ The user always knows how close they are to their daily hydration goal and gets 
 | `isOnboarding` constructor parameter over `GoRouter.canPop()` (v1.2 Phase 11) | `canPop()` returns false after GoRouter redirect-initiated navigation, making onboarding vs Settings context detection unreliable | ✓ Good — deterministic; passed via `state.extra` (null defaults to `true` for redirects, Settings push explicit `extra: false`) |
 | Privacy-by-design for calculator inputs (v1.2 Phase 11) | Sex/weight/climate held only in ephemeral widget state; never written to SharedPreferences or Drift | ✓ Good — CALC-04 satisfied without any special deletion logic; widget disposal is sufficient |
 | Callback pattern for bottom sheet (v1.1) | Sheet receives presets + onAdd callback; no direct provider access — keeps sheet stateless and testable | ✓ Good — clean separation; Navigator.pop before onAdd ensures sheet closes before SnackBar |
+| `synthetic-package: false` for gen-l10n (v1.3) | Flutter 3.44.1 analyzer conflict between drift_dev and riverpod_generator namespace; true would inject into app package and break the code-gen chain | ✓ Good — resolved analyzer conflicts; output-dir: lib/l10n/generated/ cleanly separates generated code |
+| BiologicalSex/ClimateLevel enums over Italian string keys (v1.3) | Calculator used Italian display strings as map keys; switching locale crashed with null deref. Enums are locale-agnostic by definition | ✓ Good — prerequisite for crash-free locale switching; pattern: computation on enums, display on translated strings |
+| Primary-only locale resolution (v1.3) | `locales.first` with English fallback — consistent across UI (localeListResolutionCallback in main.dart) and NotificationService (_resolveLocale). Simpler than basicLocaleListResolution and avoids sub-locale edge cases | ✓ Good — consistent behavior confirmed in Phase 13 UAT; notification locale matches UI locale |
+| PlatformDispatcher + lookupAppLocalizations for NotificationService (v1.3) | Service runs without BuildContext (it's a singleton). PlatformDispatcher.instance.locales is the only locale source available outside widget tree | ✓ Good — dart:ui import, no widget dependency; try/catch English fallback covers edge cases |
 
 ## Evolution
 
@@ -132,4 +129,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-15 — v1.3 milestone started (multilingual support: it/en/fr/es, system locale, EN fallback).*
+*Last updated: 2026-06-15 after v1.3 milestone — Multilingual Support shipped (it/en/fr/es, system locale, EN fallback, localized notifications).*

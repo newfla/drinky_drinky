@@ -167,6 +167,59 @@
 
 ---
 
+## Milestone: v1.3 — Multilingual Support
+
+**Shipped:** 2026-06-15
+**Phases:** 3 (12-14) | **Plans:** 6 | **Duration:** 1 day (2026-06-15)
+**Files changed:** 105 | **Insertions:** ~8,501 | **Deletions:** ~11,984 | **Commits:** ~35
+
+### What Was Built
+
+- Gen-l10n pipeline: `l10n.yaml` (synthetic-package: false), flutter_localizations SDK dep, `context.l10n` extension, `initializeDateFormatting()` before runApp()
+- 79-key `app_en.arb` canonical template with full `@key` metadata; Italian, French, Spanish ARBs with ICU plurals
+- `BiologicalSex` and `ClimateLevel` enums replacing locale-sensitive Italian string map keys in the calculator
+- Full string extraction across 6 screens via `context.l10n` — zero hardcoded user-visible strings
+- Localized notifications: `_resolveLocale()` via `PlatformDispatcher.instance.locales`, `lookupAppLocalizations()` without BuildContext
+- iOS `CFBundleLocalizations` + Android `resourceConfigurations` for correct platform locale detection
+
+### What Worked
+
+- **Discuss-phase locking locale resolution strategy first:** Locking "primary locale only" as D-01 in CONTEXT.md before planning meant the NotificationService implementation and `localeListResolutionCallback` in main.dart were automatically consistent. No divergence discovered during UAT.
+- **Enum refactor as a prerequisite phase:** Identifying that the Italian string-key pattern in the calculator would crash on non-Italian locales in Phase 13 research, and executing the enum refactor first in 13-01, meant 13-02 (translations) had no crash surface. Zero calculator crashes in UAT.
+- **Code review catching guard ordering:** The code review on Phase 14 caught two blocking bugs (cancelAll before permission check, zero-interval infinite loop) that static verification missed. Code review as a gate before verification was the right sequencing.
+- **`lookupAppLocalizations` pattern for service-layer l10n:** Avoiding BuildContext in NotificationService was a clean design constraint. The generated `lookupAppLocalizations()` function with a try/catch English fallback was the correct escape hatch.
+- **Parallel worktree execution for 14-01 and 14-02:** The two Phase 14 plans were independent (ARB/service vs platform config) — parallel worktree execution saved time with zero merge conflicts.
+
+### What Was Inefficient
+
+- **Machine-generated translations without native review:** ARBs ship with machine translations for it/fr/es. A quality gate (L10N-FUTURE-01) was deferred. If the app reaches native speakers before v1.4, this becomes visible tech debt.
+- **14-VERIFICATION.md and 12-VERIFICATION.md remained human_needed at milestone close:** Both phases had completed UAT but the VERIFICATION.md status was never updated from `human_needed` to `complete`. The audit tool flagged them as open artifacts. Either update VERIFICATION.md inline when UAT completes, or change the UAT workflow to also patch the verification file.
+- **Phase 14 plan descriptions in ROADMAP.md were inaccurate:** 14-01 and 14-02 plan descriptions incorrectly said "L10n pipeline setup" / "Complete app_en.arb" (copied from Phase 12 plans). Caught during milestone archival, not at planning time. Plan descriptions should be reviewed against actual PLAN.md content before committing.
+
+### Patterns Established
+
+- `synthetic-package: false` + `output-dir: lib/l10n/generated/` for gen-l10n on Flutter 3.44+ with riverpod_generator/drift_dev in the dependency graph
+- `context.l10n` via `extension AppLocalizationsX on BuildContext { AppLocalizations get l10n => AppLocalizations.of(this)!; }` — single extension, single import
+- Enum-keyed computation pattern: enums carry all locale-agnostic values; display labels resolved via `context.l10n` at render time — no string-key map lookup, no locale coupling
+- `PlatformDispatcher.instance.locales` + `lookupAppLocalizations(locale)` — service-layer locale resolution without BuildContext
+- Primary-only locale matching: `locales.first`, iterate `supportedLocales` by `languageCode`, English fallback — consistent across UI and service layer
+- ICU plural with explicit `=0` + `=1` + `other` — French `one` category covers 0 and 1, so explicit `=0`/`=1` avoids French-specific divergence
+
+### Key Lessons
+
+1. **Lock locale resolution strategy in discuss-phase.** A single decision (primary-only vs list resolution) determines how UI locale and notification locale align. Locking it early prevented silent divergence.
+2. **Enum refactor before translation.** Any string-keyed computation that uses display strings as map keys will crash when locale changes. Identify these in research, refactor to enums first, then add translations.
+3. **Update VERIFICATION.md when UAT completes.** Leaving `status: human_needed` after UAT passes creates stale artifacts that the pre-close audit flags as open. Patch the status field inline or merge the UAT result into VERIFICATION.md.
+4. **Review plan descriptions in ROADMAP.md before committing.** Copy-paste errors in plan descriptions (14-01/14-02 reused Phase 12 descriptions) are invisible at planning time but create misleading history. A quick sanity check at plan completion prevents this.
+
+### Cost Observations
+
+- Model: Claude Sonnet 4.6 (orchestrator); executor subagents via worktrees
+- Sessions: single day (2026-06-15), ~3.5 hours wall-clock
+- Notable: 105 files changed, but most of the delta was generated code (ARB locale implementations, `app_localizations_*.dart`). The actual hand-written diff was much smaller. Generated code churn can be misleading as a complexity proxy.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -176,6 +229,7 @@
 | v1.0 | 5 days | 5 | Baseline — first milestone |
 | v1.1 | 1 day | 3 | Narrow polish phases; worktree executor; icon via pure-Dart CLI |
 | v1.2 | 5 days | 3 | Bug fixes + feature depth; schema migration; onboarding screen chain |
+| v1.3 | 1 day | 3 | l10n pipeline; ARB + codegen; enum refactor; platform locale config |
 
 ### Cumulative Quality
 
@@ -184,6 +238,7 @@
 | v1.0 | 11 passing | 0 issues | 2 (1 major fixed, 1 cosmetic fixed) |
 | v1.1 | 12 passing | 0 issues | 0 (UAT passed; Material You skipped/N/A on test device) |
 | v1.2 | 12 passing | 0 issues | 0 (UAT 11/11 passed; schema migration verified) |
+| v1.3 | 12 passing | 0 issues | 3 inline fixes during Phase 13 UAT + 2 code review blockers in Phase 14 (all resolved) |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -193,3 +248,5 @@
 4. Worktree artifacts may bleed to main — check `git status` on main before any merge
 5. Audit requirements checkboxes at phase transition, not milestone close
 6. Centralise write paths early — a single dual-write method made a later onboarding feature require zero data-layer changes
+7. Lock cross-cutting design decisions in discuss-phase; enum-vs-string and locale-resolution-strategy must be consistent across all phases that touch the same subsystem
+8. Generated code churn (ARB implementations, Drift DAOs) inflates file/LOC stats — measure hand-written delta separately when assessing complexity

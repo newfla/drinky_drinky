@@ -1,5 +1,20 @@
 # Milestones
 
+## v1.3 Multilingual Support (Shipped: 2026-06-15)
+
+**Phases completed:** 3 phases (12-14), 6 plans, 9 requirements
+
+**Key accomplishments:**
+
+- Gen-l10n pipeline wired: `l10n.yaml` (synthetic-package: false), flutter_localizations SDK dep, `context.l10n` extension via `AppLocalizationsX`, `initializeDateFormatting()` before runApp() for table_calendar support
+- 79-key `app_en.arb` canonical template with full `@key` metadata; ICU plural forms with explicit `=0`/`=1`/`other` for cross-language safety
+- `BiologicalSex` and `ClimateLevel` enums replacing Italian display-string map keys in the calculator — prerequisite for crash-free locale switching
+- Complete Italian, French, Spanish ARB translations (79 keys each) with ICU plurals; all 6 screens verified in 4 languages via human UAT
+- `NotificationService` locale resolution via `PlatformDispatcher.instance.locales` + `lookupAppLocalizations()` — no BuildContext required; primary-only matching consistent with UI locale strategy
+- iOS `CFBundleLocalizations` (en/it/fr/es) in Info.plist and Android `resourceConfigurations += setOf("en", "it", "fr", "es")` in build.gradle.kts for correct platform locale detection
+
+---
+
 ## v1.2 Bug Fixes & Feature Depth (Shipped: 2026-06-15)
 
 **Phases completed:** 3 phases, 6 plans, 11 tasks
