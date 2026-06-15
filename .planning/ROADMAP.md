@@ -60,7 +60,7 @@ Full details: `.planning/milestones/v1.3-ROADMAP.md`
 
 **Milestone Goal:** Fix two visible UI issues from v1.3 and add a public-facing README with screenshots.
 
-- [ ] **Phase 15: Home & History Fixes** - Fix placeholder centering on home and stale empty-state on history screen
+- [x] **Phase 15: Home & History Fixes** - Fix placeholder centering on home and stale empty-state on history screen (completed 2026-06-15)
 - [ ] **Phase 16: Project README** - Add README.md with screenshots and build instructions
 
 ## Phase Details
@@ -76,9 +76,11 @@ Full details: `.planning/milestones/v1.3-ROADMAP.md`
   2. On a fresh install, after logging the first water intake, navigating to the history screen shows today's intake data (not "Nessuna cronologia")
   3. After adding multiple intakes on a fresh install, the history screen timeline updates to reflect all entries without requiring app restart
 
-**Plans**: 1 planPlans:
+**Plans**: 1 plan
 
-- [ ] 15-01-PLAN.md — Fix home empty-state centering + history screen reactivity
+Plans:
+
+- [x] 15-01-PLAN.md — Fix home empty-state centering + history screen reactivity
 
 **UI hint**: yes
 
@@ -93,9 +95,10 @@ Full details: `.planning/milestones/v1.3-ROADMAP.md`
   2. The build instructions are sufficient for a developer with Flutter installed to clone and run the app
 
 **Plans**: 1 plan
+
 Plans:
 
-- [ ] 15-01-PLAN.md — Fix home empty-state centering + history screen reactivity
+- [ ] 16-01-PLAN.md — Write project README with description, screenshots, features, and build instructions
 
 ## Progress
 
@@ -115,5 +118,5 @@ Plans:
 | 12. L10n Infrastructure | v1.3 | 2/2 | Complete | 2026-06-15 |
 | 13. String Extraction & Translation | v1.3 | 2/2 | Complete | 2026-06-15 |
 | 14. Notification Localization & Platform Config | v1.3 | 2/2 | Complete | 2026-06-15 |
-| 15. Home & History Fixes | v1.4 | 0/1 | Not started | - |
-| 16. Project README | v1.4 | 0/0 | Not started | - |
+| 15. Home & History Fixes | v1.4 | 1/1 | Complete    | 2026-06-15 |
+| 16. Project README | v1.4 | 0/1 | Not started | - |
