@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/providers/repository_providers.dart';
+import '../../l10n/l10n_extensions.dart';
 import '../../core/providers/stream_providers.dart';
 import '../../core/services/notification_service.dart';
 import '../../domain/entities/drink_preset_entity.dart';
@@ -42,11 +43,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final presetsAsync = ref.watch(drinkPresetsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(context.l10n.settingsTitle)),
       body: settingsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const Center(
-          child: Text('Something went wrong loading your data.'),
+        error: (e, _) => Center(
+          child: Text(context.l10n.errorLoadingData),
         ),
         data: (settings) {
           final presets = presetsAsync.value ?? <DrinkPresetEntity>[];
@@ -66,18 +67,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionLabel(context, 'DAILY GOAL'),
+          _sectionLabel(context, context.l10n.sectionDailyGoal),
           _dailyGoalCard(context, settings),
-          _sectionLabel(context, 'QUICK-ADD PRESETS'),
+          _sectionLabel(context, context.l10n.sectionQuickAddPresets),
           _presetsCard(context, presets),
-          _sectionLabel(context, 'NOTIFICATIONS'),
+          _sectionLabel(context, context.l10n.sectionNotifications),
           _notificationsCard(context, settings),
-          _sectionLabel(context, 'HYDRATION'),
+          _sectionLabel(context, context.l10n.sectionHydration),
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ListTile(
               leading: const Icon(Icons.calculate_outlined),
-              title: const Text('Ricalcola raccomandazione idratazione'),
+              title: Text(context.l10n.recalculateHydration),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/calculator', extra: false),
             ),
@@ -109,7 +110,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${currentTarget.toInt()} ml',
+              context.l10n.amountMl(currentTarget.toInt()),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             Slider(
@@ -127,11 +128,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const Divider(),
             SwitchListTile(
-              title: const Text('Applica da domani'),
+              title: Text(context.l10n.applyFromTomorrow),
               subtitle: Text(
                 settings.applyFromTomorrow
-                    ? 'Le modifiche al target entrano in vigore domani'
-                    : 'Le modifiche al target entrano in vigore oggi',
+                    ? context.l10n.applyFromTomorrowSubtitle
+                    : context.l10n.applyFromTodaySubtitle,
               ),
               value: settings.applyFromTomorrow,
               onChanged: (val) {
@@ -152,8 +153,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Column(
         children: presets.take(3).map((preset) {
           return ListTile(
-            title: Text('Preset ${preset.sortOrder + 1}'),
-            subtitle: Text('${preset.amountMl} ml'),
+            title: Text(context.l10n.presetTitle(preset.sortOrder + 1)),
+            subtitle: Text(context.l10n.amountMl(preset.amountMl)),
             trailing: const Icon(Icons.edit),
             onTap: () => showPresetEditDialog(context, ref, preset),
           );
@@ -195,7 +196,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Notifications are disabled. Tap to open system Settings.',
+                      context.l10n.notificationsDisabledBanner,
                       style:
                           Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Theme.of(context)
@@ -207,7 +208,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   TextButton(
                     onPressed: () => openAppSettings(),
                     child: Text(
-                      'Open',
+                      context.l10n.openButton,
                       style: TextStyle(
                         color:
                             Theme.of(context).colorScheme.onErrorContainer,
@@ -224,7 +225,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${currentInterval.toInt()} min',
+                  context.l10n.intervalMinutes(currentInterval.toInt()),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Slider(
@@ -255,8 +256,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           // DND toggle (D-12)
           SwitchListTile(
-            title: const Text('Do Not Disturb'),
-            subtitle: Text(settings.dndEnabled ? 'On' : 'Off'),
+            title: Text(context.l10n.doNotDisturb),
+            subtitle: Text(settings.dndEnabled ? context.l10n.toggleOn : context.l10n.toggleOff),
             value: settings.dndEnabled,
             onChanged: (val) {
               ref.read(settingsRepositoryProvider).updateSettings(
@@ -276,7 +277,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Column(
                 children: [
                   ListTile(
-                    title: const Text('Start time'),
+                    title: Text(context.l10n.startTime),
                     trailing: Text(
                       _formatTime(
                         context,
@@ -288,7 +289,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         _pickDndTime(isStart: true, settings: settings),
                   ),
                   ListTile(
-                    title: const Text('End time'),
+                    title: Text(context.l10n.endTime),
                     trailing: Text(
                       _formatTime(
                         context,

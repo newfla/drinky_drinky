@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../l10n/l10n_extensions.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/history_screen.dart';
 import '../../presentation/screens/permission_screen.dart';
@@ -60,21 +61,21 @@ GoRouter appRouter(Ref ref) {
             bottomNavigationBar: NavigationBar(
               selectedIndex: navigationShell.currentIndex,
               onDestinationSelected: navigationShell.goBranch,
-              destinations: const [
+              destinations: [
                 NavigationDestination(
-                  icon: Icon(Icons.water_drop_outlined),
-                  selectedIcon: Icon(Icons.water_drop),
-                  label: 'Home',
+                  icon: const Icon(Icons.water_drop_outlined),
+                  selectedIcon: const Icon(Icons.water_drop),
+                  label: context.l10n.tabHome,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.calendar_month_outlined),
-                  selectedIcon: Icon(Icons.calendar_month),
-                  label: 'History',
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  selectedIcon: const Icon(Icons.calendar_month),
+                  label: context.l10n.tabHistory,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.settings_outlined),
-                  selectedIcon: Icon(Icons.settings),
-                  label: 'Settings',
+                  icon: const Icon(Icons.settings_outlined),
+                  selectedIcon: const Icon(Icons.settings),
+                  label: context.l10n.tabSettings,
                 ),
               ],
             ),

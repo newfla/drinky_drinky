@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/repository_providers.dart';
 import '../../domain/entities/drink_preset_entity.dart';
+import '../../l10n/l10n_extensions.dart';
 
 Future<void> showPresetEditDialog(
   BuildContext context,
@@ -51,22 +52,22 @@ class _PresetEditDialogState extends State<_PresetEditDialog> {
     final showError = text.isNotEmpty && !isValid;
 
     return AlertDialog(
-      title: Text('Edit Preset ${widget.preset.sortOrder + 1}'),
+      title: Text(context.l10n.editPresetTitle(widget.preset.sortOrder + 1)),
       content: TextField(
         controller: _controller,
         keyboardType: TextInputType.number,
         autofocus: true,
         decoration: InputDecoration(
-          labelText: 'Amount (ml)',
-          suffixText: 'ml',
-          errorText: showError ? 'Enter a value between 50 and 2000' : null,
+          labelText: context.l10n.amountInputLabel,
+          suffixText: context.l10n.mlUnit,
+          errorText: showError ? context.l10n.presetValidationError : null,
         ),
         onChanged: (_) => setState(() {}),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancelButton),
         ),
         FilledButton(
           onPressed: isValid
@@ -77,7 +78,7 @@ class _PresetEditDialogState extends State<_PresetEditDialog> {
                   Navigator.of(context).pop();
                 }
               : null,
-          child: const Text('Confirm'),
+          child: Text(context.l10n.confirmButton),
         ),
       ],
     );

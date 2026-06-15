@@ -1,35 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../core/providers/repository_providers.dart';
 import '../../core/providers/stream_providers.dart';
 import '../../domain/entities/target_history_entry.dart';
+import '../../l10n/l10n_extensions.dart';
 
 /// Convert an arbitrary DateTime to a dateKey string (YYYY-MM-DD).
 /// Matches the format used by todayDateKey() in stream_providers.dart.
 String _toDateKey(DateTime d) {
   return '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-}
-
-/// Returns the full month name for the given 1-based month integer.
-String _monthName(int month) {
-  const names = [
-    '',
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-  return names[month];
 }
 
 /// Finds the effective target for a date by scanning sorted target history.
@@ -95,7 +77,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     // Show a full-screen spinner while getEarliestDateKey() is loading (D-11).
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('History')),
+        appBar: AppBar(title: Text(context.l10n.historyTitle)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -103,7 +85,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     // Empty state: no entries have ever been logged.
     if (_noEntries) {
       return Scaffold(
-        appBar: AppBar(title: const Text('History')),
+        appBar: AppBar(title: Text(context.l10n.historyTitle)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -111,12 +93,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'No history yet',
+                  context.l10n.noHistoryYet,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Start logging water on the Home tab to see your history here.',
+                  context.l10n.noHistoryYetHint,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -135,11 +117,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final targetsAsync = ref.watch(allTargetHistoryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('History')),
+      appBar: AppBar(title: Text(context.l10n.historyTitle)),
       body: targetsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const Center(
-          child: Text('Something went wrong loading your data.'),
+        error: (e, _) => Center(
+          child: Text(context.l10n.errorLoadingData),
         ),
         data: (targets) {
           // Watch per-month totals for the focused month (D-06, D-07).
@@ -188,14 +170,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '$streak',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          ' day streak',
+                          context.l10n.dayStreak(streak),
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
@@ -341,6 +316,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     required bool? metGoal,
     required bool isToday,
   }) {
+    final locale = Localizations.localeOf(context).toString();
     final colorScheme = Theme.of(context).colorScheme;
     final brightness = Theme.of(context).brightness;
 
@@ -364,11 +340,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     final String semanticLabel;
     if (metGoal == true) {
-      semanticLabel = '${_monthName(day.month)} ${day.day}: goal met';
+      semanticLabel = context.l10n.calendarDayGoalMet(DateFormat.MMMM(locale).format(day), day.day);
     } else if (metGoal == false) {
-      semanticLabel = '${_monthName(day.month)} ${day.day}: goal not met';
+      semanticLabel = context.l10n.calendarDayGoalNotMet(DateFormat.MMMM(locale).format(day), day.day);
     } else {
-      semanticLabel = '${_monthName(day.month)} ${day.day}';
+      semanticLabel = context.l10n.calendarDay(DateFormat.MMMM(locale).format(day), day.day);
     }
 
     return Semantics(
@@ -401,15 +377,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     Map<String, int> monthTotals,
     List<TargetHistoryEntry> targets,
   ) {
+    final locale = Localizations.localeOf(context).toString();
     final dateKey = _toDateKey(day);
     final total = monthTotals[dateKey];
     final dailyTarget = _findActiveTarget(targets, dateKey);
-    final dateLabel = '${_monthName(day.month)} ${day.day}, ${day.year}';
+    final dateLabel = '${DateFormat.MMMM(locale).format(day)} ${day.day}, ${day.year}';
     final String contentLabel;
     if (total != null && total > 0) {
-      contentLabel = '$dateLabel -- $total of $dailyTarget ml';
+      contentLabel = context.l10n.daySummaryWithEntries(dateLabel, total, dailyTarget);
     } else {
-      contentLabel = '$dateLabel -- No entries';
+      contentLabel = context.l10n.daySummaryNoEntries(dateLabel);
     }
 
     return Card(
