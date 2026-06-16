@@ -1,779 +1,296 @@
-# Pitfalls Research: Drinky Drinky v1.3 -- Retrofitting Flutter l10n
+# Domain Pitfalls
 
-**Domain:** Flutter hydration tracker / water reminder app (offline-first, iOS + Android)
-**Stack:** Flutter 3.44.1 + Riverpod 3.x + Drift 2.33.0 + GoRouter + SharedPreferences
-**Researched:** 2026-06-15
-**Scope:** Pitfalls specific to ADDING ARB-based l10n (it/en/fr/es) to an existing Flutter app with ~400-600 hardcoded strings, a singleton NotificationService, and six screens. Covers: missed strings, context availability, ARB codegen, plural rules, RTL, testing, and platform declarations.
-**Overall confidence:** HIGH -- based on official Flutter docs (Context7), direct codebase analysis, and CLDR plural rule data.
-
----
+**Domain:** Adding fl_chart BarChart to an existing Flutter + Riverpod + Drift hydration tracker
+**Researched:** 2026-06-16
+**Confidence:** HIGH (Context7 fl_chart docs, GitHub source code, existing codebase analysis)
 
 ## Critical Pitfalls
 
-### Pitfall 1: NotificationService Singleton Has No BuildContext (CRITICAL)
+Mistakes that cause crashes, blank screens, or require rewrites.
 
-**What goes wrong:** The `NotificationService` is a pure-Dart singleton (`NotificationService._()`) that has no `BuildContext`. The notification title and body are hardcoded as `static const` strings:
-```dart
-static const String _notifTitle = 'Drinky Drinky';
-static const String _notifBody = 'Time to drink water!';
-```
-These strings cannot be localized via `AppLocalizations.of(context)` because there is no `context` available inside the singleton. The `scheduleWindow()` method (line 148) passes `_notifTitle` and `_notifBody` to `_plugin.zonedSchedule()`, which stores them at schedule time, not display time. This means the notification text is baked in when scheduled, not when displayed.
+### Pitfall 1: maxY Defaults to NaN -- All-Zero and Empty-Month Charts Render Blank or Crash
 
-**Why it happens:** The singleton pattern was chosen explicitly (PROJECT.md Key Decision: "notifications are imperative side effects, not reactive streams"). This is the correct architecture decision, but it creates a tension with l10n: localized strings require `BuildContext` to resolve the current locale, and the singleton does not have one.
+**What goes wrong:** When all bars in a month have `toY: 0` (new user, month with no logged entries) or `barGroups` is empty, fl_chart's auto-calculated `maxY` resolves to `0` (from the internal `calculateMaxAxisValues()` helper). The chart either renders as a flat line at the bottom or, depending on downstream math (0-based scaling), produces visual artifacts. If `barGroups` is empty and `maxY` is left as the default `double.nan`, the chart renders nothing but still reserves layout space, confusing the user.
+
+**Why it happens:** The existing `calendarMonthProvider` returns a `Map<String, int>` where absent keys mean "no data for that day." When converting to `BarChartGroupData`, developers often skip days with no data (producing fewer than 28-31 bars) or set `toY: 0` for them. fl_chart does not crash on empty groups -- it returns `(0, 0)` from `calculateMaxAxisValues()` -- but the result is a visually meaningless chart.
 
 **Consequences:**
-- If notification strings are not localized, users see English text regardless of device language
-- If notification strings are localized using the locale at schedule time, and the user changes device language mid-week, all 64 pre-scheduled notifications display in the OLD language until the next reschedule
-- If you try to pass `BuildContext` to the singleton, you risk holding a reference to a disposed context
+- Blank chart area with axis labels but no visible bars (silent failure)
+- If `maxY` is explicitly set to `0`, grid lines and tooltips may produce division-by-zero artifacts
+- Users see a chart that looks "broken" on months where they barely used the app
 
 **Prevention:**
-1. **Pass resolved strings, not context:** Modify `scheduleWindow()` to accept localized title and body as parameters:
-   ```dart
-   Future<void> scheduleWindow(
-     UserSettingsEntity settings, {
-     required String title,
-     required String body,
-   }) async { ... }
-   ```
-2. **Resolve at call site:** Every caller of `scheduleWindow()` already has a `BuildContext` (or a `WidgetRef` that can access one):
-   - `home_screen.dart` line 37 (`_rescheduleNotifications` -- has `context` via `ConsumerState`)
-   - `home_screen.dart` line 67 (`cancelAll` -- no change needed, cancelling does not need strings)
-   - `settings_screen.dart` line 246 (interval change -- has `context`)
-   - `settings_screen.dart` line 266 (DND toggle -- has `context`)
-   - `settings_screen.dart` line 334 (DND time change -- has `context`)
-   - `permission_screen.dart` line 108 (first schedule -- has `context`)
-3. **Accept stale-language risk:** Notifications are rescheduled on every app resume (`AppLifecycleListener.onResume`), so the language staleness window is short. Document this as an acceptable trade-off.
-4. **Do NOT make NotificationService locale-aware.** Do not store the locale in the singleton or import `flutter_localizations`. Keep the singleton pure-Dart.
+- Always generate exactly N `BarChartGroupData` items (where N = number of days in the focused month), with `toY: 0.0` for days with no data. Never skip days.
+- Always provide an explicit `maxY` that is at least some sensible minimum (e.g., `max(actualMaxValue, dailyTarget.toDouble())`). This guarantees a meaningful Y axis even when all values are zero.
+- Show an empty-state message ("No data this month") instead of a chart when the month has zero total intake. Check `monthTotals.isEmpty` before rendering the chart widget at all.
 
-**Detection:** Schedule notifications, then change the device language without opening the app. If the notifications show the old language, the fix is working as designed (stale until next reschedule). If they show untranslated keys like `notif_body`, the l10n integration is broken.
-
-**Confidence:** HIGH -- direct code analysis of `notification_service.dart` lines 24-25 and all 6 call sites.
-
-**Phase:** Must be addressed in the notification strings translation task (v1.3).
+**Detection:** Test with a fresh database, test with a month where only 1-2 days have data.
 
 ---
 
-### Pitfall 2: Missed Strings Outside Widget Code (CRITICAL)
+### Pitfall 2: Implicit Animation Crash on Bar Count Change Between Months
 
-**What goes wrong:** Developers audit `.dart` files in `lib/presentation/` for hardcoded strings but miss strings in non-widget locations. In this codebase, there are translatable strings in at least these non-obvious places:
+**What goes wrong:** fl_chart uses implicit animations via `lerp()` between old and new `BarChartData`. The `lerpBarChartRodDataList` function interpolates between the old and new lists of `BarChartGroupData`. When the user swipes from a 31-day month to a 28-day month (or vice versa), the bar count changes. fl_chart handles this gracefully in its lerp (it pads or truncates the list during interpolation), but the `x` values shift during the animation, causing day labels on the bottom axis to briefly show incorrect numbers -- day "29" animates into day "1", for example.
 
-1. **Semantics labels in `history_screen.dart`** (lines 364-370):
-   ```dart
-   semanticLabel = '${_monthName(day.month)} ${day.day}: goal met';
-   semanticLabel = '${_monthName(day.month)} ${day.day}: goal not met';
-   ```
-   These are accessibility strings spoken by screen readers. They MUST be localized.
-
-2. **Month name array in `history_screen.dart`** (lines 17-32):
-   ```dart
-   const names = ['', 'January', 'February', ...];
-   ```
-   This is a manual month list used for semantics and the day summary card (line 406). After l10n, this should use `DateFormat.MMMM(locale).format(date)` from the `intl` package (already a dependency).
-
-3. **Day summary card content** (lines 407-410):
-   ```dart
-   contentLabel = '$dateLabel -- $total of $dailyTarget ml';
-   contentLabel = '$dateLabel -- No entries';
-   ```
-
-4. **NotificationService** strings (covered in Pitfall 1).
-
-5. **Android notification channel name** (`notification_service.dart` line 23):
-   ```dart
-   static const String _channelName = 'Hydration Reminders';
-   ```
-   The channel name is visible in Android Settings > App > Notifications. It should be localized, but **cannot** use `AppLocalizations.of(context)` because `initialize()` runs in `main()` before `MaterialApp` exists. See Pitfall 3.
-
-6. **`_sexFactors` map keys used as both data keys AND display labels** (`hydration_calculator_screen.dart` lines 28-30):
-   ```dart
-   static const _sexFactors = {
-     'Maschio': 35.0,
-     'Femmina': 31.0,
-     'Altro': 33.0,
-   };
-   ```
-   The key `'Maschio'` is stored in `_selectedSex` and then used as BOTH a map lookup key (`_sexFactors[_selectedSex!]!`) AND a display value in `ButtonSegment(value: 'Maschio', label: Text('Maschio'))`. After l10n, the display label changes per locale, but the map key must remain stable.
-
-**Prevention:**
-1. **Grep comprehensively.** Search for ALL string literals in `lib/`, not just `Text(` widgets:
-   ```bash
-   grep -rn "'" lib/ --include="*.dart" | grep -v ".g.dart" | grep -v ".freezed.dart" | grep -v "import " | grep -v "//"
-   ```
-2. **Replace `_monthName()` with `DateFormat.MMMM(locale).format()`** -- the `intl` package is already a dependency and handles all four target locales correctly.
-3. **Separate data keys from display labels** for the calculator:
-   ```dart
-   enum Sex { male, female, other }
-   static const _sexFactors = {Sex.male: 35.0, Sex.female: 31.0, Sex.other: 33.0};
-   // Display: AppLocalizations.of(context).sexMale, etc.
-   ```
-4. **Use `untranslated-messages-file` in `l10n.yaml`** to generate a file listing any ARB keys present in the template but missing in translation files. This catches missed translations, not missed extractions.
-5. **Create a string audit checklist** covering: Text widgets, SnackBar content, AppBar titles, dialog titles/content, tooltip strings, semanticLabel, hintText, labelText, errorText, suffixText, and notification strings.
-
-**Detection:** Run the app in French. If any Italian or English strings appear, they were missed.
-
-**Confidence:** HIGH -- direct codebase analysis identified all 6 categories above.
-
-**Phase:** String extraction task (v1.3, first phase).
-
----
-
-### Pitfall 3: AppLocalizations.of(context) Returns Null Before MaterialApp (CRITICAL)
-
-**What goes wrong:** `AppLocalizations.of(context)` works only BELOW the `MaterialApp` widget in the widget tree. If called above it (e.g., in `main()`, in root-level `build()`, or in code that runs before `MaterialApp` is built), it returns `null`. With `nullable-getter: true` (the default), the `!` operator crashes. With `nullable-getter: false`, the framework itself throws.
-
-In this codebase, the specific danger points are:
-
-1. **`main()` function** (line 21): `NotificationService.instance.initialize()` runs before `MaterialApp`. The notification channel name is set here. You CANNOT use `AppLocalizations` at this point because there is no widget tree at all.
-
-2. **`DrinkyDrinkyApp.build()`** (line 34): This is the `ConsumerWidget` that CREATES the `MaterialApp`. Calling `AppLocalizations.of(context)` inside this `build` method fails because the `localizationsDelegates` have not been installed yet -- they ARE the `MaterialApp`.
-
-3. **MaterialApp `title` property** (line 39): `title: 'Drinky Drinky'` is set inside `MaterialApp.router()`. This is fine as a non-localized app name, but if you try to localize it via `AppLocalizations.of(context)`, it fails because the context is from ABOVE the MaterialApp. Use `onGenerateTitle` instead:
-   ```dart
-   onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
-   ```
-
-**Prevention:**
-1. **Use `nullable-getter: false` in `l10n.yaml`** to get compile-time safety (non-nullable return type). This way, calling `AppLocalizations.of(context)` from a context without localization delegates produces a clear framework error instead of a silent null.
-2. **Never pass `AppLocalizations` to code that runs before `MaterialApp`.** For `NotificationService.initialize()`, keep the channel name as a hardcoded English string (it is only visible in Android system settings and is set once at startup).
-3. **For `MaterialApp.title`, use `onGenerateTitle`** which provides a context BELOW the MaterialApp.
-4. **Audit every call to `AppLocalizations.of(context)`** to ensure the context is from a widget BELOW `MaterialApp` in the tree. In this app, all screens are rendered via GoRouter routes, which are all below `MaterialApp`, so screen-level usage is safe.
-
-**Detection:** If the app crashes on startup with "Null check operator used on a null value" after adding l10n, you are calling `AppLocalizations.of(context)` from above `MaterialApp`.
-
-**Confidence:** HIGH -- verified via Flutter official docs (Context7) and direct analysis of `main.dart`.
-
-**Phase:** Infrastructure setup task (v1.3, first task).
-
----
-
-### Pitfall 4: Hydration Calculator Uses Italian Strings as Map Keys (CRITICAL)
-
-**What goes wrong:** The `_sexFactors` map uses Italian display strings as keys (`'Maschio'`, `'Femmina'`, `'Altro'`). The `_selectedSex` state variable holds these Italian strings. The `_computeRecommendation()` method looks up `_sexFactors[_selectedSex!]!`. After l10n, if the ButtonSegment `value` is changed to a localized string (e.g., `'Male'` in English), `_sexFactors['Male']` returns `null`, and the `!` crashes.
-
-Similarly, `_climateLabels` (line 34) contains Italian strings (`'Freddo'`, `'Mite'`, `'Caldo'`, `'Molto caldo'`, `'Afoso'`) used as display labels. These are safer because they are looked up by index, not by string key. But they still need localization.
-
-**Why it happens:** The original code was Italian-only, so using display strings as map keys worked fine. This is a classic l10n anti-pattern: conflating data identifiers with user-visible text.
-
-**Consequences:** App crashes when the device language is not Italian. The hydration calculator is unusable.
-
-**Prevention:**
-1. **Refactor to enum-based keys BEFORE adding l10n:**
-   ```dart
-   enum Sex { male, female, other }
-   static const _sexFactors = {Sex.male: 35.0, Sex.female: 31.0, Sex.other: 33.0};
-   ```
-2. **Localize display labels separately:**
-   ```dart
-   String _sexLabel(BuildContext context, Sex sex) {
-     final l10n = AppLocalizations.of(context);
-     return switch (sex) {
-       Sex.male => l10n.sexMale,
-       Sex.female => l10n.sexFemale,
-       Sex.other => l10n.sexOther,
-     };
-   }
-   ```
-3. **Localize climate labels the same way:**
-   ```dart
-   List<String> _climateLabels(BuildContext context) {
-     final l10n = AppLocalizations.of(context);
-     return [l10n.climateCold, l10n.climateMild, l10n.climateWarm, l10n.climateVeryWarm, l10n.climateHumid];
-   }
-   ```
-4. **This refactor MUST happen before or during the string extraction phase**, not after. If you extract strings first and try to use localized strings as map keys, you introduce the crash.
-
-**Detection:** Switch to English. Open the calculator. Select a sex option. If the app crashes, the map key was not decoupled from the display label.
-
-**Confidence:** HIGH -- direct code analysis of `hydration_calculator_screen.dart` lines 27-34, 56.
-
-**Phase:** String extraction task (v1.3). Must be done as a prerequisite refactor.
-
----
-
-## High-Severity Pitfalls
-
-### Pitfall 5: iOS Info.plist Missing CFBundleLocalizations
-
-**What goes wrong:** The iOS `Info.plist` currently has no `CFBundleLocalizations` key. Without it, iOS does not know the app supports Italian, French, or Spanish. This causes two problems:
-1. The App Store listing does not show the supported languages
-2. iOS may not offer the app's supported locales to the Flutter framework via `Localizations.localeOf(context)` -- it defaults to English
-
-The current `project.pbxproj` only declares `knownRegions = (en, Base)`. The locales `it`, `fr`, `es` are missing.
-
-**Why it happens:** The Flutter project template only includes English. Adding locales to the Dart side (`supportedLocales` in `MaterialApp`) is necessary but NOT sufficient for iOS. The native iOS side must also declare them.
-
-**Consequences:** On iOS, the app may always display in English even when the device language is Italian, French, or Spanish. Flutter's locale resolution depends on the platform reporting the device locale, and iOS filters available locales through the app's declared capabilities.
-
-**Prevention:**
-1. **Add locales via Xcode:** Open `ios/Runner.xcodeproj` in Xcode. Under Project > Info > Localizations, add Italian, French, and Spanish. Xcode will create empty `.strings` files and update `project.pbxproj` to include `it`, `fr`, `es` in `knownRegions`.
-2. **Or add `CFBundleLocalizations` manually to `Info.plist`:**
-   ```xml
-   <key>CFBundleLocalizations</key>
-   <array>
-     <string>en</string>
-     <string>it</string>
-     <string>fr</string>
-     <string>es</string>
-   </array>
-   ```
-3. **Do BOTH:** The Xcode project settings and Info.plist should agree. The Xcode approach is safer because it also sets up the native localization infrastructure.
-4. **Test on a real iOS device** with the device language set to Italian, then French, then Spanish. If `Localizations.localeOf(context).languageCode` still returns `en`, the native declaration is missing.
-
-**Detection:** Set iOS device to Italian. Launch app. If strings appear in English, check `Info.plist` for `CFBundleLocalizations`.
-
-**Confidence:** HIGH -- verified via Flutter official internationalization docs (Context7) and direct inspection of `Info.plist` (no `CFBundleLocalizations` key present).
-
-**Phase:** Platform configuration task (v1.3).
-
----
-
-### Pitfall 6: Android resConfigs Not Set (Locale Filtering)
-
-**What goes wrong:** Android's build system includes all locale resources from all dependencies by default. Without `resConfigs`, the APK contains locale data for 80+ languages from Material/Cupertino dependencies. This has two effects:
-1. **App bloat:** The APK is larger than necessary with unused locale resources
-2. **Android system locale list:** The app appears to support languages it does not actually support, because the system detects resource folders for those languages
-
-**Why it happens:** The `build.gradle.kts` has no `resConfigs` declaration (verified: only `minSdk`, `targetSdk`, `versionCode`, `versionName` in `defaultConfig`).
-
-**Consequences:** Minor for a 4-language app, but can confuse the Android locale resolution algorithm. If the device is set to German (unsupported), Android might match to a resource from a dependency rather than falling back to English as intended.
-
-**Prevention:**
-Add to `android/app/build.gradle.kts` inside `defaultConfig`:
-```kotlin
-defaultConfig {
-    // ... existing config ...
-    resourceConfigurations.addAll(listOf("en", "it", "fr", "es"))
-}
-```
-
-**Detection:** Build the APK. Check `res/` folder for unexpected locale directories.
-
-**Confidence:** MEDIUM -- this is a best practice rather than a must-fix. Flutter's l10n resolution handles fallback correctly regardless. But it prevents spurious locale matches.
-
-**Phase:** Platform configuration task (v1.3).
-
----
-
-### Pitfall 7: `synthetic-package` Default Changed -- Import Path Confusion
-
-**What goes wrong:** Flutter 3.32+ changed the default for `synthetic-package` from `true` to `false`. With `synthetic-package: true` (old default), generated files went to a virtual `package:flutter_gen/gen_l10n/` package. With `synthetic-package: false` (new default, which is what Flutter 3.44.1 uses), generated files go into the source directory (default: same as `arb-dir`).
-
-If the developer follows old tutorials or Stack Overflow answers that use `import 'package:flutter_gen/gen_l10n/app_localizations.dart'`, the import fails because no synthetic package is created.
-
-**Why it happens:** The breaking change landed in Flutter 3.28 and was finalized in 3.32. Since this project uses Flutter 3.44.1, the old synthetic-package behavior is unavailable. Old documentation and tutorials still reference the old import path.
-
-**Consequences:** Compilation error: `Target of URI doesn't exist: 'package:flutter_gen/gen_l10n/app_localizations.dart'`.
-
-**Prevention:**
-1. **Create `l10n.yaml` with explicit configuration:**
-   ```yaml
-   arb-dir: lib/l10n
-   template-arb-file: app_en.arb
-   output-localization-file: app_localizations.dart
-   synthetic-package: false
-   nullable-getter: false
-   ```
-2. **Import from the source path, not the synthetic package:**
-   ```dart
-   import 'package:drinky_drinky/l10n/app_localizations.dart';
-   // NOT: import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-   ```
-3. **Add `generate: true` to `pubspec.yaml`** under the `flutter:` key. This is now REQUIRED for l10n generation:
-   ```yaml
-   flutter:
-     uses-material-design: true
-     generate: true
-   ```
-4. **Ignore tutorials dated before 2025** that reference `package:flutter_gen`.
-
-**Detection:** Run `flutter gen-l10n`. If it succeeds but the import path is wrong, the app will not compile.
-
-**Confidence:** HIGH -- verified via Flutter official breaking change docs (https://docs.flutter.dev/release/breaking-changes/flutter-generate-i10n-source).
-
-**Phase:** Infrastructure setup task (v1.3, first task).
-
----
-
-### Pitfall 8: `output-dir` Clash with build_runner
-
-**What goes wrong:** If `output-dir` in `l10n.yaml` is set to a directory that `build_runner` also writes to (e.g., `lib/` root, or a directory with `.g.dart` files), `build_runner` may delete or conflict with gen-l10n output files. Conversely, `flutter gen-l10n` may overwrite build_runner output.
-
-This project uses `build_runner` for Drift (`*.g.dart`), Riverpod (`*.g.dart`), and Freezed (`*.freezed.dart`). The code-gen output lives alongside source files.
-
-**Why it happens:** `flutter gen-l10n` and `build_runner` are two independent code generation systems. They do not coordinate. `build_runner` has a `deleteConflictingOutputs` option that can nuke files it does not recognize.
-
-**Consequences:** Generated l10n files disappear after running `build_runner build`, or vice versa. Compilation fails with missing `AppLocalizations` class.
-
-**Prevention:**
-1. **Put ARB files and generated output in a dedicated directory** that does not contain any build_runner-managed files:
-   ```yaml
-   # l10n.yaml
-   arb-dir: lib/l10n
-   output-dir: lib/l10n
-   synthetic-package: false
-   ```
-   The `lib/l10n/` directory should contain ONLY `.arb` files and gen-l10n output. No Drift tables, no Riverpod providers, no Freezed models.
-2. **Do NOT use `output-dir: lib/`** or any directory that contains `.dart` files managed by build_runner.
-3. **Run in the correct order:** `flutter gen-l10n` first, then `dart run build_runner build`. Or better, use `flutter gen-l10n` independently (it does not need build_runner).
-4. **Note:** `flutter gen-l10n` is NOT a build_runner builder. It is a standalone Flutter tool. It runs separately from `dart run build_runner build`. They do not conflict as long as their output directories are distinct.
-
-**Detection:** Run `flutter gen-l10n`, verify files exist in `lib/l10n/`. Run `dart run build_runner build --delete-conflicting-outputs`. Verify l10n files still exist.
-
-**Confidence:** HIGH -- verified via Flutter docs. The key insight is that gen-l10n and build_runner are independent systems.
-
-**Phase:** Infrastructure setup task (v1.3).
-
----
-
-### Pitfall 9: `const Text()` Widgets Break After l10n
-
-**What goes wrong:** Many Text widgets in the codebase are declared as `const`:
-```dart
-appBar: AppBar(title: const Text('Settings')),
-child: const Text('Enable Reminders'),
-child: const Text('Usa come target'),
-```
-After l10n, these become:
-```dart
-appBar: AppBar(title: Text(AppLocalizations.of(context)!.settingsTitle)),
-```
-The `const` keyword must be removed because `AppLocalizations.of(context)` is a runtime call. If a parent widget is also `const`, it must lose `const` too. This can cascade: a `const InputDecoration(hintText: 'Custom amount')` becomes non-const, which may affect the parent `TextField`, etc.
-
-**Why it happens:** `const` requires compile-time constants. Localized strings are runtime values.
+**Why it happens:** The lerp implementation interpolates `x` between the old and new group: `(a.x + (b.x - a.x) * t).round()`. If old month has groups x=0..30 and new month has x=0..27, during animation the last 3 groups animate x from 28/29/30 toward lower values, producing transient garbage on the bottom axis.
 
 **Consequences:**
-1. **Compilation errors** if `const` is left in place
-2. **Lint warnings** from `flutter_lints` about unnecessary `const` removal
-3. **Performance:** Removing `const` from leaf widgets has negligible performance impact. The real cost is developer time removing `const` throughout the tree.
+- Visually confusing animation artifacts during month transitions
+- Bottom axis labels briefly show wrong day numbers
+- Does not crash, but looks unprofessional
 
 **Prevention:**
-1. **Accept the const removal.** It is unavoidable and has no meaningful performance impact for this app's scale.
-2. **Do NOT try to preserve const** by pre-resolving strings in `initState` or `didChangeDependencies`. This creates stale-string bugs when the locale changes at runtime.
-3. **Use find-and-replace systematically:** Search for `const Text('` across all screens. Each one needs l10n treatment.
-4. **Count:** The codebase has approximately 15-20 `const Text(...)` widgets that need const removal. This is a manageable manual task.
+- Set `duration: Duration.zero` (disable animation) or use a very short duration (50ms) to make lerp artifacts imperceptible.
+- Alternatively, use a `ValueKey` on the `BarChart` widget keyed to `'$year-$month'` so Flutter destroys and recreates the widget on month change instead of animating.
+- The `ValueKey` approach is simpler and recommended for this use case since month-to-month animation is not expected UX in a calendar chart.
 
-**Detection:** `flutter analyze` will flag every `const` violation. Fix them all before moving on.
-
-**Confidence:** HIGH -- direct codebase grep identified all instances.
-
-**Phase:** String extraction task (v1.3). Tedious but straightforward.
+**Detection:** Navigate between February (28 days) and March (31 days) in the calendar while watching for animation glitches.
 
 ---
 
-### Pitfall 10: French Plural Rules Differ from Italian/Spanish/English
+### Pitfall 3: showingTooltipIndicators Index Out of Bounds on Data Change
 
-**What goes wrong:** French treats 0 and 1 as the SAME plural category (`one`), while Italian, Spanish, and English treat only 1 as singular. This means ARB plural messages must be defined carefully:
+**What goes wrong:** If `showingTooltipIndicators` is hardcoded with indices (e.g., `[0]` to always show a tooltip), and the bar data changes such that the referenced rod index no longer exists, fl_chart crashes with `RangeError (length): Invalid value: Not in inclusive range 0..N: M`. This is a confirmed bug (GitHub issue #1911).
 
-| Count | English | Italian | French | Spanish |
-|-------|---------|---------|--------|---------|
-| 0 | "0 days" (other) | "0 giorni" (other) | "0 jour" (one!) | "0 dias" (other) |
-| 1 | "1 day" (one) | "1 giorno" (one) | "1 jour" (one) | "1 dia" (one) |
-| 2 | "2 days" (other) | "2 giorni" (other) | "2 jours" (other) | "2 dias" (other) |
+**Why it happens:** In a Riverpod reactive setup, the chart data rebuilds whenever the Drift stream emits. If the developer uses `showingTooltipIndicators` to pin tooltips on specific bars, the indices can reference rods that no longer exist after a data update.
 
-Additionally, Italian and French have a `many` category for certain large numbers, though this is unlikely to matter for a hydration app (users will not drink 1,000,000 ml of water).
-
-**Why it happens:** CLDR (Unicode Common Locale Data Repository) defines different plural rules per language. The `intl` package and Flutter's gen-l10n respect these rules. If the ARB file for French does not include the `one` category handling 0 correctly, the output is grammatically wrong.
-
-**Consequences:** The streak display says `"0 day streak"` in French (correct per CLDR) but looks odd if the English-speaking developer expected `"0 days"`. If you use a select/plural ICU message format, you must test the `0` case in French specifically.
+**Consequences:** Hard crash during paint phase -- `drawTouchTooltip` accesses an invalid array index.
 
 **Prevention:**
-1. **Use ICU plural syntax in ARB files** for any string that includes a count:
-   ```json
-   "dayStreak": "{count, plural, =0{Nessuna serie} one{{count} giorno di serie} other{{count} giorni di serie}}",
-   ```
-2. **In the French ARB**, remember that `one` covers both 0 and 1:
-   ```json
-   "dayStreak": "{count, plural, one{{count} jour de suite} other{{count} jours de suite}}",
-   ```
-   Here, `one` will match for count=0 ("0 jour de suite") and count=1 ("1 jour de suite"). If you want a special zero case in French, use `=0` explicitly:
-   ```json
-   "dayStreak": "{count, plural, =0{Aucune serie} one{{count} jour de suite} other{{count} jours de suite}}",
-   ```
-3. **Test plural strings with counts 0, 1, 2, and 21** in all four locales.
-4. **In this app, the affected strings are:**
-   - Streak count: `"$streak day streak"` (history_screen.dart line 199)
-   - Any future "X entries" or "X ml" strings that use plural forms
+- Do not use `showingTooltipIndicators` at all for this use case. Rely on `handleBuiltInTouches: true` for tap-to-show tooltips instead.
+- If pinned tooltips are needed, always rebuild `showingTooltipIndicators` in the same pass as the bar data, validating indices against the current rod count.
 
-**Detection:** Set device to French. Log zero entries. Check if "0 jour" vs "0 jours" is grammatically correct. (Both are acceptable in French -- "0 jour" is prescriptively correct per CLDR, even though "0 jours" is common colloquially.)
-
-**Confidence:** HIGH -- CLDR plural rules verified via unicode.org.
-
-**Phase:** Translation task (v1.3). Translator must be aware of French `one` = {0,1}.
+**Detection:** Rapidly tap through months while tooltips are visible.
 
 ---
 
-### Pitfall 11: table_calendar Locale Not Wired to App Locale
+### Pitfall 4: Drift Stream Resubscription Thrashing When Calendar Month Changes
 
-**What goes wrong:** `table_calendar` renders day-of-week headers and month names using the `intl` package. It accepts an optional `locale` parameter. If omitted, it uses the default `intl` locale. After adding l10n, the app's locale changes dynamically, but if `table_calendar`'s `locale` property is not set, the calendar headers remain in the default locale.
+**What goes wrong:** The existing `calendarMonthProvider(year, month)` is a family provider that creates a new Drift stream subscription per (year, month) pair. When the user swipes the TableCalendar, `onPageChanged` fires with a new `focusedDay`, which updates `focusedMonthProvider`, which triggers the chart to watch a new `calendarMonthProvider(newYear, newMonth)`. If the chart provider also sets up its own family provider watching `calendarMonthProvider`, there is a chain of: page change -> focused month update -> calendar month provider resubscribe -> chart provider resubscribe. This causes a visible loading flash (the `AsyncValue` goes through `loading` briefly) every time the user swipes months.
 
-Additionally, `table_calendar` requires `initializeDateFormatting()` to be called before using non-default locales. This is documented in the table_calendar README and must be called in `main()`.
+**Why it happens:** Riverpod autoDispose family providers transition through `loading` state when a new family key is watched for the first time. The calendar provider already handles this for the calendar grid, but a new chart provider layered on top amplifies the effect.
 
-**Why it happens:** `table_calendar` does not automatically inherit the `Locale` from `MaterialApp`. It uses the `intl` package's default locale unless overridden via its `locale` parameter.
-
-**Consequences:** The app shows localized UI strings (translated via gen-l10n), but the calendar month names and day-of-week headers remain in English. This is a jarring inconsistency.
+**Consequences:**
+- Loading spinner/shimmer flashes on every month swipe
+- Two separate loading states (calendar + chart) that resolve at different times
+- User perceives the History screen as "slow"
 
 **Prevention:**
-1. **Pass the locale to `TableCalendar`:**
-   ```dart
-   TableCalendar(
-     locale: Localizations.localeOf(context).toString(),
-     // ... other properties
-   ),
-   ```
-2. **Call `initializeDateFormatting()` in `main()`:**
-   ```dart
-   import 'package:intl/date_symbol_data_local.dart';
+- Reuse the existing `calendarMonthProvider` data for the chart instead of creating a separate chart-specific provider. The `Map<String, int>` it returns already contains all daily totals needed for the monthly bar chart.
+- Convert the `calendarMonthProvider` output to `BarChartGroupData` in a derived (computed) provider that does NOT make its own DB call. This way there is only one stream subscription and one loading state per month.
+- Pattern: `@riverpod monthlyBarChartData(ref, year, month) { final totals = ref.watch(calendarMonthProvider(year, month)); return totals.when(...convert to BarChartGroupData...); }`
 
-   Future<void> main() async {
-     WidgetsFlutterBinding.ensureInitialized();
-     await initializeDateFormatting(); // loads ALL locale data
-     // ... rest of main()
-   }
-   ```
-   Note: `initializeDateFormatting()` with no arguments loads ALL locale data. For a smaller footprint, you could call `initializeDateFormatting('it')`, `initializeDateFormatting('fr')`, etc., but loading all is simpler and the size difference is negligible for a mobile app.
-3. **Remove the manual `_monthName()` function** (history_screen.dart lines 16-33) and replace with `DateFormat.MMMM(locale).format(date)`. This eliminates a second source of month names that would not be localized.
-
-**Detection:** Set device to French. Open calendar. If month names are in English but app bar says "Historique", the `locale` parameter is not set.
-
-**Confidence:** HIGH -- verified via table_calendar Context7 docs (README shows locale configuration).
-
-**Phase:** UI wiring task (v1.3). Must be done when localizing the history screen.
+**Detection:** Swipe rapidly through 5-6 months and observe whether charts flash or stutter.
 
 ---
 
-### Pitfall 12: Dynamic String Concatenation Creates Untranslatable Strings
+### Pitfall 5: GoRouter Sub-Route Under StatefulShellBranch Breaks Navigation Stack
 
-**What goes wrong:** Several screens use Dart string interpolation to build sentences:
-```dart
-// home_screen.dart line 140
-'${_formatLiters(context, totalMl)} / ${_formatLiters(context, target)} L'
+**What goes wrong:** Adding a `/history/:dateKey` sub-route under the `/history` branch of `StatefulShellRoute.indexedStack` causes the day detail screen to render inside the history tab's navigation area with the bottom navigation bar still visible. If done incorrectly (as a sibling route instead of child route), GoRouter may not maintain the history tab's navigation stack, causing back-button to jump to home instead of back to the calendar.
 
-// home_screen.dart line 240
-'+$amountMl ml added'
+**Why it happens:** `StatefulShellRoute.indexedStack` maintains separate navigation stacks per branch. Sub-routes must be declared as children of the branch's `GoRoute`, not as top-level routes. The existing router has `/history` as a leaf route with no children.
 
-// settings_screen.dart line 155
-'Preset ${preset.sortOrder + 1}'
-
-// history_screen.dart line 409
-'$dateLabel -- $total of $dailyTarget ml'
-
-// hydration_calculator_screen.dart line 102
-'Target aggiornato a ${_formatMl(context, recommendedMl)}'
-```
-These concatenated strings cannot be extracted to ARB as-is. Each one needs to become an ARB message with placeholders:
-```json
-"progressText": "{current} / {target} L",
-"mlAdded": "+{amount} ml added",
-"presetNumber": "Preset {number}",
-"daySummary": "{date} -- {total} of {target} ml"
-```
-
-**Why it happens:** String interpolation is natural in Dart. It works fine in a single language. But different languages have different word orders, so `"$total of $dailyTarget ml"` cannot be translated to French by just translating "of" -- the entire sentence structure may differ.
-
-**Consequences:** If strings are not properly parameterized in ARB, translators either cannot translate them, or the translations produce grammatically incorrect sentences.
+**Consequences:**
+- Day detail screen either shows with bottom nav bar (if child of branch) or without it (if top-level route) -- developer must choose intentionally
+- Back navigation may break if the route is not properly nested
+- If declared as top-level route, the history tab loses its selected state
 
 **Prevention:**
-1. **Identify ALL interpolated strings** before writing ARB files. Grep for `'$` and `"$` in presentation code.
-2. **Convert each to an ARB message with named placeholders:**
-   ```json
-   {
-     "progressDisplay": "{current} / {target} L",
-     "@progressDisplay": {
-       "placeholders": {
-         "current": {"type": "String"},
-         "target": {"type": "String"}
-       }
-     }
-   }
-   ```
-3. **Use `NumberFormat` with locale** for number formatting inside placeholders. Do NOT hardcode comma vs period.
-4. **Special case -- "Goal reached!"** (home_screen.dart line 140): The ternary `totalMl == target ? 'Goal reached!' : '...'` should become two separate ARB keys, not a parameterized string with a conditional.
+- For a full-screen day detail (no bottom nav), add it as a top-level `GoRoute` outside `StatefulShellRoute`: `GoRoute(path: '/day-detail/:dateKey', builder: ...)`. Navigate with `context.push('/day-detail/$dateKey')`.
+- For a day detail inside the history tab (with bottom nav), change `/history` from a leaf to a parent with children: `GoRoute(path: '/history', builder: ..., routes: [GoRoute(path: 'day/:dateKey', builder: ...)])`. Navigate with `context.go('/history/day/$dateKey')`.
+- Decision should be explicit in the spec. Full-screen push (top-level route) is recommended for charts because it gives more vertical space and a clearer "drill down then back" UX.
 
-**Detection:** Review ARB files. Any message without `{placeholders}` that corresponds to an interpolated string in the Dart code is a bug.
-
-**Confidence:** HIGH -- direct codebase grep identified all interpolated strings.
-
-**Phase:** String extraction task (v1.3).
-
----
+**Detection:** Navigate to day detail, then press system back button. Verify you return to history (not home). Verify bottom nav state is correct.
 
 ## Moderate Pitfalls
 
-### Pitfall 13: SnackBar Strings Captured Before Locale Context Available
+### Pitfall 6: Bottom Axis Label Overlap for 28-31 Day Months
 
-**What goes wrong:** Several SnackBar messages are created in async callbacks. The pattern:
-```dart
-void _onQuickAdd(int amountMl) async {
-  await repo.insertEntry(amountMl, DateTime.now(), capturedKey);
-  if (!mounted) return;
-  messenger.showSnackBar(
-    SnackBar(content: Text('+$amountMl ml added')),
-  );
-}
-```
-After l10n, this becomes:
-```dart
-SnackBar(content: Text(AppLocalizations.of(context)!.mlAdded(amountMl))),
-```
-The `context` is still valid here (protected by `if (!mounted) return`), so this is safe. BUT if the developer pre-resolves the string BEFORE the async gap to "be safe":
-```dart
-final msg = AppLocalizations.of(context)!.mlAdded(amountMl); // Before async
-await repo.insertEntry(...);
-if (!mounted) return;
-messenger.showSnackBar(SnackBar(content: Text(msg))); // Uses stale msg
-```
-The string is resolved with the locale at resolution time, which is fine. But if the locale changes during the async gap (unlikely but possible if the user changes language in system settings while the app is processing), the string would be stale.
+**What goes wrong:** A monthly bar chart has 28-31 bars. With `SideTitles.interval: 1` on the bottom axis, every day shows a label. On a phone screen (360-414dp wide), 31 labels at even 10px each total 310px plus spacing, causing labels to overlap and become unreadable.
 
 **Prevention:**
-1. **Resolve localized strings AFTER `if (!mounted) return`, not before.** This is already the correct pattern for `ScaffoldMessenger.of(context)` calls.
-2. **The existing code pattern is safe.** Do not pre-resolve strings before async gaps.
+- Set `interval` to show only every 5th or 7th day (e.g., 1, 5, 10, 15, 20, 25, [28-31]).
+- Use `getTitlesWidget` callback to return `SizedBox.shrink()` for non-milestone days.
+- Set `reservedSize` appropriately (at least 30) for bottom titles.
+- Consider rotating labels 45 degrees via `RotatedBox` in `getTitlesWidget` if all days must be shown.
 
-**Detection:** Code review. Search for `AppLocalizations.of(context)` calls that appear before `await` statements in async methods.
-
-**Confidence:** MEDIUM -- this is a coding pattern risk, not a current bug.
-
-**Phase:** String extraction task (v1.3). Code review checkpoint.
+**Detection:** Test on a 360dp-wide device with a 31-day month.
 
 ---
 
-### Pitfall 14: Missing `flutter_localizations` SDK Dependency
+### Pitfall 7: Chart Does Not React to New Water Entry Added on Home Screen
 
-**What goes wrong:** The `pubspec.yaml` does not currently include `flutter_localizations` as a dependency. Without it, `GlobalMaterialLocalizations.delegate`, `GlobalWidgetsLocalizations.delegate`, and `GlobalCupertinoLocalizations.delegate` are not available. These delegates are REQUIRED for Material and Cupertino widgets to display in the correct locale (date pickers, time pickers, dialogs).
+**What goes wrong:** The user adds water on the Home tab, switches to History tab, and the chart still shows old data. This happens if the chart provider is not derived from the same reactive Drift stream as the calendar.
 
-The app uses `showTimePicker()` in `settings_screen.dart` (line 321). Without `GlobalMaterialLocalizations`, the time picker always displays in English regardless of the app locale.
+**Why it happens:** If the chart has its own `Future`-based provider (e.g., a one-shot query on tab switch rather than a stream), it will not receive Drift's change notifications. The existing calendar already uses stream-based `calendarMonthProvider`, so the fix is straightforward -- but creating a separate chart provider that uses `Future` instead of `Stream` is a natural mistake.
 
-**Why it happens:** `flutter_localizations` is an SDK package (not from pub.dev) that must be explicitly added. It is not included in the default Flutter project template.
+**Prevention:**
+- Derive chart data from `calendarMonthProvider` (stream-based), not from a new one-shot query.
+- The existing codebase already learned this lesson with BUG-04 (HistoryScreen reactivity fix in v1.4): stream providers are required for cross-tab reactivity in `StatefulShellRoute.indexedStack`.
+- Never use `FutureProvider` for data that can change while the screen is alive in an `indexedStack`.
+
+**Detection:** Add water on Home, switch to History without restarting app. Chart should update.
+
+---
+
+### Pitfall 8: Drift watchEntriesInRange Fetches All Rows, Not Aggregates
+
+**What goes wrong:** The existing `watchDailyTotalsInRange` in `WaterRepository` calls `watchEntriesInRange`, which fetches ALL individual `WaterEntry` rows for the date range, then groups and sums them in Dart. For the monthly bar chart this means fetching potentially hundreds of rows per month when only 28-31 aggregate values are needed.
+
+**Why it happens:** The original query was designed for the calendar feature where individual entries were not needed for aggregation (just row-level access for the streak provider). The in-Dart `groupBy` + `fold` pattern works but is not optimal for a chart that only needs daily totals.
 
 **Consequences:**
-- Material widgets (TimePicker, DatePicker, AlertDialog buttons) display in English only
-- The localizationsDelegates list is incomplete
-- `AppLocalizations.of(context)` may work (because gen-l10n creates its own delegate), but Material/Cupertino components are not localized
+- Unnecessary memory allocation for row-level data that is immediately discarded
+- Drift must deserialize every row from SQLite before Dart can aggregate
+- For power users with many entries per day (e.g., 10-15 entries daily over months), this compounds
 
 **Prevention:**
-Add to `pubspec.yaml`:
-```yaml
-dependencies:
-  flutter_localizations:
-    sdk: flutter
-```
-Then add delegates to `MaterialApp.router`:
-```dart
-localizationsDelegates: AppLocalizations.localizationsDelegates,
-supportedLocales: AppLocalizations.supportedLocales,
-```
-The generated `AppLocalizations.localizationsDelegates` getter includes `GlobalMaterialLocalizations.delegate`, `GlobalWidgetsLocalizations.delegate`, and `GlobalCupertinoLocalizations.delegate` automatically.
+- For the monthly chart, consider creating a new Drift DAO method that does the aggregation in SQL:
+  ```dart
+  Stream<List<TypedResult>> watchDailyTotalsAggregated(String startKey, String endKey) {
+    final sum = waterEntries.amountMl.sum();
+    final query = selectOnly(waterEntries)
+      ..addColumns([waterEntries.dateKey, sum])
+      ..where(waterEntries.dateKey.isBiggerOrEqualValue(startKey) &
+              waterEntries.dateKey.isSmallerOrEqualValue(endKey))
+      ..groupBy([waterEntries.dateKey]);
+    return query.watch();
+  }
+  ```
+- Alternatively, accept the current approach for v1.5 (it works, just suboptimal) and add a performance note for future optimization. The existing index on `dateKey` makes the query fast regardless.
+- For the daily detail chart (entries by hour), the existing `watchEntriesForDate` is already correct -- individual entry rows are needed.
 
-**Detection:** Open the time picker in Settings after adding l10n. If it shows English labels on an Italian device, the Material localization delegate is missing.
-
-**Confidence:** HIGH -- direct inspection of `pubspec.yaml` confirms no `flutter_localizations` dependency.
-
-**Phase:** Infrastructure setup task (v1.3, first task).
+**Detection:** Profile with `flutter run --profile` and check frame times when loading a month with 15+ entries per day.
 
 ---
 
-### Pitfall 15: Widget Tests Break After Adding l10n
+### Pitfall 9: Bar Width Not Adaptive to Month Length
 
-**What goes wrong:** Existing widget tests use `MaterialApp` without `localizationsDelegates`. After l10n, every widget that calls `AppLocalizations.of(context)` requires the delegates to be present. Tests that do not provide them crash with null errors.
-
-The existing test files:
-- `test/widget_test.dart` -- likely wraps widgets in a basic `MaterialApp`
-- `test/data/repositories/water_repository_test.dart` -- pure-Dart, no widget context (safe)
-- `test/data/database/daos/*.dart` -- pure-Dart, no widget context (safe)
-
-Only `widget_test.dart` is at risk.
-
-**Why it happens:** Widget tests create their own widget tree. If the test's `MaterialApp` does not include `localizationsDelegates` and `supportedLocales`, `AppLocalizations.of(context)` returns null.
-
-**Consequences:** All widget tests fail after l10n is added.
+**What goes wrong:** Using a fixed `width` (e.g., `width: 12`) for `BarChartRodData` looks fine for 28-day months but causes bars to overlap or leave excessive gaps for 31-day months (or months with only partial data displayed). The default `BarChartAlignment.spaceEvenly` distributes bars evenly within the available width, but fixed-width bars may visually collide when the chart is narrow.
 
 **Prevention:**
-1. **Create a test helper that wraps widgets with l10n:**
-   ```dart
-   Widget buildTestApp(Widget child, {Locale locale = const Locale('en')}) {
-     return MaterialApp(
-       localizationsDelegates: AppLocalizations.localizationsDelegates,
-       supportedLocales: AppLocalizations.supportedLocales,
-       locale: locale,
-       home: child,
-     );
-   }
-   ```
-2. **Use this helper in all widget tests.** It allows testing specific locales:
-   ```dart
-   testWidgets('Home screen shows Italian strings', (tester) async {
-     await tester.pumpWidget(buildTestApp(const HomeScreen(), locale: const Locale('it')));
-     expect(find.text('Obiettivo raggiunto!'), findsOneWidget);
-   });
-   ```
-3. **Test ALL four locales** (en, it, fr, es) for at least one screen to verify the full l10n pipeline works end-to-end.
-4. **Do not test by matching exact translated strings** unless the test is specifically a localization test. For functional tests, use `find.byType` or `find.byKey` instead of `find.text`.
+- Calculate bar width dynamically: `final barWidth = max(4.0, (chartWidth - totalPadding) / daysInMonth - spacing);`
+- Or use a narrow fixed width (6-8px) that works for the worst case (31 days on a 360dp screen).
+- Use `BarChartAlignment.spaceEvenly` (the default) and test with both 28 and 31 day months.
+- Wrap the chart in a `LayoutBuilder` to get actual available width for the calculation.
 
-**Detection:** Run `flutter test` after adding l10n. If widget tests fail with null errors, the test setup needs l10n delegates.
-
-**Confidence:** HIGH -- standard Flutter testing pattern documented in official docs.
-
-**Phase:** Testing task (v1.3). Must update existing tests and add l10n-specific tests.
+**Detection:** Compare visual appearance of February vs August chart on the narrowest supported device.
 
 ---
 
-### Pitfall 16: Forgetting `initializeDateFormatting()` Causes intl Crashes
+### Pitfall 10: TableCalendar and BarChart Month Desync
 
-**What goes wrong:** The `intl` package's `DateFormat` and `NumberFormat` classes require locale data to be initialized before use with non-default locales. The home screen already uses `NumberFormat.decimalPatternDigits(locale: locale)` (line 219), which works because the default `en_US` locale data is always available. But once the locale is `it`, `fr`, or `es`, `NumberFormat` and `DateFormat` need their locale data loaded.
+**What goes wrong:** The TableCalendar's `onPageChanged` updates `focusedMonthProvider`, which the chart watches. But `onPageChanged` fires with the `focusedDay` parameter, which is the middle of the new month page. If the user swipes to a new month but the `focusedDay` has a different year-month than expected (e.g., during January-December boundary), the chart may show data for the wrong month.
 
-Currently, `initializeDateFormatting()` is NOT called anywhere in `main()` (verified by grep). The `intl` package is used only with the default locale (which works without initialization). After l10n, non-English locales will fail.
-
-**Why it happens:** The `intl` package loads locale data lazily for some features, but `DateFormat` with a non-default locale requires explicit initialization.
-
-**Consequences:** `DateFormat.MMMM('fr').format(date)` throws `LocaleDataException: Locale data has not been initialized`. This would crash the calendar screen when displaying month names in French.
+**Why it happens:** `onPageChanged` provides a `DateTime` that represents the page's focused day. The existing code correctly extracts `.year` and `.month` from it. However, if a developer mistakenly uses `onDaySelected`'s focusedDay (which can lag behind page changes), the chart and calendar can show different months.
 
 **Prevention:**
-1. **Call `initializeDateFormatting()` in `main()` before `runApp()`:**
-   ```dart
-   import 'package:intl/date_symbol_data_local.dart';
+- Always derive the chart's year/month from `focusedMonthProvider`, which is already updated by `onPageChanged`.
+- Never add a separate "chart month" state variable. Single source of truth for the displayed month.
+- The existing `focusedMonthProvider` is the correct mechanism. The chart should watch it, not maintain its own month state.
 
-   Future<void> main() async {
-     WidgetsFlutterBinding.ensureInitialized();
-     await initializeDateFormatting();
-     // ... timezone init, notification init ...
-     runApp(const ProviderScope(child: DrinkyDrinkyApp()));
-   }
-   ```
-2. **Call it once with no arguments** to load all locale data. The `intl` package is already a dependency at version 0.20.2.
-3. **Do NOT call it per-locale** (e.g., `initializeDateFormatting('fr')`) unless APK size is critical. For a 4-locale app, loading all is fine.
-
-**Detection:** Set device to French. Open the calendar. If it crashes with `LocaleDataException`, initialization was missed.
-
-**Confidence:** HIGH -- verified via table_calendar Context7 docs and intl package behavior.
-
-**Phase:** Infrastructure setup task (v1.3, in `main()` modifications).
+**Detection:** Swipe TableCalendar from December to January (year boundary). Verify chart shows correct month.
 
 ---
 
-### Pitfall 17: Mixed Italian/English Strings in Current Codebase
+### Pitfall 11: Daily Detail Chart -- Time-Based X Axis Gaps
 
-**What goes wrong:** The current codebase has BOTH Italian and English hardcoded strings. Some screens are predominantly English (home_screen, history_screen, permission_screen, preset_edit_dialog), while the hydration calculator is predominantly Italian. The settings screen is a mix of both. This creates a confusing baseline for string extraction:
+**What goes wrong:** The daily detail chart shows individual water entries with time on the X axis. If entries are at 8:00, 12:00, and 22:00, a naive approach using sequential x values (0, 1, 2) misrepresents the time gaps between entries. The chart appears evenly spaced when the actual consumption was clustered in the morning.
 
-**English strings:** `'Settings'`, `'History'`, `'Do Not Disturb'`, `'Enable Reminders'`, `'Skip for now'`, `'Add'`, `'Cancel'`, `'Confirm'`, `'Goal reached!'`, `'No drinks logged yet'`, `'day streak'`
-
-**Italian strings:** `'Maschio'`, `'Femmina'`, `'Sesso'`, `'Peso'`, `'Clima'`, `'Calcolatore idratazione'`, `'Usa come target'`, `'Salta'`, `'Applica da domani'`, `'Ricalcola raccomandazione idratazione'`, `'Compila tutti i campi'`, `'La tua raccomandazione'`
-
-**Mixed (same screen):** `settings_screen.dart` has `'Settings'` (English) and `'Applica da domani'` (Italian) side by side.
-
-**Why it happens:** The app evolved organically. The calculator was written in Italian. Other screens were written in English. Nobody enforced a single source language.
-
-**Consequences:**
-- When creating the template ARB file (typically `app_en.arb`), the developer must decide: is the template language English or Italian?
-- If the template is English (`app_en.arb`), ALL Italian strings must be translated to English for the template, then back to Italian for `app_it.arb`. This is double-work and error-prone.
-- If the template is Italian, the English ARB becomes a translation rather than the source.
+**Why it happens:** fl_chart `BarChartGroupData.x` is a positional double, not a time value. Developers often use the index of the entry as `x`, losing temporal information.
 
 **Prevention:**
-1. **Use English as the template language** (`app_en.arb`). English is the fallback locale declared in the project spec.
-2. **First pass: extract ALL strings** (both Italian and English) into English ARB keys.
-3. **For currently-Italian strings:** The developer must decide the English equivalent. E.g., `'Calcolatore idratazione'` -> ARB key `hydrationCalculatorTitle`, English value `"Hydration calculator"`.
-4. **For currently-English strings:** Use the existing English text directly. E.g., `'Settings'` -> ARB key `settingsTitle`, English value `"Settings"`.
-5. **Create ALL four ARB files** (en, it, fr, es) during extraction, not after. This prevents the "I'll do translations later" trap where the Italian ARB is forgotten because the developer thinks the Italian strings are "already there" in the source code.
+- Use the hour as the x value for a 24-hour axis: `x: entry.loggedAt.hour` (or fractional: `x: entry.loggedAt.hour + entry.loggedAt.minute / 60.0`).
+- If multiple entries share the same hour, stack them (sum the amounts for that hour) rather than creating overlapping bars.
+- Set explicit `minX: 0` and `maxX: 24` (or the hour range of the day) to maintain consistent scale. Note: `BarChartData` does not have `minX`/`maxX` properties (unlike `LineChartData`). Instead, the x-axis scale is determined by the `x` values of `barGroups` and the `alignment`. Use hour-based x values and `BarChartAlignment.spaceEvenly` or generate explicit bar groups for all 24 hours with `toY: 0` for empty hours.
+- For sparse days (1-2 entries), the chart will look sparse -- this is correct and expected.
 
-**Detection:** After extraction, run the app in Italian. If some strings appear in English, the Italian ARB is missing entries.
-
-**Confidence:** HIGH -- direct codebase analysis of all 6 screens.
-
-**Phase:** String extraction task (v1.3). This is the primary complexity driver for this milestone.
-
----
+**Detection:** Log entries at 8:00, 8:15, and 22:00 on the same day. Verify the chart shows clustering at 8:00 and the gap to 22:00.
 
 ## Minor Pitfalls
 
-### Pitfall 18: RTL Layout Breakage (Even Without RTL Languages)
+### Pitfall 12: Missing reservedSize for Left Axis Causes Label Clipping
 
-**What goes wrong:** Adding `GlobalWidgetsLocalizations.delegate` and `GlobalMaterialLocalizations.delegate` to `MaterialApp` can subtly change the text direction handling in the widget tree, even when all supported languages are LTR. Specifically:
-- `Alignment.centerLeft` behaves differently when `Directionality` is explicitly set vs inherited
-- `EdgeInsets.symmetric(horizontal: ...)` is safe, but `EdgeInsets.only(left: ...)` could misbehave if a future RTL locale is added
-- Row children with `Expanded` + `Text` may wrap differently
-
-For this app's four target languages (en, it, fr, es), ALL are LTR. There should be zero RTL impact.
-
-**Why it happens:** Adding localization delegates makes `Directionality` resolution more explicit. In a non-localized app, Flutter uses `LTR` by default. In a localized app, it uses the locale's directionality. For LTR locales, the result is the same.
-
-**Consequences:** For en/it/fr/es: NONE. This is a non-issue for this milestone.
+**What goes wrong:** The left Y axis shows ml values (e.g., "2000", "3000"). The default `reservedSize: 22` is not wide enough for 4-digit numbers, causing labels to be clipped or overflow into the chart area.
 
 **Prevention:**
-1. **Do nothing.** All four target locales are LTR.
-2. **If Arabic or Hebrew support is added later** (out of scope for v1.3), audit all `EdgeInsets.only(left/right)` and `Alignment.centerLeft/centerRight` usages. Replace with `EdgeInsetsDirectional.start/end` and `AlignmentDirectional.centerStart/centerEnd`.
-3. **Current codebase uses `EdgeInsets.symmetric` consistently** (verified by grep), which is RTL-safe.
+- Set `reservedSize: 40` (or `48` for safety) on the left `SideTitles` for the monthly chart.
+- Use `NumberFormat.compact()` from `intl` for large values (e.g., "2K" instead of "2000") if space is tight.
 
-**Detection:** Not needed for v1.3. All target locales are LTR.
-
-**Confidence:** HIGH -- all four target locales are LTR. Verified that the codebase uses symmetric padding.
-
-**Phase:** None for v1.3. Document for future.
+**Detection:** Set a daily target of 5000ml or higher and check left axis rendering.
 
 ---
 
-### Pitfall 19: Hot Reload Does Not Update Generated l10n Files
+### Pitfall 13: Color/Theme Not Respecting Material You Dynamic Colors
 
-**What goes wrong:** After modifying `.arb` files, hot reload does not regenerate the localization classes. The developer adds a new string to `app_en.arb`, hot-reloads, and gets a compile error because `AppLocalizations` does not have the new getter.
-
-**Why it happens:** `flutter gen-l10n` is a separate build step, not part of the hot reload cycle. Unlike build_runner's `watch` mode, gen-l10n does not have a file watcher. (Note: `flutter run` with `generate: true` in `pubspec.yaml` DOES run gen-l10n automatically during `flutter run`, but only on cold start, not on hot reload.)
+**What goes wrong:** Hardcoding bar colors (e.g., `Colors.blue`) instead of using `Theme.of(context).colorScheme.primary` makes the chart visually inconsistent with the rest of the app, especially on Android 12+ with dynamic colors.
 
 **Prevention:**
-1. **After editing ARB files, run `flutter gen-l10n` manually** or restart the app (`flutter run` again).
-2. **Use `flutter run` with `--dart-define` or just accept the cold restart.**
-3. **Do NOT expect hot reload to pick up ARB changes.** This is by design.
-4. **Tip:** Edit all strings in one batch, run gen-l10n once, then hot-reload the Dart code changes.
+- Use `colorScheme.primary` for normal bars, `colorScheme.primaryContainer` for background bars.
+- Use `colorScheme.error` for bars that missed the target (consistent with calendar red).
+- Use `colorScheme.tertiary` or similar for the target line.
+- Access theme inside the `build` method, not in a static helper that cannot access `BuildContext`.
 
-**Detection:** If `AppLocalizations.of(context)!.newKey` causes a compile error after adding `newKey` to the ARB, you forgot to run gen-l10n.
-
-**Confidence:** HIGH -- documented Flutter behavior.
-
-**Phase:** Development workflow (v1.3). Inform developers.
+**Detection:** Change device wallpaper on Android 12+ and verify chart colors update.
 
 ---
 
-### Pitfall 20: `intl` Version Constraint Conflict
+### Pitfall 14: Target Line Using ExtraLinesData Not Visible
 
-**What goes wrong:** The current `pubspec.yaml` has `intl: ^0.20.2`. The `flutter_localizations` SDK package also depends on `intl`. If `flutter_localizations` pins a different `intl` version range, `pub get` fails with a dependency conflict.
-
-**Why it happens:** `flutter_localizations` is an SDK package that ships with the Flutter SDK. Its `intl` dependency is pinned to the Flutter SDK's bundled version. If the project specifies a different `intl` version, they may conflict.
+**What goes wrong:** Horizontal `ExtraLinesData` lines are drawn but may be hidden behind bars or outside the visible Y range if `maxY` is auto-calculated and happens to equal the target value.
 
 **Prevention:**
-1. **Use `intl: any` when also depending on `flutter_localizations`:**
-   ```yaml
-   dependencies:
-     flutter_localizations:
-       sdk: flutter
-     intl: any  # Use whatever version flutter_localizations needs
-   ```
-   This is the official recommendation from Flutter docs.
-2. **Or remove the explicit `intl` dependency** and let it be transitively resolved through `flutter_localizations`.
-3. **The current `intl: ^0.20.2` should be compatible** with Flutter 3.44.1's bundled version, but using `any` is safer.
+- If showing a target line at `targetMl`, ensure `maxY` is set to at least `targetMl * 1.1` (10% headroom) so the line is not at the very top edge.
+- Style the target line with a dashed pattern and contrasting color for visibility.
+- Set `extraLinesOnTop: true` (default) so the line renders above bars.
 
-**Detection:** Run `flutter pub get` after adding `flutter_localizations`. If it fails with a version conflict on `intl`, change to `intl: any`.
-
-**Confidence:** MEDIUM -- depends on the specific Flutter SDK version's intl pin. Likely compatible, but `any` is the safe choice.
-
-**Phase:** Infrastructure setup task (v1.3).
+**Detection:** Log exactly the target amount on every day of the month. Verify the target line is visible above the bars.
 
 ---
 
-## Phase-Specific Warnings Summary
+### Pitfall 15: Tooltip Text Not Localized
 
-| Phase Topic | Pitfall | Severity | Mitigation |
-|-------------|---------|----------|------------|
-| Infrastructure setup | #3 (context before MaterialApp), #7 (synthetic-package), #8 (output-dir), #14 (flutter_localizations), #16 (initializeDateFormatting), #20 (intl version) | CRITICAL/HIGH | Create l10n.yaml correctly; add flutter_localizations; add initializeDateFormatting to main(); use nullable-getter: false |
-| String extraction | #2 (missed strings), #4 (calculator map keys), #9 (const removal), #12 (interpolation), #17 (mixed languages) | CRITICAL/HIGH | Comprehensive grep; refactor calculator to enums; convert interpolation to ARB placeholders; use English template |
-| Notification l10n | #1 (singleton no context) | CRITICAL | Pass resolved strings to scheduleWindow(); keep singleton pure-Dart |
-| Translation | #10 (French plurals) | HIGH | Use ICU plural syntax; test 0/1/2 in all locales; brief translator on French 0=singular |
-| UI wiring | #11 (table_calendar locale), #13 (SnackBar context) | HIGH/MEDIUM | Pass locale to TableCalendar; resolve strings after mounted check |
-| Platform config | #5 (iOS Info.plist), #6 (Android resConfigs) | HIGH/MEDIUM | Add CFBundleLocalizations; add resConfigs; test on both platforms |
-| Testing | #15 (widget test breakage) | HIGH | Create l10n test helper; wrap all widget tests; test all 4 locales |
-| Development workflow | #19 (hot reload), #18 (RTL) | LOW | Run gen-l10n after ARB edits; no RTL action for v1.3 |
+**What goes wrong:** The default `getTooltipItems` callback returns raw numbers. In this app, values should include "ml" suffix and use locale-aware formatting (e.g., "2.500 ml" in Italian vs "2,500 ml" in English).
+
+**Prevention:**
+- Provide a custom `getTooltipItems` callback that uses `NumberFormat.decimalPattern(locale)` from `intl` (already in the dependency graph).
+- Append the localized "ml" unit from the ARB files.
+- `BuildContext` is not available inside `getTooltipItems`. Pass the locale string and `NumberFormat` instance to the chart builder function from the `build` method.
+
+**Detection:** Switch locale to Italian, tap a bar, verify tooltip shows locale-correct number formatting.
 
 ---
+
+### Pitfall 16: AspectRatio Constraint Missing -- Chart Height Unbounded in ScrollView
+
+**What goes wrong:** The BarChart widget requires bounded height. If placed directly inside a `SingleChildScrollView` (like the existing HistoryScreen layout) or a `Column` without height constraints, the chart receives unbounded height from the layout and either throws a rendering error or renders at zero height.
+
+**Why it happens:** The existing HistoryScreen uses `SingleChildScrollView > Column`. Adding a `BarChart` directly inside this Column provides unbounded height constraints to the chart's internal layout.
+
+**Prevention:**
+- Wrap the BarChart in either `AspectRatio(aspectRatio: 1.6, child: BarChart(...))` or `SizedBox(height: 200, child: BarChart(...))`.
+- The official fl_chart samples consistently use `AspectRatio` for this purpose.
+- `AspectRatio` is preferred because it adapts to screen width while maintaining a consistent visual proportion.
+
+**Detection:** Place BarChart inside the existing Column without height constraints. The app either shows a blank area or throws "Vertical viewport was given unbounded height."
+
+## Phase-Specific Warnings
+
+| Phase Topic | Likely Pitfall | Mitigation |
+|-------------|---------------|------------|
+| Monthly BarChart widget | Pitfall 1 (all-zero maxY), Pitfall 2 (animation on month change), Pitfall 6 (label overlap), Pitfall 16 (unbounded height) | Set explicit maxY >= target, use ValueKey for month, adaptive label interval, wrap in AspectRatio |
+| Drift query for chart | Pitfall 8 (fetches all rows not aggregates), Pitfall 4 (stream thrashing) | Reuse calendarMonthProvider, consider SQL aggregation |
+| Calendar + chart sync | Pitfall 10 (month desync), Pitfall 7 (no reactivity) | Single source of truth via focusedMonthProvider, stream-based providers only |
+| Day detail screen | Pitfall 5 (GoRouter navigation), Pitfall 11 (time-axis gaps) | Top-level route for full-screen push, hour-based x values |
+| Touch/tooltips | Pitfall 3 (index crash), Pitfall 15 (unlocalized text) | Avoid showingTooltipIndicators, custom getTooltipItems with locale |
+| Visual polish | Pitfall 9 (bar width), Pitfall 12 (reservedSize), Pitfall 13 (theme colors), Pitfall 14 (target line) | Adaptive width, 40px+ reservedSize, colorScheme colors, maxY headroom |
 
 ## Sources
 
-- Flutter internationalization docs (Context7, flutter.dev): https://docs.flutter.dev/ui/accessibility-and-internationalization/internationalization (HIGH confidence)
-- Flutter breaking change -- synthetic-package (Context7): https://docs.flutter.dev/release/breaking-changes/flutter-generate-i10n-source (HIGH confidence)
-- table_calendar README -- locale configuration (Context7, GitHub): https://github.com/aleksanderwozniak/table_calendar (HIGH confidence)
-- CLDR Language Plural Rules (unicode.org): https://www.unicode.org/cldr/charts/latest/supplemental/language_plural_rules.html (HIGH confidence)
-- Direct codebase analysis: `notification_service.dart`, `main.dart`, `home_screen.dart`, `settings_screen.dart`, `history_screen.dart`, `hydration_calculator_screen.dart`, `permission_screen.dart`, `preset_edit_dialog.dart`, `pubspec.yaml`, `Info.plist`, `build.gradle.kts`, `project.pbxproj` (HIGH confidence)
+- Context7: fl_chart GitHub docs (`/imanneo/fl_chart`) -- BarChartData, BarChartGroupData, BarTouchData, SideTitles, lerp behavior (HIGH confidence)
+- Context7: fl_chart pub.dev docs (`/websites/pub_dev_fl_chart`) -- BarChartData constructor (maxY defaults to double.nan), BarChartRodData, BarChartGroupData.lerp (HIGH confidence)
+- GitHub source: `bar_chart_helper.dart` -- `calculateMaxAxisValues()` returns `(0, 0)` for empty barGroups (HIGH confidence)
+- GitHub source: `bar_chart_data.dart` -- constructor assigns `maxY ?? double.nan` (HIGH confidence)
+- GitHub issue #1911 -- `showingTooltipIndicators` index out of bounds crash on data change (HIGH confidence, confirmed bug)
+- GitHub issue #1963 -- axis labels stop rendering past certain reserved thresholds (MEDIUM confidence)
+- Existing codebase analysis: `history_screen.dart`, `stream_providers.dart`, `water_entry_dao.dart`, `water_repository.dart`, `app_router.dart`, `app_database.dart` (HIGH confidence)

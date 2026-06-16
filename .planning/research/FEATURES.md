@@ -1,661 +1,213 @@
-# Feature Landscape: Flutter l10n (Multilingual Support)
+# Feature Landscape: Bar Chart UX for Mobile Hydration Tracker
 
-**Domain:** Flutter hydration tracker -- multilingual support (it/en/fr/es, EN fallback)
-**Researched:** 2026-06-15
-**Overall confidence:** HIGH (Flutter ARB-based l10n is mature, well-documented, and verified via Context7 + official docs)
+**Domain:** Bar chart visualizations in a mobile health/hydration tracking app (FL Chart on Flutter)
+**Researched:** 2026-06-16
+**Overall confidence:** HIGH (fl_chart API verified via Context7; UX patterns drawn from Apple HIG principles, Material Design data-viz guidance, and competitive analysis of health-tracking apps)
 
 ---
 
 ## Table Stakes
 
-Features users expect from a properly localized app. Missing any = broken UX for non-Italian speakers.
+Features users expect from bar charts in a health/hydration tracking context. Missing any = charts feel broken or decorative rather than useful.
+
+### Monthly Bar Chart (under the calendar)
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| All visible UI strings translated (it/en/fr/es) | Core multilingual requirement | Medium | ~75-85 distinct string keys across 5 screens + 1 dialog + 1 bottom sheet |
-| Notification title/body translated | Users see notifications in system language | Medium | **Critical challenge:** NotificationService is a singleton, not in widget tree; requires `delegate.load()` pattern |
-| System locale auto-detection | Standard mobile behavior | Low | Flutter's `supportedLocales` + default locale resolution handle this automatically |
-| English fallback for unsupported locales | Prevents empty/broken strings | Low | Put `Locale('en')` first in `supportedLocales` list; Flutter falls back to first entry |
-| Plural forms for streak counter | "1 day streak" vs "2 days streak" / "1 giorno di fila" vs "2 giorni di fila" | Low | ICU plural syntax in ARB; `=1{...} other{...}` |
-| Parameterized strings with arguments | "Target: 2,000 ml", "+250 ml added" | Low | ARB placeholder syntax with `{value}` |
-| Calendar/date formatting locale-aware | Month names, date order in table_calendar and day summary | Low | Already using `intl` package; `DateFormat` is locale-aware when `initializeDateFormatting()` is called |
-| Material widget localization | Date pickers, buttons, dialog text in correct language | Low | `GlobalMaterialLocalizations.delegate` via `flutter_localizations` SDK package |
-| Accessibility labels translated | Semantic labels on calendar day cells | Low | Replace hardcoded `_monthName()` helper with `DateFormat.MMMM()` + localized goal status strings |
+| One bar per day of the visible month | Core data representation; maps 1:1 to calendar days above | Low | fl_chart `BarChartGroupData.x` = day-of-month (1..31); `toY` = total ml. Data already available from `calendarMonthProvider` |
+| Goal reference line (horizontal dashed line at target ml) | Without a reference, raw ml numbers are meaningless -- user cannot tell if 1500 ml was good or bad | Low | fl_chart `ExtraLinesData` with `HorizontalLine(y: targetMl)`. Use dashed style via `dashArray`. Per-day target complicates this -- use current month's dominant target or show no line if multiple targets apply |
+| Green/red bar coloring matching calendar decoration | Consistency with existing green (goal met) / red (goal missed) calendar dots; otherwise the two visualizations tell conflicting stories | Low | Reuse exact same green/red logic from `_buildDayCell`: compare day total to `_findActiveTarget()`. Days with no data = no bar (absent from map) |
+| X-axis day labels (subset -- not all 31) | Labeling every day creates overlap on mobile screens; showing none removes orientation | Low | Show labels at days 1, 5, 10, 15, 20, 25, and last day of month. Or every 7th day. `getTitlesWidget` callback controls this |
+| Y-axis ml labels | User needs scale context to interpret bar heights | Low | Show 2-3 labels: 0, mid-point, and max (rounded to nearest 500 ml). Use `reservedSize` to prevent overlap with chart area |
+| Sync with calendar page changes | When user swipes to a different month on the calendar, the bar chart below must update to match | Low | Both already watch `focusedMonthProvider` -- chart widget watches same `calendarMonthProvider(year, month)` family provider |
+| Empty state when no entries exist for the month | A blank chart with axes but no bars is confusing; user needs a clear "no data" message | Low | Check if `monthTotals` map is empty; if so, show a centered text placeholder instead of an empty chart frame |
+| Implicit animation on data change | Bars should animate smoothly when switching months or when new data arrives; abrupt redraws feel broken | Low | fl_chart provides built-in implicit animation via `duration` and `curve` parameters on `BarChart()`. Default 150ms is fine |
+| Bars for future days are absent | Showing zero-height bars for days that have not happened yet implies the user failed those days | Low | Only generate `BarChartGroupData` for days <= today (for current month) or all days (for past months) |
+| Touch-to-see-value tooltip | Tapping a bar should show the exact ml value -- users expect to be able to read precise numbers, not just compare heights | Low | fl_chart `BarTouchData(handleBuiltInTouches: true)` with `BarTouchTooltipData`. Format tooltip as "1,250 ml" using `intl.NumberFormat` |
+| Dark mode support | App already supports dark mode via Material You; charts that ignore theme look broken | Med | Use `Theme.of(context).colorScheme` for grid lines, text colors, tooltip backgrounds. Green/red already have dark-mode variants in `_buildDayCell` |
+
+### Day Detail Chart (push navigation screen)
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| One bar per individual intake entry | Core purpose of this screen -- show when and how much the user drank throughout the day | Low | Each `WaterEntryEntity` becomes a `BarChartGroupData`. x = index or time-derived position, toY = amountMl |
+| X-axis time labels (HH:mm) | User wants to see when they drank, not just how much | Med | Extract hour:minute from `WaterEntryEntity.loggedAt`. Label every bar or every Nth bar depending on density. Use `DateFormat.Hm()` for locale-aware formatting |
+| Y-axis ml labels | Same reasoning as monthly chart -- scale context | Low | Same approach: 0 to max entry, 2-3 labels |
+| Total summary text | User wants the day's total prominently displayed, not just individual bars | Low | Sum all entries; display as "Total: X.XX L" or "Total: X,XXX ml" above or below the chart |
+| Touch-to-see-value tooltip with time and amount | Tapping a bar should show both the amount and the exact time | Low | `getTooltipItem` callback formats as "250 ml\n14:30" |
+| Empty state for days with no entries | User navigates to a day with no data -- should see a clear message, not a broken chart | Low | Check entries list; if empty, show "No entries for this day" text |
+| Back navigation to history screen | Standard mobile navigation -- user pushed in, must be able to go back | Low | Standard `Navigator.pop()` or GoRouter equivalent. AppBar back button |
+
+---
 
 ## Differentiators
 
-Features that go beyond minimum l10n but add polish. Not expected, but valued.
+Features that go beyond minimum expectations and add genuine value. Not expected, but make the chart transition from "decorative" to "genuinely useful."
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Non-nullable AppLocalizations getter | Eliminates `!` on every `AppLocalizations.of(context)` call; cleaner code | Low | Set `nullable-getter: false` in l10n.yaml |
-| Number formatting locale-aware (decimal separators) | Italian: "2.000,50" vs English: "2,000.50" | Already done | `NumberFormat.decimalPatternDigits(locale: locale)` already used in home_screen.dart `_formatLiters()` |
-| Climate labels translated in calculator | "Freddo/Mite/Caldo" -> "Cold/Mild/Hot" | Low | Currently hardcoded Italian in `_climateLabels` array |
-| Sex options translated in calculator | "Maschio/Femmina/Altro" -> "Male/Female/Other" | Low-Med | **Requires decoupling display text from map keys** -- currently `_sexFactors` uses Italian labels as keys |
-| Notification channel name translated | Android notification settings show localized channel name | Low | Channel name set at init time; re-create channel with localized name |
-| Locale-aware notification rescheduling on language change | Notifications update to new language on next schedule cycle | Low | Already happens naturally: `scheduleWindow()` is called on app resume |
+| **Goal target background bar** (backDrawRodData) | Show a faded bar at the target height behind each day's actual bar. Instantly communicates "how close was I" without needing a reference line. Used by Apple Health, Fitbit, WaterMinder | Med | fl_chart `backDrawRodData: BackgroundBarChartRodData(toY: targetMl, color: grey.withOpacity(0.15))`. Per-day targets mean each bar may have a different background height -- query from `allTargetHistoryProvider` |
+| **Tap bar to navigate to day detail** (monthly chart) | Connecting the monthly overview to the day detail via tap eliminates a two-step navigation (select day on calendar, then tap something). Chart becomes interactive, not just visual | Med | `touchCallback` on `BarTouchData` detects `FlTouchEvent is FlTapUpEvent`, extracts `groupIndex` to determine which day was tapped, then pushes day detail route |
+| **Day total text above each bar** (monthly chart) | For months with few entries, showing the total above each bar eliminates the need to tap every bar for its value | Med | fl_chart `BarChartRodLabel(show: true)` or a custom positioned text. Risk: overlapping labels in dense months. Consider showing only when bar count is low (< 10 bars) or only for the tapped bar |
+| **Color gradient on bars** (progress feel) | A gradient from light-to-dark blue (below target) or green (above target) adds visual richness without information overload | Low | fl_chart `gradient` parameter on `BarChartRodData`. Use `LinearGradient` from bottom-to-top |
+| **Rounded bar tops** | Rounded caps look more polished than flat-top rectangles; matches the soft visual language of the existing circular progress indicator | Low | `borderRadius: BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4))` |
+| **Today's bar highlighted** (monthly chart) | On the current month view, today's bar should be visually distinct (border, different shade, or a small indicator) so the user's eye is drawn to "how am I doing right now" | Low | Conditionally apply a `borderSide` or different color to today's bar group |
+| **Semantic accessibility labels** | VoiceOver/TalkBack should describe each bar: "June 15, 1250 milliliters, 83% of goal" | Med | fl_chart does not provide built-in semantics. Wrap the `BarChart` widget in a `Semantics` widget with a custom label summarizing the chart data, or use `ExcludeSemantics` on the chart and place an invisible `ListView` of semantic descriptions behind it |
+| **Chart height adapts to context** | Monthly chart: shorter (embedded below calendar in a scroll). Day detail: taller (main content). Using `AspectRatio` or fixed height prevents layout issues | Low | Monthly: `SizedBox(height: 180)`. Day detail: `AspectRatio(aspectRatio: 1.5)` |
+
+---
 
 ## Anti-Features
 
-Features to explicitly NOT build for this milestone.
+Features to explicitly NOT build. Each represents a trap that adds complexity without proportional value for a personal hydration tracker.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| In-app language picker | Adds complexity, non-standard UX; 4 locales do not justify a picker | Follow system locale; users change language in device Settings |
-| Country-variant locales (en_US vs en_GB, es_ES vs es_MX) | Overkill for 4-language scope; no meaningful string differences for this app | Use language-only locales: `en`, `it`, `fr`, `es` |
-| RTL layout support | None of the 4 target languages are RTL | Do not add RTL-specific layout code |
-| Translated app name (CFBundleDisplayName / AndroidManifest label) | App name "Drinky Drinky" is a brand name | Keep "Drinky Drinky" in all locales |
-| Translation management platform (Crowdin, Lokalise) | 4 languages, ~80 keys, single developer | Manage ARB files directly in repo |
-| Dynamic locale switching without app restart | Flutter's built-in locale resolution handles system changes automatically | Let the system handle it |
-| Machine translation / auto-translate | Quality is unpredictable for a polished app | Human-written translations for all four locales |
-| Per-screen lazy-loaded translations | Unnecessary for 4 locales with ~80 strings | Load all strings at startup (Flutter's default ARB approach) |
+| **Pinch-to-zoom on monthly chart** | 31 bars on a phone screen are already at useful density; zooming into a subset of days adds interaction complexity without insight. No health app does this for monthly views | Keep bars at fixed width; rely on tap-to-tooltip for precise values |
+| **Horizontal scrolling monthly chart** | Defeats the purpose of "at a glance" monthly overview; user loses spatial orientation of which day is which | Show all days of the month at once; bars can be thin (4-6px width). Months with 28-31 days always fit in screen width |
+| **Weekly/custom date range selector** | Scope is monthly (synced with calendar above) and daily (detail screen). A custom range picker adds UI complexity for a utility app | Monthly view is the calendar-month. For trends across months, that is a v2 feature (fl_chart line charts) |
+| **Animated bar-by-bar sequential entrance** | Staggered animations (bar 1 grows, then bar 2, then bar 3...) are visually busy and slow for 31 bars. They delay information delivery | Use fl_chart's implicit swap animation (all bars animate simultaneously when data changes). Duration: 150-300ms |
+| **3D or skeuomorphic bar styling** | Does not match Material 3 design language; harder to read accurately; accessibility concerns | Flat bars with optional subtle gradient. Material You color tokens |
+| **Cumulative/stacked bars on monthly chart** | Each day is independent in a hydration tracker -- there is nothing to stack. Stacking intake types (water vs coffee) is v2 scope at best | One bar per day, one color (green/red based on goal), one value (total ml) |
+| **Export chart as image** | Niche feature for a personal tracker; adds platform-specific screenshot/share complexity | If users want to share, they can use OS screenshot |
+| **Real-time bar growth animation on home screen** | The home screen already has the circular progress indicator for "right now" feedback. Adding a live-updating bar there would be redundant and distracting | Keep charts on the history screen only; home screen = circular progress ring |
 
 ---
 
 ## Feature Dependencies
 
 ```
-initializeDateFormatting() -> calendar month names, date formats
-     |
-l10n.yaml + ARB files -> flutter gen-l10n -> AppLocalizations class
-     |
-     +-> MaterialApp.localizationsDelegates + supportedLocales
-     |       |
-     |       +-> All widget-tree strings (AppLocalizations.of(context))
-     |       |
-     |       +-> table_calendar locale property
-     |
-     +-> AppLocalizations.delegate.load(locale) [no context needed]
-             |
-             +-> NotificationService localized strings
+calendarMonthProvider (existing) --> Monthly bar chart data source
+  |
+  +--> Bar chart syncs on focusedMonthProvider changes (existing)
+
+allTargetHistoryProvider (existing) --> Per-day target for green/red coloring + goal line
+  |
+  +--> _findActiveTarget() logic (existing) reused for bar color decisions
+
+waterEntriesForDate provider (existing) --> Day detail chart data source
+  |
+  +--> Needs dateKey parameter from selected/tapped day
+
+Monthly bar chart tap interaction --> Day detail screen (NEW navigation route)
+  |
+  +--> GoRouter route addition required
+  +--> Receives dateKey as parameter
+
+Day detail screen --> waterEntriesForDate(dateKey) provider
+  |
+  +--> Individual entries with loggedAt timestamps for x-axis
+
+Dark mode colors --> Theme.of(context) (existing infrastructure)
+  |
+  +--> Green/red dark-mode variants already defined in history_screen.dart
+
+Localization --> l10n strings (existing infrastructure)
+  |
+  +--> New ARB keys needed: chart axis labels, tooltips, empty states, screen title
 ```
 
----
-
-## ARB-Based l10n: How It Works in Practice
-
-### Infrastructure Setup
-
-**1. Add `flutter_localizations` SDK dependency to pubspec.yaml:**
-
-```yaml
-dependencies:
-  flutter_localizations:
-    sdk: flutter
-  intl: ^0.20.2  # already present
-```
-
-**2. Add `generate: true` to pubspec.yaml flutter section:**
-
-```yaml
-flutter:
-  generate: true
-  uses-material-design: true
-```
-
-**3. Create `l10n.yaml` in project root:**
-
-```yaml
-arb-dir: lib/l10n
-template-arb-file: app_en.arb
-output-localization-file: app_localizations.dart
-output-class: AppLocalizations
-nullable-getter: false
-synthetic-package: false
-output-dir: lib/l10n/generated
-```
-
-Key options:
-- `nullable-getter: false` -- removes the need for `!` on every `AppLocalizations.of(context)` call. Instead of `AppLocalizations.of(context)!.hello`, you write `AppLocalizations.of(context).hello`.
-- `synthetic-package: false` -- **required** since Flutter 3.32+. The old `package:flutter_gen` approach is EOL. Files generate directly into your source tree.
-- `output-dir` -- keeps generated code separate from ARB source files for clarity.
-
-**Confidence:** HIGH -- verified via Context7 (Flutter docs) and official breaking change docs for synthetic-package removal.
-
-**4. Wire into MaterialApp:**
-
-```dart
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'l10n/generated/app_localizations.dart';
-
-MaterialApp.router(
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
-  supportedLocales: AppLocalizations.supportedLocales,
-  // ... existing config
-);
-```
-
-`AppLocalizations.localizationsDelegates` is a generated convenience list that includes:
-- `AppLocalizations.delegate` (your app strings)
-- `GlobalMaterialLocalizations.delegate` (Material widget strings)
-- `GlobalWidgetsLocalizations.delegate` (text direction)
-- `GlobalCupertinoLocalizations.delegate` (Cupertino widget strings)
-
-`AppLocalizations.supportedLocales` is auto-generated from your ARB files.
-
-**Confidence:** HIGH -- verified via Context7 (Flutter internationalization docs).
-
-### Pattern 1: Simple String Substitution
-
-**ARB (app_en.arb):**
-```json
-{
-  "@@locale": "en",
-  "appTitle": "Drinky Drinky",
-  "settingsTitle": "Settings",
-  "historyTitle": "History",
-  "noHistory": "No history yet",
-  "goalReached": "Goal reached!",
-  "addWater": "Add water",
-  "add": "Add",
-  "customAmount": "Custom amount",
-  "doNotDisturb": "Do Not Disturb",
-  "startTime": "Start time",
-  "endTime": "End time",
-  "enableReminders": "Enable Reminders",
-  "skipForNow": "Skip for now"
-}
-```
-
-**Dart usage:**
-```dart
-Text(AppLocalizations.of(context).settingsTitle)
-```
-
-**Confidence:** HIGH -- fundamental gen-l10n pattern, verified via Context7.
-
-### Pattern 2: Plurals (Streak Counter)
-
-**ARB (app_en.arb):**
-```json
-{
-  "streakCount": "{count, plural, =0{No streak} =1{1 day streak} other{{count} day streak}}",
-  "@streakCount": {
-    "description": "Streak counter label on history screen",
-    "placeholders": {
-      "count": {
-        "type": "num"
-      }
-    }
-  }
-}
-```
-
-**ARB (app_it.arb):**
-```json
-{
-  "streakCount": "{count, plural, =0{Nessuna serie} =1{1 giorno di fila} other{{count} giorni di fila}}"
-}
-```
-
-**ARB (app_fr.arb):**
-```json
-{
-  "streakCount": "{count, plural, =0{Pas de serie} =1{1 jour consecutif} other{{count} jours consecutifs}}"
-}
-```
-
-**ARB (app_es.arb):**
-```json
-{
-  "streakCount": "{count, plural, =0{Sin racha} =1{1 dia consecutivo} other{{count} dias consecutivos}}"
-}
-```
-
-**Dart usage:**
-```dart
-Text(AppLocalizations.of(context).streakCount(streak))
-```
-
-The generated code produces a method `String streakCount(num count)` that handles plural selection per locale using ICU rules. Only `other` is required; `=0`, `=1`, `few`, `many` are optional.
-
-**Important:** Italian, French, Spanish, and English all follow simple `one`/`other` plural rules. No `few` or `many` forms needed for these 4 languages.
-
-**Confidence:** HIGH -- ICU plural syntax verified via Context7 (Flutter internationalization docs).
-
-### Pattern 3: Strings with Arguments (Parameterized)
-
-**ARB (app_en.arb):**
-```json
-{
-  "progressDisplay": "{current} / {target} L",
-  "@progressDisplay": {
-    "description": "Progress ring text showing current/target in liters",
-    "placeholders": {
-      "current": { "type": "String" },
-      "target": { "type": "String" }
-    }
-  },
-  "mlAdded": "+{amount} ml added",
-  "@mlAdded": {
-    "description": "SnackBar confirmation after adding water",
-    "placeholders": {
-      "amount": { "type": "int" }
-    }
-  },
-  "presetLabel": "+{amount} ml",
-  "@presetLabel": {
-    "description": "Quick-add preset button label",
-    "placeholders": {
-      "amount": { "type": "int" }
-    }
-  },
-  "presetNumber": "Preset {number}",
-  "@presetNumber": {
-    "description": "Settings preset row title",
-    "placeholders": {
-      "number": { "type": "int" }
-    }
-  },
-  "targetUpdated": "Target updated to {value}",
-  "@targetUpdated": {
-    "description": "SnackBar after calculator applies target",
-    "placeholders": {
-      "value": { "type": "String" }
-    }
-  }
-}
-```
-
-**Dart usage:**
-```dart
-// Progress ring
-Text(AppLocalizations.of(context).progressDisplay(
-  _formatLiters(context, totalMl),
-  _formatLiters(context, target),
-))
-
-// SnackBar
-Text(AppLocalizations.of(context).mlAdded(amountMl))
-```
-
-**Note on the progress display:** The `current` and `target` parameters are `String` (not `int`) because the liters formatting (`_formatLiters`) already handles locale-aware decimal formatting. Passing pre-formatted strings avoids double-formatting.
-
-**Confidence:** HIGH -- placeholder syntax verified via Context7.
-
-### Pattern 4: Notification Strings Outside Widget Tree
-
-**The problem:** `NotificationService` is a singleton accessed via `NotificationService.instance`. It has no `BuildContext`, so `AppLocalizations.of(context)` is not available. The notification title and body are currently hardcoded as `static const String` fields.
-
-**The solution: `AppLocalizations.delegate.load(locale)`**
-
-The generated `AppLocalizations.delegate` is a `LocalizationsDelegate<AppLocalizations>`. Its `load(Locale locale)` method returns `Future<AppLocalizations>` and can be called anywhere -- no `BuildContext` required.
-
-To get the device locale without context: `WidgetsBinding.instance.platformDispatcher.locale`
-
-**Implementation pattern:**
-
-```dart
-import 'dart:ui' show PlatformDispatcher;
-import '../l10n/generated/app_localizations.dart';
-
-class NotificationService {
-  // ... existing code ...
-
-  /// Get localized strings for the current device locale.
-  /// Falls back to English if the device locale is not supported.
-  Future<AppLocalizations> _getLocalizations() async {
-    final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
-
-    // Check if device locale is supported; fall back to English
-    final supportedLocale = AppLocalizations.supportedLocales.firstWhere(
-      (l) => l.languageCode == deviceLocale.languageCode,
-      orElse: () => const Locale('en'),
-    );
-
-    return AppLocalizations.delegate.load(supportedLocale);
-  }
-
-  Future<void> scheduleWindow(UserSettingsEntity settings) async {
-    await cancelAll();
-    if (!_initialized) return;
-    if (!(await permissionGranted())) return;
-
-    // Load localized strings once for all notifications in this batch
-    final l10n = await _getLocalizations();
-    final title = l10n.notificationTitle;   // e.g. "Drinky Drinky"
-    final body = l10n.notificationBody;     // e.g. "Time to drink water!"
-
-    // ... scheduling loop uses title and body instead of _notifTitle/_notifBody ...
-    await _plugin.zonedSchedule(
-      id: slotId++,
-      scheduledDate: candidate,
-      notificationDetails: _notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      title: title,
-      body: body,
-      matchDateTimeComponents: null,
-    );
-  }
-}
-```
-
-**Why this works:**
-- `delegate.load()` is a pure factory method that instantiates the correct locale subclass of `AppLocalizations`. It does not require the widget tree.
-- The locale is read from `PlatformDispatcher` which reflects the device's current system locale.
-- Fallback to English is explicit via the `firstWhere` + `orElse` pattern.
-
-**Critical caveat:** Notifications are scheduled with the locale active at scheduling time. If the user changes their device language, previously scheduled notifications retain the OLD language text. This is acceptable because `scheduleWindow()` is called on every app resume, settings change, and permission grant -- so notifications are re-scheduled frequently with the new locale.
-
-**ARB entries for notifications:**
-```json
-{
-  "notificationTitle": "Drinky Drinky",
-  "@notificationTitle": {
-    "description": "Notification title for hydration reminders"
-  },
-  "notificationBody": "Time to drink water!",
-  "@notificationBody": {
-    "description": "Notification body for hydration reminders"
-  }
-}
-```
-
-**Confidence:** HIGH -- `LocalizationsDelegate.load(Locale)` returns `Future<T>` per official API docs (api.flutter.dev). `WidgetsBinding.instance.platformDispatcher.locale` verified via Context7 (Flutter breaking changes docs for window singleton deprecation).
-
-### Pattern 5: Locale Fallback for Unsupported System Locale
-
-**How Flutter resolves locale (built-in, no custom code needed):**
-
-1. User's device locale matches a supported locale exactly (e.g., `it` matches `it`) -- use it
-2. Language code matches but country code differs (e.g., `es_AR` matches `es`) -- use the matching language
-3. No match at all (e.g., `de`) -- fall back to **first entry** in `supportedLocales`
-
-**Therefore, put English first in the ARB directory:**
-
-```
-lib/l10n/
-  app_en.arb    <-- template (first = default fallback)
-  app_it.arb
-  app_fr.arb
-  app_es.arb
-```
-
-In `l10n.yaml`:
-```yaml
-template-arb-file: app_en.arb
-```
-
-The generated `AppLocalizations.supportedLocales` list is ordered by the ARB files. By making `app_en.arb` the template, English is the first element and becomes the fallback for any unsupported locale.
-
-**No `localeResolutionCallback` needed** for this use case. Flutter's default resolution handles it.
-
-**Confidence:** HIGH -- Flutter docs explicitly state: "If an exact match for the device locale isn't found, then the first supported locale with a matching languageCode is used. If that fails, then the first element of the supportedLocales list is used." Verified via Context7.
-
----
-
-## Complete String Inventory (Extraction Scope)
-
-### Home Screen (`home_screen.dart`)
-
-| Current String | Type | ARB Key | Notes |
-|----------------|------|---------|-------|
-| `'Drinky Drinky'` (AppBar) | Simple | `appTitle` | Brand name, same in all locales |
-| `'Add water'` (FAB tooltip) | Simple | `addWater` | |
-| `'Goal reached!'` | Simple | `goalReached` | |
-| `'{current} / {target} L'` | Parameterized | `progressDisplay` | Args are pre-formatted liter strings |
-| `"Today's Intake"` | Simple | `todaysIntake` | |
-| `'No drinks logged yet'` | Simple | `noDrinksLogged` | |
-| `'Tap the + button to log your first drink today.'` | Simple | `noDrinksLoggedHint` | |
-| `'+$amountMl ml added'` | Parameterized | `mlAdded` | SnackBar |
-| `'UNDO'` | Simple | `undo` | SnackBar action |
-| `'+${preset.amountMl} ml'` | Parameterized | `presetLabel` | Preset button text |
-| `'Custom amount'` (hint) | Simple | `customAmount` | Bottom sheet TextField |
-| `'ml'` (suffix) | Simple | `mlUnit` | Unit suffix |
-| `'Add'` (button) | Simple | `add` | Bottom sheet confirm |
-| `'Something went wrong...'` | Simple | `errorLoadingDataRestart` | Error state |
-
-### Settings Screen (`settings_screen.dart`)
-
-| Current String | Type | ARB Key | Notes |
-|----------------|------|---------|-------|
-| `'Settings'` (AppBar) | Simple | `settingsTitle` | |
-| `'DAILY GOAL'` | Simple | `dailyGoalSection` | Section label |
-| `'QUICK-ADD PRESETS'` | Simple | `presetsSection` | Section label |
-| `'NOTIFICATIONS'` | Simple | `notificationsSection` | Section label |
-| `'HYDRATION'` | Simple | `hydrationSection` | Section label |
-| `'${currentTarget.toInt()} ml'` | Parameterized | `valueMl` | Target slider value |
-| `'${currentInterval.toInt()} min'` | Parameterized | `valueMin` | Interval slider value |
-| `'Applica da domani'` | Simple | `applyFromTomorrow` | Already Italian! |
-| `'Le modifiche al target entrano in vigore domani'` | Simple | `applyFromTomorrowDesc` | |
-| `'Le modifiche al target entrano in vigore oggi'` | Simple | `applyFromTodayDesc` | |
-| `'Preset ${preset.sortOrder + 1}'` | Parameterized | `presetNumber` | |
-| `'${preset.amountMl} ml'` | Parameterized | `valueMl` | Reuse of valueMl |
-| `'Ricalcola raccomandazione idratazione'` | Simple | `recalculateHydration` | Already Italian! |
-| `'Notifications are disabled...'` | Simple | `notificationsDisabled` | Permission banner |
-| `'Open'` | Simple | `openSystemSettings` | Button to system settings |
-| `'Do Not Disturb'` | Simple | `doNotDisturb` | |
-| `'On'` / `'Off'` | Simple | `on` / `off` | DND status |
-| `'Start time'` / `'End time'` | Simple | `startTime` / `endTime` | |
-| `'Something went wrong...'` | Simple | `errorLoadingData` | Error state |
-
-### History Screen (`history_screen.dart`)
-
-| Current String | Type | ARB Key | Notes |
-|----------------|------|---------|-------|
-| `'History'` (AppBar, 3 instances) | Simple | `historyTitle` | |
-| `'No history yet'` | Simple | `noHistory` | Empty state |
-| `'Start logging water on the Home tab...'` | Simple | `noHistoryBody` | Empty state body |
-| `'$streak'` + `' day streak'` | **Plural** | `streakCount` | ICU plural format: `{count, plural, =1{...} other{...}}` |
-| `'${_monthName(day.month)} ${day.day}: goal met'` | Parameterized | `calendarDayGoalMet` | Semantic label |
-| `'${_monthName(day.month)} ${day.day}: goal not met'` | Parameterized | `calendarDayGoalNotMet` | Semantic label |
-| `'$dateLabel -- $total of $dailyTarget ml'` | Parameterized | `daySummary` | Day summary card |
-| `'$dateLabel -- No entries'` | Parameterized | `daySummaryEmpty` | Day summary card |
-| `_monthName()` helper (English array) | **Remove entirely** | -- | Replace with `DateFormat.MMMM(locale).format(date)` |
-| `'Something went wrong...'` | Simple | `errorLoadingData` | Reuse |
-
-### Permission Screen (`permission_screen.dart`)
-
-| Current String | Type | ARB Key | Notes |
-|----------------|------|---------|-------|
-| `'Stay hydrated with reminders'` | Simple | `permissionTitle` | |
-| `'Drinky Drinky sends you gentle reminders...'` | Simple | `permissionBody` | |
-| `'Enable Reminders'` | Simple | `enableReminders` | |
-| `'Skip for now'` | Simple | `skipForNow` | |
-| `'Reminders enabled!...'` | Simple | `remindersEnabledMessage` | SnackBar |
-| `'No problem...'` | Simple | `remindersDeniedMessage` | SnackBar |
-
-### Hydration Calculator Screen (`hydration_calculator_screen.dart`)
-
-| Current String | Type | ARB Key | Notes |
-|----------------|------|---------|-------|
-| `'Calcolatore idratazione'` | Simple | `calculatorTitle` | Already Italian |
-| `'Sesso'` | Simple | `sexLabel` | Section label |
-| `'Maschio'` / `'Femmina'` / `'Altro'` | Simple | `sexMale` / `sexFemale` / `sexOther` | **CRITICAL: decouple from `_sexFactors` map keys** |
-| `'Peso'` | Simple | `weightLabel` | Section label |
-| `'Peso (kg)'` | Simple | `weightInputLabel` | TextField label |
-| `'kg'` | Simple | `kgUnit` | Suffix |
-| `'Inserisci un peso tra 1 e 300 kg'` | Simple | `weightError` | Validation error |
-| `'Clima'` | Simple | `climateLabel` | Section label |
-| `'Freddo'`/`'Mite'`/`'Caldo'`/`'Molto caldo'`/`'Afoso'` | Simple | `climateCold`/`climateMild`/`climateHot`/`climateVeryHot`/`climateHumid` | 5 climate labels |
-| `'La tua raccomandazione'` | Simple | `yourRecommendation` | |
-| `'Compila tutti i campi'` | Simple | `fillAllFields` | Incomplete state |
-| Privacy disclaimer text | Simple | `privacyDisclaimer` | Multi-sentence |
-| `'Usa come target'` | Simple | `useAsTarget` | |
-| `'Salta'` | Simple | `skip` | Onboarding only |
-| `'Errore durante l\'aggiornamento...'` | Simple | `targetUpdateError` | SnackBar error |
-| `'Target aggiornato a ${value}'` | Parameterized | `targetUpdated` | SnackBar success |
-
-### Preset Edit Dialog (`preset_edit_dialog.dart`)
-
-| Current String | Type | ARB Key | Notes |
-|----------------|------|---------|-------|
-| `'Edit Preset ${widget.preset.sortOrder + 1}'` | Parameterized | `editPreset` | Dialog title |
-| `'Amount (ml)'` | Simple | `amountMlLabel` | TextField label |
-| `'ml'` | Simple | `mlUnit` | Reuse |
-| `'Enter a value between 50 and 2000'` | Simple | `presetAmountError` | Validation |
-| `'Cancel'` | Simple | `cancel` | |
-| `'Confirm'` | Simple | `confirm` | |
-
-### NotificationService (`notification_service.dart`)
-
-| Current String | Type | ARB Key | Notes |
-|----------------|------|---------|-------|
-| `'Hydration Reminders'` (channel name) | Simple | `notificationChannelName` | Android notification channel |
-| `'Drinky Drinky'` (notification title) | Simple | `notificationTitle` | |
-| `'Time to drink water!'` (notification body) | Simple | `notificationBody` | |
-
-**Total estimated string keys: ~75-85**
-
----
-
-## Critical Implementation Details
-
-### Decoupling Calculator Sex Labels from Logic Keys
-
-**Problem:** The current `_sexFactors` map uses Italian display text as keys:
-
-```dart
-static const _sexFactors = {
-  'Maschio': 35.0,
-  'Femmina': 31.0,
-  'Altro': 33.0,
-};
-```
-
-The `_selectedSex` state variable stores `'Maschio'`, `'Femmina'`, or `'Altro'` -- the SAME strings used for both display and computation. When display strings are localized, the map lookup breaks.
-
-**Solution:** Use locale-independent enum for logic; display strings from ARB:
-
-```dart
-// Logic keys (never change, never displayed directly)
-enum BiologicalSex { male, female, other }
-
-static const _sexFactors = {
-  BiologicalSex.male: 35.0,
-  BiologicalSex.female: 31.0,
-  BiologicalSex.other: 33.0,
-};
-
-BiologicalSex? _selectedSex;
-
-// Display via ARB
-SegmentedButton<BiologicalSex>(
-  segments: [
-    ButtonSegment(
-      value: BiologicalSex.male,
-      label: Text(AppLocalizations.of(context).sexMale),
-    ),
-    ButtonSegment(
-      value: BiologicalSex.female,
-      label: Text(AppLocalizations.of(context).sexFemale),
-    ),
-    ButtonSegment(
-      value: BiologicalSex.other,
-      label: Text(AppLocalizations.of(context).sexOther),
-    ),
-  ],
-  selected: _selectedSex != null ? {_selectedSex!} : {},
-  onSelectionChanged: (sel) =>
-      setState(() => _selectedSex = sel.firstOrNull),
-),
-```
-
-Same pattern applies to `_climateLabels` -- replace the Italian string array with a method that returns localized labels from AppLocalizations indexed by integer position.
-
-### Replacing `_monthName()` in History Screen
-
-The hardcoded English month name array must be replaced:
-
-```dart
-// BEFORE (hardcoded English)
-String _monthName(int month) {
-  const names = ['', 'January', 'February', ...];
-  return names[month];
-}
-
-// AFTER (locale-aware via intl)
-String _monthName(DateTime date, String locale) {
-  return DateFormat.MMMM(locale).format(date);
-}
-```
-
-This requires passing the locale string (from `Localizations.localeOf(context).toString()`) or using `DateFormat.MMMM()` with the current locale. The `intl` package handles Italian/French/Spanish/English month names automatically after `initializeDateFormatting()` is called.
-
-### table_calendar Locale Property
-
-`TableCalendar` accepts a `locale` property that controls day-of-week headers and month names:
-
-```dart
-TableCalendar(
-  locale: Localizations.localeOf(context).toString(),
-  // ... rest of config
-)
-```
-
-**Prerequisite:** `initializeDateFormatting()` must be called in `main()` before `runApp()`:
-
-```dart
-import 'package:intl/date_symbol_data_local.dart';
-
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting();  // ADD THIS -- inits all locale data for intl
-  // ... existing timezone init, notification init ...
-  runApp(const ProviderScope(child: DrinkyDrinkyApp()));
-}
-```
-
-**Confidence:** HIGH -- verified via Context7 (table_calendar docs).
-
-### Notification Channel Name Re-creation
-
-Android notification channels are created once and persist. If the user changes language, the channel name shown in Android Settings stays in the old language.
-
-**Solution:** Re-create the channel on every `initialize()` call with the localized name. Android allows re-creating channels with the same ID -- it updates the display name without losing user preferences (importance, sound, etc.):
-
-```dart
-Future<void> initialize() async {
-  // ... existing init code ...
-
-  if (Platform.isAndroid) {
-    final l10n = await _getLocalizations();
-    final channel = AndroidNotificationChannel(
-      _channelId,
-      l10n.notificationChannelName,  // localized
-      importance: Importance.high,
-    );
-    await _plugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
-  }
-  _initialized = true;
-}
-```
-
-### `const` Removal Impact
-
-Many widgets currently use `const Text('...')` for hardcoded strings. After l10n, these become `Text(AppLocalizations.of(context).someKey)` which is NOT const. This is expected and harmless -- the performance difference is negligible. Do not try to preserve `const` by caching strings.
+### Dependency on Existing History Screen
+
+The monthly bar chart must integrate into the existing `HistoryScreen` widget, which currently contains:
+1. A `SingleChildScrollView` with `Column` children
+2. A streak card at the top
+3. A `TableCalendar` widget
+4. An `AnimatedSwitcher` day summary card at the bottom
+
+The bar chart should be inserted between the calendar and the day summary card (position 3.5). This means:
+- It lives inside the same `SingleChildScrollView` and must not be independently scrollable
+- It watches the same `focusedMonthProvider` as the calendar
+- It watches the same `calendarMonthProvider(year, month)` family provider
+- It reuses the same green/red color logic and dark-mode handling
+
+The day detail screen is a new push route, independent of the history screen layout.
 
 ---
 
 ## MVP Recommendation
 
-**Prioritize (must-have for v1.3):**
+### Phase 1: Monthly Bar Chart (embed in history screen)
 
-1. l10n infrastructure (l10n.yaml, ARB files, flutter_localizations dep, MaterialApp wiring, initializeDateFormatting)
-2. Template ARB file (app_en.arb) with all ~80 string keys and metadata
-3. Translation ARB files (app_it.arb, app_fr.arb, app_es.arb) -- all strings translated
-4. All UI screens refactored to use `AppLocalizations.of(context)` instead of hardcoded strings
-5. Calculator sex/climate label decoupling from logic keys (enum instead of string keys)
-6. `_monthName()` replacement with locale-aware `DateFormat.MMMM()`
-7. table_calendar `locale` property wiring
-8. Notification strings via `delegate.load()` pattern in NotificationService
-9. English fallback (template = en, first in supportedLocales)
+Prioritize these table-stakes features:
+1. One bar per day, green/red coloring, synced with calendar month
+2. Goal reference line (horizontal dashed)
+3. X-axis day labels (subset), Y-axis ml labels
+4. Touch tooltip showing exact ml value
+5. Empty state for months with no data
+6. Future days absent from chart
+7. Implicit animation on month change
+8. Dark mode support
 
-**Defer (nice-to-have, include if time permits):**
+Plus these high-value, low-complexity differentiators:
+- Rounded bar tops (trivial)
+- Today's bar highlighted (trivial)
 
-- Notification channel name localization: Low impact, channel name is rarely seen by users
-- Semantic label translations for calendar day cells: Important for accessibility but not blocking
+### Phase 2: Day Detail Screen (push navigation)
+
+Prioritize:
+1. New GoRouter route accepting dateKey parameter
+2. Bar chart with one bar per intake entry, x-axis = time, y-axis = ml
+3. Total summary text
+4. Touch tooltip with time and amount
+5. Empty state
+6. Back navigation
+
+Plus:
+- Tap-to-navigate from monthly chart bar to day detail (connects the two)
+
+### Defer
+
+- **Goal background bars** (backDrawRodData): Nice but not essential; adds per-day target complexity. Good candidate for a polish pass after core charts work.
+- **Semantic accessibility labels**: Important for accessibility but requires careful design of invisible semantic tree. Address in a dedicated accessibility pass.
+- **Day total text above bars**: Risk of overlap; punt until chart is working and visually tuned.
+- **Color gradient on bars**: Polish item; add after core coloring (green/red) is correct.
+
+---
+
+## What Makes Charts Useful vs Decorative
+
+Based on analysis of successful health-tracking apps (Apple Health, Fitbit, WaterMinder, MyFitnessPal), the line between "useful chart" and "decorative chart" comes down to three properties:
+
+### 1. Context (the goal line)
+
+A bar chart showing "1,500 ml on June 10" is meaningless without knowing the target was 2,000 ml. The single most important feature that makes a hydration chart useful is the **goal reference line**. Without it, the user is looking at abstract heights. With it, every bar instantly communicates "above target" or "below target." The green/red coloring reinforces this, but the line provides the continuous reference.
+
+### 2. Actionability (tap-to-detail)
+
+A chart that you can only look at is a picture. A chart you can tap into to see details becomes a navigation tool. The monthly bar chart should drive exploration: "I see a short red bar on June 8 -- let me tap to see what happened that day." This converts the chart from a passive visualization into an active investigation tool.
+
+### 3. Integration (not an island)
+
+The chart must be woven into the existing screen, not bolted on. It shares the same month as the calendar above. It uses the same colors. It responds to the same interactions (swiping months). If the chart and the calendar tell different stories or respond to different gestures, the user perceives the chart as a gimmick.
+
+---
+
+## Localization Considerations
+
+New ARB string keys needed for chart features:
+
+| Key | English | Purpose |
+|-----|---------|---------|
+| `chartNoDataMonth` | "No intake data for this month" | Monthly chart empty state |
+| `chartNoDataDay` | "No entries for this day" | Day detail empty state |
+| `chartTooltipMl` | "{amount} ml" | Tooltip format (parameterized) |
+| `chartTooltipTime` | "{time}" | Tooltip time line (parameterized, locale-formatted) |
+| `chartDayDetailTitle` | "Daily Detail" | Day detail screen AppBar title |
+| `chartTotalLabel` | "Total: {total} ml" | Day detail total summary |
+| `chartGoalLine` | "Goal" | Label for the horizontal goal reference line (optional) |
+
+All values should use ICU MessageFormat with placeholders. No new plural forms needed.
 
 ---
 
 ## Sources
 
-- Flutter internationalization docs (Context7: /websites/flutter_dev, topic "internationalization l10n gen-l10n ARB") -- ARB syntax, plural format, placeholder syntax, MaterialApp wiring, locale resolution, l10n.yaml options
-- Flutter breaking changes: synthetic-package removal (https://docs.flutter.dev/release/breaking-changes/flutter-generate-i10n-source) -- `synthetic-package: false` required since 3.32
-- Flutter API: LocalizationsDelegate.load() (https://api.flutter.dev/flutter/widgets/LocalizationsDelegate-class.html) -- `load(Locale) -> Future<T>` for non-context usage
-- Flutter window singleton deprecation (Context7: /websites/flutter_dev) -- `WidgetsBinding.instance.platformDispatcher.locale` for device locale without context
-- table_calendar docs (Context7: /aleksanderwozniak/table_calendar) -- `locale` property, `initializeDateFormatting()` prerequisite
-- Existing codebase: notification_service.dart, home_screen.dart, settings_screen.dart, history_screen.dart, hydration_calculator_screen.dart, permission_screen.dart, preset_edit_dialog.dart
+- fl_chart BarTouchData API: https://pub.dev/documentation/fl_chart/latest/fl_chart/BarTouchData/BarTouchData.html (verified via Context7, HIGH confidence)
+- fl_chart BarChartRodData API: https://pub.dev/documentation/fl_chart/latest/fl_chart/BarChartRodData/BarChartRodData.html (verified via Context7, HIGH confidence)
+- fl_chart ExtraLinesData / HorizontalLine: https://github.com/imanneo/fl_chart/blob/main/repo_files/documentations/base_chart.md (verified via Context7, HIGH confidence)
+- fl_chart BackgroundBarChartRodData: https://pub.dev/documentation/fl_chart/latest/fl_chart/BackgroundBarChartRodData-class.html (verified via Context7, HIGH confidence)
+- fl_chart implicit animation: https://github.com/imanneo/fl_chart/blob/main/repo_files/documentations/bar_chart.md (verified via Context7, HIGH confidence)
+- fl_chart BarTouchTooltipData: https://pub.dev/documentation/fl_chart/latest/fl_chart/BarTouchTooltipData/BarTouchTooltipData.html (verified via Context7, HIGH confidence)
+- Existing codebase: `history_screen.dart`, `stream_providers.dart`, `water_entry_dao.dart`, `water_repository.dart` (direct code review)
+- Apple HIG chart principles: 44pt minimum touch targets, don't rely solely on color, animate subtly (MEDIUM confidence -- fetched but partial rendering)
