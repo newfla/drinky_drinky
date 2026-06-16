@@ -86,7 +86,9 @@ Full details: `.planning/milestones/v1.4-ROADMAP.md`
   3. A dashed horizontal line marks the current daily target on the chart
   4. Tapping a bar shows a tooltip with the exact ml value for that day
   5. When the user switches months in the calendar, the chart updates to show data for the newly selected month; months with no data show an empty-state message instead of the chart
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 17-01-PLAN.md — Add fl_chart dependency, create MonthlyBarChart widget, embed in HistoryScreen
 **UI hint**: yes
 
 ### Phase 18: Day Detail Screen
@@ -123,5 +125,5 @@ Full details: `.planning/milestones/v1.4-ROADMAP.md`
 | 14. Notification Localization & Platform Config | v1.3 | 2/2 | Complete | 2026-06-15 |
 | 15. Home & History Fixes | v1.4 | 1/1 | Complete | 2026-06-15 |
 | 16. Project README | v1.4 | 1/1 | Complete | 2026-06-15 |
-| 17. Monthly Bar Chart | v1.5 | 0/0 | Not started | - |
+| 17. Monthly Bar Chart | v1.5 | 0/1 | Planned | - |
 | 18. Day Detail Screen | v1.5 | 0/0 | Not started | - |
