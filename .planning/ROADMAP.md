@@ -113,7 +113,7 @@ Plans:
 
 Plans:
 
-- [ ] 18-01-PLAN.md — Create DayDetailScreen widget with per-entry bar chart, total display, empty state, and L10N strings
+- [x] 18-01-PLAN.md — Create DayDetailScreen widget with per-entry bar chart, total display, empty state, and L10N strings
 - [ ] 18-02-PLAN.md — Wire GoRouter route and rewire HistoryScreen calendar navigation
 
 **UI hint**: yes
@@ -141,4 +141,4 @@ Plans:
 | 15. Home & History Fixes | v1.4 | 1/1 | Complete | 2026-06-15 |
 | 16. Project README | v1.4 | 1/1 | Complete | 2026-06-15 |
 | 17. Monthly Bar Chart | v1.5 | 1/1 | Complete    | 2026-06-16 |
-| 18. Day Detail Screen | v1.5 | 0/2 | Not started | - |
+| 18. Day Detail Screen | v1.5 | 1/2 | In Progress|  |
