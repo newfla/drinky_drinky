@@ -72,7 +72,7 @@ Full details: `.planning/milestones/v1.4-ROADMAP.md`
 **Milestone Goal:** Add data visualization to the History screen with monthly and daily bar charts.
 
 - [x] **Phase 17: Monthly Bar Chart** - fl_chart dependency and monthly bar chart widget embedded in HistoryScreen (completed 2026-06-16)
-- [ ] **Phase 18: Day Detail Screen** - Day detail screen with per-entry chart, GoRouter wiring, and L10N strings
+- [x] **Phase 18: Day Detail Screen** - Day detail screen with per-entry chart, GoRouter wiring, and L10N strings (completed 2026-06-16)
 
 ## Phase Details
 
@@ -114,7 +114,7 @@ Plans:
 Plans:
 
 - [x] 18-01-PLAN.md — Create DayDetailScreen widget with per-entry bar chart, total display, empty state, and L10N strings
-- [ ] 18-02-PLAN.md — Wire GoRouter route and rewire HistoryScreen calendar navigation
+- [x] 18-02-PLAN.md — Wire GoRouter route and rewire HistoryScreen calendar navigation
 
 **UI hint**: yes
 
@@ -141,4 +141,4 @@ Plans:
 | 15. Home & History Fixes | v1.4 | 1/1 | Complete | 2026-06-15 |
 | 16. Project README | v1.4 | 1/1 | Complete | 2026-06-15 |
 | 17. Monthly Bar Chart | v1.5 | 1/1 | Complete    | 2026-06-16 |
-| 18. Day Detail Screen | v1.5 | 1/2 | In Progress|  |
+| 18. Day Detail Screen | v1.5 | 2/2 | Complete   | 2026-06-16 |
