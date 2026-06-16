@@ -7,12 +7,12 @@
 
 ### Charts — Monthly Bar Chart
 
-- [ ] **CHART-01**: L'utente vede un grafico a barre mensile sotto il calendario con i ml totali giornalieri per il mese visualizzato
-- [ ] **CHART-02**: Le barre del mese corrente escludono i giorni futuri (barre solo per giorni <= oggi)
-- [ ] **CHART-03**: Una linea orizzontale dashed indica il target giornaliero corrente
-- [ ] **CHART-04**: Toccando una barra, il tooltip mostra i ml esatti del giorno
-- [ ] **CHART-05**: Quando il mese non ha dati, il chart mostra un empty state testuale al posto delle barre
-- [ ] **CHART-06**: Il chart si aggiorna automaticamente quando l'utente cambia mese nel calendario
+- [x] **CHART-01**: L'utente vede un grafico a barre mensile sotto il calendario con i ml totali giornalieri per il mese visualizzato
+- [x] **CHART-02**: Le barre del mese corrente escludono i giorni futuri (barre solo per giorni <= oggi)
+- [x] **CHART-03**: Una linea orizzontale dashed indica il target giornaliero corrente
+- [x] **CHART-04**: Toccando una barra, il tooltip mostra i ml esatti del giorno
+- [x] **CHART-05**: Quando il mese non ha dati, il chart mostra un empty state testuale al posto delle barre
+- [x] **CHART-06**: Il chart si aggiorna automaticamente quando l'utente cambia mese nel calendario
 
 ### Charts — Day Detail Screen
 
@@ -47,12 +47,12 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CHART-01 | Phase 17 | Pending |
-| CHART-02 | Phase 17 | Pending |
-| CHART-03 | Phase 17 | Pending |
-| CHART-04 | Phase 17 | Pending |
-| CHART-05 | Phase 17 | Pending |
-| CHART-06 | Phase 17 | Pending |
+| CHART-01 | Phase 17 | Complete |
+| CHART-02 | Phase 17 | Complete |
+| CHART-03 | Phase 17 | Complete |
+| CHART-04 | Phase 17 | Complete |
+| CHART-05 | Phase 17 | Complete |
+| CHART-06 | Phase 17 | Complete |
 | CHART-07 | Phase 18 | Pending |
 | CHART-08 | Phase 18 | Pending |
 | CHART-09 | Phase 18 | Pending |
@@ -60,6 +60,7 @@
 | CHART-11 | Phase 18 | Pending |
 
 **Coverage:**
+
 - v1.5 requirements: 11 total
 - Mapped to phases: 11
 - Unmapped: 0
