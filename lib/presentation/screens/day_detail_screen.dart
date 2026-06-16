@@ -110,6 +110,11 @@ class DayDetailScreen extends ConsumerWidget {
     // CHART-09: Find the active target for this dateKey.
     final targetMl = _findActiveTarget(targets, dateKey);
 
+    // Format ml values as L strings for display (e.g. 250 → "0.25", 2000 → "2").
+    String mlToL(int ml) => (ml / 1000)
+        .toStringAsFixed(2)
+        .replaceAll(RegExp(r'\.?0+$'), '');
+
     // CHART-08: Group entries by minutes-since-midnight for the x-axis.
     // Entries at the same minute get multiple barRods in one BarChartGroupData.
     final Map<int, List<WaterEntryEntity>> grouped = {};
@@ -178,7 +183,7 @@ class DayDetailScreen extends ConsumerWidget {
                 children: [
                   // CHART-09: Total and target text above the chart.
                   Text(
-                    context.l10n.dayDetailTotal(totalMl, targetMl),
+                    context.l10n.dayDetailTotal(mlToL(totalMl), mlToL(targetMl)),
                     style: theme.textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 12),

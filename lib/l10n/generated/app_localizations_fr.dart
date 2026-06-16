@@ -297,8 +297,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get notificationBody => 'C\'est l\'heure de boire de l\'eau ! 💧';
 
   @override
-  String dayDetailTotal(num total, num target) {
-    return '$total ml / $target ml objectif';
+  String dayDetailTotal(String total, String target) {
+    return '$total L / $target L objectif';
   }
 
   @override

@@ -582,11 +582,11 @@ abstract class AppLocalizations {
   /// **'Time to drink water! 💧'**
   String get notificationBody;
 
-  /// Total and target ml shown above the bar chart on the Day Detail screen
+  /// Total and target shown in litres above the bar chart on the Day Detail screen
   ///
   /// In en, this message translates to:
-  /// **'{total} ml / {target} ml target'**
-  String dayDetailTotal(num total, num target);
+  /// **'{total} L / {target} L target'**
+  String dayDetailTotal(String total, String target);
 
   /// Empty state text on the Day Detail screen when no water was logged for the selected date
   ///

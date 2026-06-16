@@ -489,15 +489,15 @@
     "description": "Body text of the hydration reminder push notification"
   },
 
-  "dayDetailTotal": "{total} ml / {target} ml target",
+  "dayDetailTotal": "{total} L / {target} L target",
   "@dayDetailTotal": {
-    "description": "Total and target ml shown above the bar chart on the Day Detail screen",
+    "description": "Total and target shown in litres above the bar chart on the Day Detail screen",
     "placeholders": {
       "total": {
-        "type": "num"
+        "type": "String"
       },
       "target": {
-        "type": "num"
+        "type": "String"
       }
     }
   },

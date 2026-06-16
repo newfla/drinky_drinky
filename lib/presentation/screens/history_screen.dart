@@ -308,8 +308,7 @@ class HistoryScreen extends ConsumerWidget {
                       ),
                     ),
 
-                    // md spacing between calendar and chart
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
                     // ---- MonthlyBarChart (CHART-01 through CHART-06) ----
                     MonthlyBarChart(

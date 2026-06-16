@@ -118,6 +118,6 @@
 
   "notificationBody": "È ora di bere acqua! 💧",
 
-  "dayDetailTotal": "{total} ml / {target} ml obiettivo",
+  "dayDetailTotal": "{total} L / {target} L obiettivo",
   "dayDetailNoEntries": "Nessun dato per questo giorno"
 }
