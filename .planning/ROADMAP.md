@@ -67,7 +67,7 @@ Full details: `.planning/milestones/v1.4-ROADMAP.md`
 
 </details>
 
-### 🚧 v1.5 Charts (In Progress)
+### v1.5 Charts (In Progress)
 
 **Milestone Goal:** Add data visualization to the History screen with monthly and daily bar charts.
 
@@ -89,7 +89,9 @@ Full details: `.planning/milestones/v1.4-ROADMAP.md`
   4. Tapping a bar shows a tooltip with the exact ml value for that day
   5. When the user switches months in the calendar, the chart updates to show data for the newly selected month; months with no data show an empty-state message instead of the chart
 
-**Plans**: 1 planPlans:
+**Plans**: 1 plan
+
+Plans:
 
 - [x] 17-01-PLAN.md — Add fl_chart dependency, create MonthlyBarChart widget, embed in HistoryScreen
 
@@ -107,12 +109,18 @@ Full details: `.planning/milestones/v1.4-ROADMAP.md`
   3. Days with no entries show an empty-state message instead of the chart
   4. All new strings introduced by charts (empty states, tooltips, labels, titles, totals) are localized in all 4 app languages (en/it/fr/es)
 
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+
+- [ ] 18-01-PLAN.md — Create DayDetailScreen widget with per-entry bar chart, total display, empty state, and L10N strings
+- [ ] 18-02-PLAN.md — Wire GoRouter route and rewire HistoryScreen calendar navigation
+
 **UI hint**: yes
 
 ## Progress
 
-**Execution Order:** Phases execute in numeric order: 17 → 18
+**Execution Order:** Phases execute in numeric order: 17 -> 18
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -133,4 +141,4 @@ Full details: `.planning/milestones/v1.4-ROADMAP.md`
 | 15. Home & History Fixes | v1.4 | 1/1 | Complete | 2026-06-15 |
 | 16. Project README | v1.4 | 1/1 | Complete | 2026-06-15 |
 | 17. Monthly Bar Chart | v1.5 | 1/1 | Complete    | 2026-06-16 |
-| 18. Day Detail Screen | v1.5 | 0/0 | Not started | - |
+| 18. Day Detail Screen | v1.5 | 0/2 | Not started | - |
