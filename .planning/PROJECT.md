@@ -13,7 +13,7 @@ The user always knows how close they are to their daily hydration goal and gets 
 **Goal:** Aggiungere visualizzazione dati nella History screen con grafici a barre mensili e giornalieri.
 
 **Target features:**
-- Grafico a barre mensile sotto il calendario (asse x = giorni del mese, asse y = ml totali giornalieri)
+- ✓ Grafico a barre mensile sotto il calendario (asse x = giorni del mese, asse y = ml totali giornalieri) — Phase 17 complete 2026-06-16
 - Schermata di dettaglio giornaliero (push separato) con grafico delle singole aggiunte (asse x = orario, asse y = ml)
 
 ## Shipped
