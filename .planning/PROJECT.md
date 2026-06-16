@@ -8,14 +8,6 @@ A Flutter mobile app that helps users track their daily water intake and stay hy
 
 The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
 
-## Current Milestone: v1.5 Charts
-
-**Goal:** Aggiungere visualizzazione dati nella History screen con grafici a barre mensili e giornalieri.
-
-**Target features:**
-- ✓ Grafico a barre mensile sotto il calendario (asse x = giorni del mese, asse y = ml totali giornalieri) — Phase 17 complete 2026-06-16
-- Schermata di dettaglio giornaliero (push separato) con grafico delle singole aggiunte (asse x = orario, asse y = ml)
-
 ## Shipped
 
 - ✅ **v1.0 MVP** — Phases 1-5 (2026-06-08)
@@ -23,6 +15,7 @@ The user always knows how close they are to their daily hydration goal and gets 
 - ✅ **v1.2 Bug Fixes & Feature Depth** — Phases 9-11 (2026-06-15)
 - ✅ **v1.3 Multilingual Support** — Phases 12-14 (2026-06-15)
 - ✅ **v1.4 Polish & Bug Fixes** — Phases 15-16 (2026-06-15)
+- ✅ **v1.5 Charts** — Phases 17-18 (2026-06-16)
 
 ## Requirements
 
@@ -57,6 +50,17 @@ The user always knows how close they are to their daily hydration goal and gets 
 - ✓ **POLISH-01**: Home empty-state placeholder text centered with 32px horizontal padding — Phase 15 (v1.4)
 - ✓ **BUG-04**: History screen reactively updates when first water entry is logged on fresh install — Phase 15 (v1.4)
 - ✓ **DOC-01**: README.md with project description, screenshot references (iOS + Android), 12-item feature list, and build instructions — Phase 16 (v1.4)
+- ✓ **CHART-01**: Monthly bar chart below calendar with daily ml totals; one bar per day, current month only for past/today — Phase 17 (v1.5)
+- ✓ **CHART-02**: Current-month bars exclude future days (loop gated by `lastValidDay = isCurrentMonth ? now.day : daysInMonth`) — Phase 17 (v1.5)
+- ✓ **CHART-03**: Dashed horizontal line at daily target via `ExtraLinesData(horizontalLines: [HorizontalLine(dashArray: [8, 4])])` — Phase 17 (v1.5)
+- ✓ **CHART-04**: Tap tooltip shows exact ml value for day — Phase 17 (v1.5)
+- ✓ **CHART-05**: Months with no data show empty-state text instead of chart — Phase 17 (v1.5)
+- ✓ **CHART-06**: Chart updates reactively when user switches calendar month via `focusedMonthProvider` — Phase 17 (v1.5)
+- ✓ **CHART-07**: Tapping a bar on the monthly chart navigates to DayDetailScreen; empty bars (zero intake) do not navigate — Phase 18 (v1.5)
+- ✓ **CHART-08**: DayDetailScreen shows per-entry bar chart (x = minutesSinceMidnight, y = ml), grouped bars for simultaneous entries — Phase 18 (v1.5)
+- ✓ **CHART-09**: DayDetailScreen shows total L / target L above the chart; AppBar title is locale-formatted date — Phase 18 (v1.5)
+- ✓ **CHART-10**: DayDetailScreen shows empty-state Card when no entries for the selected day — Phase 18 (v1.5)
+- ✓ **CHART-11**: All chart strings localized in en/it/fr/es (`dayDetailTotal`, `dayDetailNoEntries`) — Phase 18 (v1.5)
 
 ### Out of Scope
 
@@ -68,16 +72,16 @@ The user always knows how close they are to their daily hydration goal and gets 
 - Backend / cloud sync — fully offline for v1
 - Smart/adaptive reminder timing — requires usage pattern learning; v2
 - Full locale formatting for settings values — defer to v1.3
-- fl_chart trend charts — not needed for current scope
+- Weekly/annual trend charts, accessibility Semantics wrappers on charts — potential CHART-FUTURE evolution
 
 ## Context
 
-**Current state (v1.4 complete — 16 phases shipped):**
-- Stack: Flutter 3.44.1, Riverpod 3.x (code-gen), Drift 2.33.0 (SQLite), flutter_local_notifications 21.0.0, flutter_localizations (SDK), intl 0.20.2
+**Current state (v1.5 complete — 18 phases shipped):**
+- Stack: Flutter 3.44.1, Riverpod 3.x (code-gen), Drift 2.33.0 (SQLite), flutter_local_notifications 21.0.0, flutter_localizations (SDK), intl 0.20.2, fl_chart 1.2.0
 - Target platforms: iOS 16.0+ and Android (minSdk 26 / compileSdk 36)
 - Fully offline — no backend, no user accounts, no sync
-- All v1.4 requirements shipped: home placeholder polish, history screen reactivity fix, project README
-- UAT passed for all phases; DOC-01 verified; iOS screenshot present, Android screenshot pending developer addition
+- All v1.5 requirements shipped: monthly bar chart in HistoryScreen, DayDetailScreen with per-entry bar chart, tap navigation, L10N for all 4 languages
+- UAT passed for all phases; human verification complete for Phases 17 and 18
 
 **Known issues / tech debt:**
 - Android OEM background killing (Samsung/Xiaomi) may silently suppress notifications — requires physical device testing; **deferred**
@@ -119,6 +123,11 @@ The user always knows how close they are to their daily hydration goal and gets 
 | Primary-only locale resolution (v1.3) | `locales.first` with English fallback — consistent across UI (localeListResolutionCallback in main.dart) and NotificationService (_resolveLocale). Simpler than basicLocaleListResolution and avoids sub-locale edge cases | ✓ Good — consistent behavior confirmed in Phase 13 UAT; notification locale matches UI locale |
 | PlatformDispatcher + lookupAppLocalizations for NotificationService (v1.3) | Service runs without BuildContext (it's a singleton). PlatformDispatcher.instance.locales is the only locale source available outside widget tree | ✓ Good — dart:ui import, no widget dependency; try/catch English fallback covers edge cases |
 | Stream provider over initState Future for HistoryScreen (v1.4) | StatefulShellRoute.indexedStack keeps screens alive; initState runs only once per session, so a one-time Future never re-evaluates after the first entry is logged. Stream provider (Drift watchSingle + @riverpod) eliminates the stale-state class of bug | ✓ Good — history screen now reactive; removed 3 local state vars and the entire initState override |
+| `onBarTap` callback on MonthlyBarChart (v1.5) | Pure StatelessWidget with optional `void Function(String dateKey)?` — no GoRouter/provider import inside the chart widget; navigation stays in the screen layer | ✓ Good — chart remains reusable and testable; zero navigation coupling inside presentation widget |
+| `x = minutesSinceMidnight` for DayDetailScreen x-axis (v1.5) | Avoids DateTime comparison; directly sortable as int; collapses simultaneous entries into one BarChartGroupData with multiple barRods naturally | ✓ Good — correct grouping behavior and no sorting edge cases |
+| `mlToL` display formatting for DayDetailScreen total (v1.5) | `(ml/1000).toStringAsFixed(2).replaceAll(RegExp(r'\.?0+$'), '')` — locale-neutral compact L string; ARB placeholders typed `String` to accept pre-formatted values | ✓ Good — consistent with y-axis label format; no locale-dependent decimal separator issues |
+| `DateTime.tryParse` over `DateTime.parse` for AppBar date (v1.5) | Malformed dateKey (e.g., from deep link) would crash with `DateTime.parse`; `tryParse` + null fallback displays raw dateKey instead | ✓ Good — defensive; no visible impact on correct inputs |
+| `FlTapUpEvent` filter in touchCallback (v1.5) | fl_chart `touchCallback` fires on every touch event (down, move, up); filtering to `FlTapUpEvent` only prevents double-fires on drag and avoids navigation on long-press scroll | ✓ Good — navigation fires exactly once per intentional tap |
 
 ## Evolution
 
@@ -138,4 +147,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-16 — Milestone v1.5 Charts started. Monthly and daily bar charts scoped.*
+*Last updated: 2026-06-16 — Milestone v1.5 Charts complete. 18 phases shipped; fl_chart integrated.*

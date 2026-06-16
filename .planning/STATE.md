@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.5
-milestone_name: Charts
-status: complete
-stopped_at: Phase 18 complete — CHART-07 gap resolved by quick task 260616-m5n
-last_updated: "2026-06-16T13:00:00.000Z"
-last_activity: 2026-06-16 -- Phase 18 complete, v1.5 Charts milestone shipped
+milestone_name: Charts — SHIPPED 2026-06-16
+status: Awaiting next milestone
+stopped_at: v1.5 Charts milestone complete — Phase 18 done, CHART-07 gap resolved
+last_updated: "2026-06-16T14:54:52.900Z"
+last_activity: 2026-06-16 — Milestone v1.5 completed and archived
 progress:
   total_phases: 2
   completed_phases: 2
@@ -25,12 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-16)
 
 ## Current Position
 
-Phase: 18 (day-detail-screen) — COMPLETE
-Milestone: v1.5 Charts — COMPLETE
-Status: All phases shipped
-Last activity: 2026-06-16 -- Phase 18 complete, quick task 260616-m5n resolved CHART-07
-
-Progress: [██████████] 100%
+Phase: Milestone v1.5 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-16 — Milestone v1.5 completed and archived
 
 ## Performance Metrics
 
@@ -105,3 +103,7 @@ Items acknowledged and deferred at milestone close on 2026-06-15:
 Last session: 2026-06-16T13:00:00.000Z
 Stopped at: v1.5 Charts milestone complete — Phase 18 done, CHART-07 gap resolved
 Resume file: none
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

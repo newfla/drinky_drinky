@@ -1,5 +1,17 @@
 # Milestones
 
+## v1.5 Charts (Shipped: 2026-06-16)
+
+**Phases completed:** 2 phases, 3 plans, 5 tasks
+
+**Key accomplishments:**
+
+- fl_chart bar chart widget showing daily hydration totals per month with green/red bars, dashed target line, tap tooltips, and empty-state fallback embedded in HistoryScreen
+- DayDetailScreen ConsumerWidget with per-entry fl_chart BarChart (HH:mm x-axis, ml y-axis), total/target text display, empty state, and 4-locale L10N strings.
+- GoRoute /day/:dateKey wired as top-level route (no NavigationBar), HistoryScreen converted to ConsumerWidget with context.push navigation replacing inline day summary.
+
+---
+
 ## v1.4 Polish & Bug Fixes (Shipped: 2026-06-15)
 
 **Phases completed:** 2 phases, 2 plans, 3 tasks

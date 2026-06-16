@@ -266,6 +266,57 @@
 
 ---
 
+## Milestone: v1.5 — Charts
+
+**Shipped:** 2026-06-16
+**Phases:** 2 (17-18) | **Plans:** 3 (17-01, 18-01, 18-02) + 2 quick tasks | **Duration:** 1 day (2026-06-16)
+
+### What Was Built
+
+- `MonthlyBarChart` StatelessWidget with fl_chart `BarChart`: one bar per day, green/red by target, dashed target line, empty-state fallback, reactive to `focusedMonthProvider` — embedded in HistoryScreen below calendar
+- `onBarTap` callback on `MonthlyBarChart` — tapping a non-zero bar pushes `/day/:dateKey` via GoRouter; zero-intake bars silently ignored
+- `DayDetailScreen` ConsumerWidget: per-entry bar chart (x = minutesSinceMidnight, y = ml), grouped bars for same-minute entries, total L / target L header, locale-formatted AppBar date, empty-state Card
+- GoRouter top-level route `/day/:dateKey` (outside StatefulShellRoute → no bottom NavigationBar on detail screen)
+- 4-language L10N: `dayDetailTotal` and `dayDetailNoEntries` keys in en/it/fr/es ARBs; display values pre-formatted in Dart as L strings so ARB placeholders typed `String`
+- UAT-discovered fix: y-axis and totals display in L not ml; 24px spacing between calendar and MonthlyBarChart Card
+
+### What Worked
+
+- **`onBarTap` callback pattern:** Pure StatelessWidget with an optional callback kept fl_chart entirely out of the routing layer. Screen passes `context.push`; chart has no GoRouter import. Clean and reusable.
+- **CHART-07 as a quick task:** The navigation gap was identified at Phase 18 verification and resolved immediately as quick task 260616-m5n without reopening the full phase workflow. Gap closed in one focused commit.
+- **UAT as the final integration gate:** Two real UX issues were caught during interactive UAT that static analysis could not surface — the ml→L display preference and the spacing between calendar and chart card. Both fixed before milestone close.
+- **`minutesSinceMidnight` as x-coordinate:** A simple int avoids DateTime parsing and sorts naturally. Same-minute entries group into one BarChartGroupData with multiple barRods without any extra deduplication logic.
+- **`DateTime.tryParse` for AppBar date:** Zero runtime cost, guards against any malformed dateKey from a deep link without crashing.
+
+### What Was Inefficient
+
+- **CHART-07 gap discovered at verification, not planning:** The monthly bar chart tap navigation was not included in Phase 17's original plan (it was mapped to Phase 18 in REQUIREMENTS.md) but Phase 18 also missed it — the gap was only caught at the verification/UAT step. Requirements traceability mapping should be verified at plan-write time, not verify time.
+- **ARB placeholder type required a late change:** `dayDetailTotal` was initially written with `"type": "num"` placeholders for ml values. When the decision to pre-format in Dart was made during UAT, the placeholders had to be changed to `"type": "String"` and `flutter gen-l10n` re-run. The ARB type should match the Dart call site from the start.
+- **`flutter` not on PATH:** `flutter gen-l10n` required the full FVM path `/Users/flavio.bizzarri/fvm/versions/3.38.1/bin/flutter`. This is a recurring friction point — a shell alias or `.fvmrc` activation would eliminate it.
+
+### Patterns Established
+
+- `void Function(String dateKey)?` callback on chart widgets — optional, screen-layer wired, zero routing logic inside the widget
+- `FlTapUpEvent` filter in `touchCallback` — prevents navigation on drag-scroll; combined with `total > 0` guard for empty-bar suppression
+- `minutesSinceMidnight = entry.loggedAt.hour * 60 + entry.loggedAt.minute` as bar group x-value — sortable int, groups simultaneous entries naturally
+- `mlToL(int ml)` display helper: `(ml / 1000).toStringAsFixed(2).replaceAll(RegExp(r'\.?0+$'), '')` — compact L string, no trailing zeros, locale-neutral
+- ARB placeholders typed `"type": "String"` when Dart pre-formats the value — avoids ICU number formatting conflicts
+
+### Key Lessons
+
+1. **Verify requirements traceability at plan-write time.** CHART-07 (tap navigation) was in REQUIREMENTS.md mapped to Phase 18, but Phase 18's plan did not implement it. A check of unchecked requirements against the plan content before execution would have caught this gap before verification.
+2. **Match ARB placeholder types to the Dart call site from the start.** If you pre-format in Dart (e.g., pass a String), use `"type": "String"` in the ARB. If you pass an int/double, use `"type": "num"`. Changing this mid-phase requires `flutter gen-l10n` re-run and a quick compile check.
+3. **UAT catches display preferences that specs miss.** "Show in L not ml" was not specified anywhere — it emerged from the user seeing the screen and immediately stating a preference. For any numeric display, ask in discuss-phase: "display in native unit or formatted?" Save a UAT iteration.
+4. **Top-level GoRouter routes (outside StatefulShellRoute) naturally hide the bottom bar.** This is the correct pattern for detail/push screens — no manual scaffold customization needed.
+
+### Cost Observations
+
+- Model: Claude Sonnet 4.6 (orchestrator + executor inline)
+- Sessions: single day (2026-06-16)
+- Notable: Three commits for UAT fixes (display format, spacing) plus the CHART-07 quick task — all within the same session. The quick-task pattern kept the fix atomic and traceable without reopening full phase planning.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -277,6 +328,7 @@
 | v1.2 | 5 days | 3 | Bug fixes + feature depth; schema migration; onboarding screen chain |
 | v1.3 | 1 day | 3 | l10n pipeline; ARB + codegen; enum refactor; platform locale config |
 | v1.4 | <1 day | 2 | Targeted bug fixes; first documentation-only phase; human-verify checkpoint for screenshots |
+| v1.5 | 1 day | 2 | fl_chart integration; callback pattern for chart navigation; quick-task gap closure; UAT-driven display fix |
 
 ### Cumulative Quality
 
@@ -287,6 +339,7 @@
 | v1.2 | 12 passing | 0 issues | 0 (UAT 11/11 passed; schema migration verified) |
 | v1.3 | 12 passing | 0 issues | 3 inline fixes during Phase 13 UAT + 2 code review blockers in Phase 14 (all resolved) |
 | v1.4 | 12 passing | 0 issues | 1 code review blocker (iOS version claim), 3 warnings (all fixed pre-commit) |
+| v1.5 | 12 passing | 0 issues | 2 display/UX fixes (ml→L, spacing) + 1 CHART-07 navigation gap — all resolved same session |
 
 ### Top Lessons (Verified Across Milestones)
 
