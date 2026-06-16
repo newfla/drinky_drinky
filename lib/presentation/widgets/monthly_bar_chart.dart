@@ -174,13 +174,25 @@ class MonthlyBarChart extends StatelessWidget {
                 handleBuiltInTouches: true,
                 touchTooltipData: BarTouchTooltipData(
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    final day = group.x.toString().padLeft(2, '0');
+                    final mon = month.toString().padLeft(2, '0');
                     return BarTooltipItem(
-                      '${rod.toY.toInt()} ml',
+                      '$day/$mon\n',
                       TextStyle(
                         color: colorScheme.onInverseSurface,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 11,
                       ),
+                      children: [
+                        TextSpan(
+                          text: '${rod.toY.toInt()} ml',
+                          style: TextStyle(
+                            color: colorScheme.onInverseSurface,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
@@ -216,11 +228,23 @@ class MonthlyBarChart extends StatelessWidget {
                   ),
                 ),
 
-                // Left (y-axis): auto-interval, reservedSize 40 (Pitfall 12).
+                // Left (y-axis): values in litres (X.XL), reservedSize 40.
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 40,
+                    getTitlesWidget: (value, meta) {
+                      if (value == meta.min || value == meta.max) {
+                        return const SizedBox.shrink();
+                      }
+                      return SideTitleWidget(
+                        meta: meta,
+                        child: Text(
+                          '${(value / 1000).toStringAsFixed(1)}L',
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      );
+                    },
                   ),
                 ),
 
