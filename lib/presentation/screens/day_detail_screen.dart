@@ -250,20 +250,23 @@ class DayDetailScreen extends ConsumerWidget {
                             ),
                           ),
 
-                          // Left (y-axis): ml values as integers.
+                          // Left (y-axis): values in L (data is stored in ml, divide by 1000 for display).
                           leftTitles: AxisTitles(
                             sideTitles: SideTitles(
                               showTitles: true,
-                              reservedSize: 40,
+                              reservedSize: 46,
                               getTitlesWidget: (value, meta) {
                                 // Skip min and max values (same pattern as monthly chart).
                                 if (value == meta.min || value == meta.max) {
                                   return const SizedBox.shrink();
                                 }
+                                final lLabel = (value / 1000)
+                                    .toStringAsFixed(2)
+                                    .replaceAll(RegExp(r'\.?0+$'), '');
                                 return SideTitleWidget(
                                   meta: meta,
                                   child: Text(
-                                    '${value.toInt()}',
+                                    '$lLabel L',
                                     style: const TextStyle(fontSize: 10),
                                   ),
                                 );
