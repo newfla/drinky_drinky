@@ -46,8 +46,10 @@ class DayDetailScreen extends ConsumerWidget {
     final targetsAsync = ref.watch(allTargetHistoryProvider);
 
     final locale = Localizations.localeOf(context).toString();
-    final parsedDate = DateTime.parse(dateKey);
-    final appBarTitle = DateFormat.yMMMMd(locale).format(parsedDate);
+    final DateTime? parsedDate = DateTime.tryParse(dateKey);
+    final appBarTitle = parsedDate != null
+        ? DateFormat.yMMMMd(locale).format(parsedDate)
+        : dateKey;
 
     return Scaffold(
       appBar: AppBar(title: Text(appBarTitle)),

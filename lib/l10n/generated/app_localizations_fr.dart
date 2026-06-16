@@ -302,5 +302,5 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get dayDetailNoEntries => 'Aucune entree pour ce jour';
+  String get dayDetailNoEntries => 'Aucune entrée pour ce jour';
 }
