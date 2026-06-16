@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -31,19 +32,74 @@ int _findActiveTarget(List<TargetHistoryEntry> targets, String dateKey) {
   return result;
 }
 
-class HistoryScreen extends ConsumerStatefulWidget {
+/// Builds a single calendar day cell with the appropriate decoration.
+///
+/// [metGoal] is true for green, false for red, null for today-only ring.
+Widget _buildDayCell(
+  BuildContext context,
+  DateTime day, {
+  required bool? metGoal,
+  required bool isToday,
+}) {
+  final locale = Localizations.localeOf(context).toString();
+  final colorScheme = Theme.of(context).colorScheme;
+  final brightness = Theme.of(context).brightness;
+
+  Color? fillColor;
+  Color? textColor;
+
+  if (metGoal == true) {
+    final green = brightness == Brightness.dark
+        ? Colors.green.shade400
+        : Colors.green.shade600;
+    fillColor = green.withValues(alpha: 0.15);
+    textColor = green;
+  } else if (metGoal == false) {
+    final red = brightness == Brightness.dark
+        ? Colors.red.shade400
+        : Colors.red.shade600;
+    fillColor = red.withValues(alpha: 0.15);
+    textColor = red;
+  }
+  // metGoal == null: no fill, default text color (today ring only)
+
+  final String semanticLabel;
+  if (metGoal == true) {
+    semanticLabel = context.l10n.calendarDayGoalMet(DateFormat.MMMM(locale).format(day), day.day);
+  } else if (metGoal == false) {
+    semanticLabel = context.l10n.calendarDayGoalNotMet(DateFormat.MMMM(locale).format(day), day.day);
+  } else {
+    semanticLabel = context.l10n.calendarDay(DateFormat.MMMM(locale).format(day), day.day);
+  }
+
+  return Semantics(
+    label: semanticLabel,
+    child: Container(
+      margin: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: fillColor,
+        border: isToday
+            ? Border.all(color: colorScheme.primary, width: 2)
+            : null,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '${day.day}',
+        style: TextStyle(
+          color: textColor,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    ),
+  );
+}
+
+class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
 
   @override
-  ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
-}
-
-class _HistoryScreenState extends ConsumerState<HistoryScreen> {
-  /// Currently selected day (for the day summary card). Null = no selection.
-  DateTime? _selectedDay;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final earliestAsync = ref.watch(earliestDateKeyProvider);
 
     return Scaffold(
@@ -165,16 +221,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         formatButtonVisible: false,
                         titleCentered: true,
                       ),
-                      selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                       onDaySelected: (selectedDay, focusedDay) {
                         // Only allow selection for days not in the future.
                         if (selectedDay.isAfter(DateTime.now())) return;
-                        setState(() {
-                          _selectedDay = selectedDay;
-                        });
                         // Also update the focused month provider (Pitfall 4: only
                         // use year/month, not the day component).
                         ref.read(focusedMonthProvider.notifier).set(focusedDay);
+                        // Navigate to DayDetailScreen only if the day has data (D-02).
+                        final dateKey = _toDateKey(selectedDay);
+                        final total = monthTotals[dateKey];
+                        if (total != null && total > 0) {
+                          context.push('/day/$dateKey');
+                        }
                       },
                       onPageChanged: (focusedDay) {
                         // D-09: persist the focused month across tab switches.
@@ -261,23 +319,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       targets: targets,
                     ),
 
-                    // md spacing between chart and day summary
-                    const SizedBox(height: 16),
-
-                    // ---- DaySummaryArea ----
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: _selectedDay == null
-                          ? const SizedBox.shrink(key: ValueKey('empty'))
-                          : _buildDaySummary(
-                              context,
-                              _selectedDay!,
-                              monthTotals,
-                              targets,
-                            ),
-                    ),
-
-                    // Bottom padding so the summary card isn't flush to the edge.
+                    // Bottom padding after MonthlyBarChart (last visible widget).
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -285,101 +327,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             },
           );
         },
-      ),
-    );
-  }
-
-  /// Builds a single calendar day cell with the appropriate decoration.
-  ///
-  /// [metGoal] is true for green, false for red, null for today-only ring.
-  Widget _buildDayCell(
-    BuildContext context,
-    DateTime day, {
-    required bool? metGoal,
-    required bool isToday,
-  }) {
-    final locale = Localizations.localeOf(context).toString();
-    final colorScheme = Theme.of(context).colorScheme;
-    final brightness = Theme.of(context).brightness;
-
-    Color? fillColor;
-    Color? textColor;
-
-    if (metGoal == true) {
-      final green = brightness == Brightness.dark
-          ? Colors.green.shade400
-          : Colors.green.shade600;
-      fillColor = green.withValues(alpha: 0.15);
-      textColor = green;
-    } else if (metGoal == false) {
-      final red = brightness == Brightness.dark
-          ? Colors.red.shade400
-          : Colors.red.shade600;
-      fillColor = red.withValues(alpha: 0.15);
-      textColor = red;
-    }
-    // metGoal == null: no fill, default text color (today ring only)
-
-    final String semanticLabel;
-    if (metGoal == true) {
-      semanticLabel = context.l10n.calendarDayGoalMet(DateFormat.MMMM(locale).format(day), day.day);
-    } else if (metGoal == false) {
-      semanticLabel = context.l10n.calendarDayGoalNotMet(DateFormat.MMMM(locale).format(day), day.day);
-    } else {
-      semanticLabel = context.l10n.calendarDay(DateFormat.MMMM(locale).format(day), day.day);
-    }
-
-    return Semantics(
-      label: semanticLabel,
-      child: Container(
-        margin: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: fillColor,
-          border: isToday
-              ? Border.all(color: colorScheme.primary, width: 2)
-              : null,
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          '${day.day}',
-          style: TextStyle(
-            color: textColor,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Builds the day summary card shown below the calendar when a day is tapped.
-  Widget _buildDaySummary(
-    BuildContext context,
-    DateTime day,
-    Map<String, int> monthTotals,
-    List<TargetHistoryEntry> targets,
-  ) {
-    final locale = Localizations.localeOf(context).toString();
-    final dateKey = _toDateKey(day);
-    final total = monthTotals[dateKey];
-    final dailyTarget = _findActiveTarget(targets, dateKey);
-    final dateLabel = DateFormat.yMMMMd(locale).format(day);
-    final String contentLabel;
-    if (total != null && total > 0) {
-      contentLabel = context.l10n.daySummaryWithEntries(dateLabel, total, dailyTarget);
-    } else {
-      contentLabel = context.l10n.daySummaryNoEntries(dateLabel);
-    }
-
-    return Card(
-      key: ValueKey(dateKey),
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          contentLabel,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
       ),
     );
   }
