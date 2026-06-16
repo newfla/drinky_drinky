@@ -295,4 +295,12 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get notificationBody => 'È ora di bere acqua! 💧';
+
+  @override
+  String dayDetailTotal(num total, num target) {
+    return '$total ml / $target ml obiettivo';
+  }
+
+  @override
+  String get dayDetailNoEntries => 'Nessun dato per questo giorno';
 }

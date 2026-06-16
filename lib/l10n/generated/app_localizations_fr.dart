@@ -295,4 +295,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get notificationBody => 'C\'est l\'heure de boire de l\'eau ! 💧';
+
+  @override
+  String dayDetailTotal(num total, num target) {
+    return '$total ml / $target ml objectif';
+  }
+
+  @override
+  String get dayDetailNoEntries => 'Aucune entree pour ce jour';
 }

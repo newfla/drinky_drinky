@@ -116,5 +116,8 @@
 
   "mlUnit": "ml",
 
-  "notificationBody": "¡Es hora de beber agua! 💧"
+  "notificationBody": "¡Es hora de beber agua! 💧",
+
+  "dayDetailTotal": "{total} ml / {target} ml objetivo",
+  "dayDetailNoEntries": "Sin registros para este dia"
 }
