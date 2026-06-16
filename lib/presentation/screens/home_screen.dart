@@ -119,6 +119,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final goalMetColor = theme.brightness == Brightness.dark
         ? Colors.green.shade400
         : Colors.green.shade600;
+    final ringTrackColor = theme.brightness == Brightness.dark
+        ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+        : colorScheme.surfaceContainerHighest;
 
     return Column(
       children: [
@@ -135,8 +138,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           progressColor: isGoalMet
               ? goalMetColor
               : colorScheme.primary,
-          backgroundColor:
-              colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          backgroundColor: ringTrackColor,
           center: SizedBox(
             width: 160,
             child: Text(
