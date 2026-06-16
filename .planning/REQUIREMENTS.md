@@ -47,23 +47,23 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CHART-01 | — | Pending |
-| CHART-02 | — | Pending |
-| CHART-03 | — | Pending |
-| CHART-04 | — | Pending |
-| CHART-05 | — | Pending |
-| CHART-06 | — | Pending |
-| CHART-07 | — | Pending |
-| CHART-08 | — | Pending |
-| CHART-09 | — | Pending |
-| CHART-10 | — | Pending |
-| CHART-11 | — | Pending |
+| CHART-01 | Phase 17 | Pending |
+| CHART-02 | Phase 17 | Pending |
+| CHART-03 | Phase 17 | Pending |
+| CHART-04 | Phase 17 | Pending |
+| CHART-05 | Phase 17 | Pending |
+| CHART-06 | Phase 17 | Pending |
+| CHART-07 | Phase 18 | Pending |
+| CHART-08 | Phase 18 | Pending |
+| CHART-09 | Phase 18 | Pending |
+| CHART-10 | Phase 18 | Pending |
+| CHART-11 | Phase 18 | Pending |
 
 **Coverage:**
 - v1.5 requirements: 11 total
-- Mapped to phases: 0
-- Unmapped: 11 ⚠️
+- Mapped to phases: 11
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-16*
-*Last updated: 2026-06-16 — initial definition for v1.5 Charts*
+*Last updated: 2026-06-16 — phase traceability added for v1.5 roadmap*

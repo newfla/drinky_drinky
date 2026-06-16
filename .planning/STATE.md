@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Charts
 status: planning
-last_updated: "2026-06-16T08:48:06.140Z"
+last_updated: "2026-06-16"
 last_activity: 2026-06-16
 progress:
-  total_phases: 0
+  total_phases: 2
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,23 +17,25 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-15)
+See: .planning/PROJECT.md (updated 2026-06-16)
 
 **Core value:** The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
-**Current focus:** Phase 16 — project-readme
+**Current focus:** Phase 17 — Monthly Bar Chart
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 17 of 18 (Monthly Bar Chart)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-16 — Milestone v1.5 started
+Status: Ready to plan
+Last activity: 2026-06-16 — Roadmap created for v1.5 Charts
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 20 (from v1.0 + v1.1)
+- Total plans completed: 20 (from v1.0 through v1.4)
 - Average duration: 12min
 - Total execution time: 0.4 hours
 
@@ -46,23 +48,21 @@ Last activity: 2026-06-16 — Milestone v1.5 started
 | 03-settings | 1/1 | - | - |
 | 04-calendar-streaks | 1/1 | - | - |
 | 05-notifications | 1/1 | - | - |
-| 06 | 2/2 | - | - |
-| 07 | 1/1 | - | - |
-| 08 | 1/1 | - | - |
-| 09 | 2 | - | - |
-| 11 | 1 | - | - |
-| 13 | 2 | - | - |
-| 14 | 2 | - | - |
-| 15 | 1 | - | - |
-| 16 | 1 | - | - |
+| 06-bugfix-theme | 2/2 | - | - |
+| 07-intake-redesign | 1/1 | - | - |
+| 08-app-icon | 1/1 | - | - |
+| 09-data-bugfixes | 2/2 | - | - |
+| 10-target-integration | 3/3 | - | - |
+| 11-calculator | 1/1 | - | - |
+| 12-l10n-infra | 2/2 | - | - |
+| 13-string-extraction | 2/2 | - | - |
+| 14-notification-l10n | 2/2 | - | - |
+| 15-home-history-fixes | 1/1 | - | - |
+| 16-project-readme | 1/1 | - | - |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-01 (19min), 01-02 (5min), 02-01 (2min), 02-02 (2min), 03-01 (-)
-- Trend: improving
-
-| Phase 12 P01 | 1min | 2 tasks | 5 files |
-| Phase 12 P02 | 3min | 2 tasks | 3 files |
+- Trend: stable
 
 ## Accumulated Context
 
@@ -71,8 +71,8 @@ Last activity: 2026-06-16 — Milestone v1.5 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Roadmap v1.4]: POLISH-01 + BUG-04 grouped into Phase 15 (both are Flutter UI/provider code changes)
-- [Roadmap v1.4]: DOC-01 in Phase 16 (depends on Phase 15 — screenshots need fixed UI)
+- [Roadmap v1.5]: 2-phase structure — Phase 17 (monthly chart in HistoryScreen), Phase 18 (day detail screen + L10N)
+- [Research v1.5]: fl_chart ^1.2.0 is the only new dependency; all data providers already exist
 
 ### Pending Todos
 
@@ -81,7 +81,7 @@ None yet.
 ### Blockers/Concerns
 
 - [Phase 5]: Android OEM background killing may silently break notifications — requires physical device testing
-- [Research v1.3]: iOS CFBundleLocalizations must be in Info.plist or locale detection silently fails
+- [Research v1.5]: maxY must be explicit (data empty = maxY 0 = blank chart); ValueKey on BarChart to avoid month-switch animation artifacts; never use showingTooltipIndicators (crash bug #1911)
 
 ### Quick Tasks Completed
 
@@ -95,15 +95,11 @@ Items acknowledged and deferred at milestone close on 2026-06-15:
 
 | Category | Item | Status |
 |----------|------|--------|
-| verification | Phase 12: 12-VERIFICATION.md human_needed | Resolved — 12-UAT.md complete (all tests passed) |
-| verification | Phase 14: 14-VERIFICATION.md human_needed | Resolved — 14-HUMAN-UAT.md complete (4/4 tests passed) |
+| verification | Phase 12: 12-VERIFICATION.md human_needed | Resolved |
+| verification | Phase 14: 14-VERIFICATION.md human_needed | Resolved |
 
 ## Session Continuity
 
-Last session: 2026-06-15T17:51:06.346Z
-Stopped at: Phase 16 planned — ready for execution
-Resume file: .planning/phases/16-project-readme/16-01-PLAN.md
-
-## Operator Next Steps
-
-- Start the next milestone with /gsd-new-milestone
+Last session: 2026-06-16
+Stopped at: Roadmap created for v1.5 Charts — ready to plan Phase 17
+Resume file: None

@@ -7,6 +7,7 @@
 - ✅ **v1.2 Bug Fixes & Feature Depth** — Phases 9-11 (shipped 2026-06-15)
 - ✅ **v1.3 Multilingual Support** — Phases 12-14 (shipped 2026-06-15)
 - ✅ **v1.4 Polish & Bug Fixes** — Phases 15-16 (shipped 2026-06-15)
+- 🚧 **v1.5 Charts** — Phases 17-18 (in progress)
 
 ## Phases
 
@@ -66,7 +67,43 @@ Full details: `.planning/milestones/v1.4-ROADMAP.md`
 
 </details>
 
+### 🚧 v1.5 Charts (In Progress)
+
+**Milestone Goal:** Add data visualization to the History screen with monthly and daily bar charts.
+
+- [ ] **Phase 17: Monthly Bar Chart** - fl_chart dependency and monthly bar chart widget embedded in HistoryScreen
+- [ ] **Phase 18: Day Detail Screen** - Day detail screen with per-entry chart, GoRouter wiring, and L10N strings
+
+## Phase Details
+
+### Phase 17: Monthly Bar Chart
+**Goal**: Users can see their daily hydration totals for any month as a bar chart directly below the calendar
+**Depends on**: Phase 16 (v1.4 complete)
+**Requirements**: CHART-01, CHART-02, CHART-03, CHART-04, CHART-05, CHART-06
+**Success Criteria** (what must be TRUE):
+  1. User sees a bar chart below the calendar on the History screen showing one bar per day with ml totals for the displayed month
+  2. When viewing the current month, bars appear only for today and past days — no bars for future days
+  3. A dashed horizontal line marks the current daily target on the chart
+  4. Tapping a bar shows a tooltip with the exact ml value for that day
+  5. When the user switches months in the calendar, the chart updates to show data for the newly selected month; months with no data show an empty-state message instead of the chart
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 18: Day Detail Screen
+**Goal**: Users can drill into any day to see individual intake entries visualized as a bar chart on a dedicated screen
+**Depends on**: Phase 17
+**Requirements**: CHART-07, CHART-08, CHART-09, CHART-10, CHART-11
+**Success Criteria** (what must be TRUE):
+  1. Tapping a day on the calendar or a bar on the monthly chart navigates to a separate day detail screen (push navigation)
+  2. The day detail screen shows a bar chart with one bar per intake entry (x-axis = time, y-axis = ml) and the total ml for the day
+  3. Days with no entries show an empty-state message instead of the chart
+  4. All new strings introduced by charts (empty states, tooltips, labels, titles, totals) are localized in all 4 app languages (en/it/fr/es)
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
+
+**Execution Order:** Phases execute in numeric order: 17 → 18
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -84,5 +121,7 @@ Full details: `.planning/milestones/v1.4-ROADMAP.md`
 | 12. L10n Infrastructure | v1.3 | 2/2 | Complete | 2026-06-15 |
 | 13. String Extraction & Translation | v1.3 | 2/2 | Complete | 2026-06-15 |
 | 14. Notification Localization & Platform Config | v1.3 | 2/2 | Complete | 2026-06-15 |
-| 15. Home & History Fixes | v1.4 | 1/1 | Complete    | 2026-06-15 |
-| 16. Project README | v1.4 | 1/1 | Complete    | 2026-06-15 |
+| 15. Home & History Fixes | v1.4 | 1/1 | Complete | 2026-06-15 |
+| 16. Project README | v1.4 | 1/1 | Complete | 2026-06-15 |
+| 17. Monthly Bar Chart | v1.5 | 0/0 | Not started | - |
+| 18. Day Detail Screen | v1.5 | 0/0 | Not started | - |
