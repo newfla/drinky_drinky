@@ -43,6 +43,7 @@ class MonthlyBarChart extends StatelessWidget {
     required this.year,
     required this.month,
     required this.targets,
+    this.onBarTap,
   });
 
   /// dateKey -> ml totals for the month, from calendarMonthProvider.
@@ -56,6 +57,9 @@ class MonthlyBarChart extends StatelessWidget {
 
   /// Sorted ASC target history entries, from allTargetHistoryProvider.
   final List<TargetHistoryEntry> targets;
+
+  /// Called with the YYYY-MM-DD dateKey when a bar with data is tapped.
+  final void Function(String dateKey)? onBarTap;
 
   @override
   Widget build(BuildContext context) {
@@ -177,6 +181,19 @@ class MonthlyBarChart extends StatelessWidget {
               // Tooltips (CHART-04).
               barTouchData: BarTouchData(
                 handleBuiltInTouches: true,
+                touchCallback: onBarTap == null
+                    ? null
+                    : (FlTouchEvent event, BarTouchResponse? response) {
+                        if (event is! FlTapUpEvent) return;
+                        final spot = response?.spot;
+                        if (spot == null) return;
+                        final day = spot.touchedBarGroup.x;
+                        final dateKey = _toDateKey(DateTime(year, month, day));
+                        final total = monthTotals[dateKey] ?? 0;
+                        if (total > 0) {
+                          onBarTap!(dateKey);
+                        }
+                      },
                 touchTooltipData: BarTouchTooltipData(
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     final day = group.x.toString().padLeft(2, '0');

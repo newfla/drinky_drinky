@@ -317,6 +317,7 @@ class HistoryScreen extends ConsumerWidget {
                       year: focused.year,
                       month: focused.month,
                       targets: targets,
+                      onBarTap: (dateKey) => context.push('/day/$dateKey'),
                     ),
 
                     // Bottom padding after MonthlyBarChart (last visible widget).
