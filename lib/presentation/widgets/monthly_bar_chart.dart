@@ -101,6 +101,7 @@ class MonthlyBarChart extends StatelessWidget {
 
     // Build bar groups (CHART-01, CHART-02, D-04, D-05).
     double actualMaxValue = 0;
+    double maxTargetSeen = targetMl.toDouble();
     final barGroups = <BarChartGroupData>[];
 
     for (int day = 1; day <= lastValidDay; day++) {
@@ -112,8 +113,12 @@ class MonthlyBarChart extends StatelessWidget {
         actualMaxValue = toY;
       }
 
+      // Per-day target for correct coloring when target changed mid-month.
+      final dayTarget = _findActiveTarget(targets, dateKey);
+      if (dayTarget > maxTargetSeen) maxTargetSeen = dayTarget.toDouble();
+
       Color barColor;
-      if (total >= targetMl && targetMl > 0) {
+      if (total >= dayTarget && dayTarget > 0) {
         barColor = green;
       } else if (total > 0) {
         barColor = red;
@@ -139,8 +144,8 @@ class MonthlyBarChart extends StatelessWidget {
       );
     }
 
-    // Compute maxY (Pitfall 1): at least max(actual, target) * 1.1, floor 100.
-    final computedMax = max(actualMaxValue, targetMl.toDouble()) * 1.1;
+    // Compute maxY (Pitfall 1): at least max(actual, max target seen) * 1.1, floor 100.
+    final computedMax = max(actualMaxValue, maxTargetSeen) * 1.1;
     final maxY = max(computedMax, 100.0);
 
     return Card(
