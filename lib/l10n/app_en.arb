@@ -487,5 +487,23 @@
   "notificationBody": "Time to drink water! 💧",
   "@notificationBody": {
     "description": "Body text of the hydration reminder push notification"
+  },
+
+  "dayDetailTotal": "{total} ml / {target} ml target",
+  "@dayDetailTotal": {
+    "description": "Total and target ml shown above the bar chart on the Day Detail screen",
+    "placeholders": {
+      "total": {
+        "type": "num"
+      },
+      "target": {
+        "type": "num"
+      }
+    }
+  },
+
+  "dayDetailNoEntries": "No entries for this day",
+  "@dayDetailNoEntries": {
+    "description": "Empty state text on the Day Detail screen when no water was logged for the selected date"
   }
 }
