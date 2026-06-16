@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../l10n/l10n_extensions.dart';
+import '../../presentation/screens/day_detail_screen.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/history_screen.dart';
 import '../../presentation/screens/permission_screen.dart';
@@ -26,6 +27,9 @@ GoRouter appRouter(Ref ref) {
       // Prevent redirect loop: if already on /permission or /calculator, do not redirect again.
       if (state.matchedLocation == '/permission') return null;
       if (state.matchedLocation == '/calculator') return null;
+      // /day/:dateKey is exempt: it is only reachable after onboarding completes
+      // (user must have logged data to tap a day), so the guard would always pass.
+      if (state.matchedLocation.startsWith('/day/')) return null;
 
       final prefs = await SharedPreferences.getInstance();
       final permissionShown = prefs.getBool('drinky_permissionScreenShown') ?? false;
@@ -52,6 +56,16 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => HydrationCalculatorScreen(
           isOnboarding: state.extra as bool? ?? true,
         ),
+      ),
+
+      // /day/:dateKey is a TOP-LEVEL route (outside StatefulShellRoute) so it
+      // renders without the bottom NavigationBar.
+      GoRoute(
+        path: '/day/:dateKey',
+        builder: (context, state) {
+          final dateKey = state.pathParameters['dateKey']!;
+          return DayDetailScreen(dateKey: dateKey);
+        },
       ),
 
       StatefulShellRoute.indexedStack(
