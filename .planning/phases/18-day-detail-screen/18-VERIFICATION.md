@@ -1,18 +1,16 @@
 ---
 phase: 18-day-detail-screen
 verified: 2026-06-16T00:00:00Z
-status: gaps_found
-score: 5/6 must-haves verified
+status: complete
+score: 6/6 must-haves verified
 overrides_applied: 0
-gaps:
+gaps: []
+gap_resolution:
   - truth: "Tapping a bar on the monthly chart navigates to DayDetailScreen (push)"
-    status: failed
-    reason: "ROADMAP SC#1 and REQUIREMENTS CHART-07 require navigation on bar tap in the monthly chart. MonthlyBarChart.barTouchData uses handleBuiltInTouches: true with tooltip only — no touchCallback, no context.push, no go_router import. HistoryScreen only wires push navigation via onDaySelected on the calendar."
-    artifacts:
-      - path: "lib/presentation/widgets/monthly_bar_chart.dart"
-        issue: "barTouchData has no touchCallback that calls context.push('/day/...'); tap only shows tooltip"
-    missing:
-      - "Add touchCallback to BarTouchData in MonthlyBarChart that calls context.push('/day/$dateKey') when a bar is tapped, matching the same data-guard logic used in HistoryScreen.onDaySelected"
+    status: resolved
+    resolved_by: "quick task 260616-m5n"
+    commit: "6ec2ebb"
+    fix: "Added onBarTap callback parameter to MonthlyBarChart and touchCallback in BarTouchData; HistoryScreen passes onBarTap: (dateKey) => context.push('/day/$dateKey')"
 human_verification:
   - test: "Visual verification of day detail navigation and chart"
     expected: |
@@ -31,8 +29,8 @@ human_verification:
 
 **Phase Goal:** Users can drill into any day to see individual intake entries visualized as a bar chart on a dedicated screen
 **Verified:** 2026-06-16T00:00:00Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Status:** complete (gap resolved by quick task 260616-m5n, commit 6ec2ebb)
+**Re-verification:** 2026-06-16 — CHART-07 gap closed
 
 ## Goal Achievement
 
@@ -45,7 +43,7 @@ human_verification:
 | 3 | DayDetailScreen shows an empty-state message when there are no entries for the selected day | VERIFIED | Lines 81-104: `if (entries.isEmpty)` branch renders `Card` with `context.l10n.dayDetailNoEntries` text |
 | 4 | All new strings (dayDetailTotal, dayDetailNoEntries) are localized in en, it, fr, es | VERIFIED | `app_en.arb` lines 492-508: both keys with @-metadata. `app_it.arb` line 121-122, `app_fr.arb` 121-122, `app_es.arb` 121-122: all present. Generated `app_localizations_en.dart` exposes `dayDetailTotal(num total, num target)` and `get dayDetailNoEntries` |
 | 5 | Tapping a day with data on the calendar navigates to DayDetailScreen via push | VERIFIED | `history_screen.dart` line 234: `context.push('/day/$dateKey')` inside `onDaySelected` when `monthTotals[dateKey] != null && monthTotals[dateKey]! > 0`; `app_router.dart` line 64: `GoRoute(path: '/day/:dateKey')` as top-level route |
-| 6 | Tapping a bar on the monthly chart navigates to DayDetailScreen via push | FAILED | `monthly_bar_chart.dart` `barTouchData` only has `handleBuiltInTouches: true` and a tooltip definition — no `touchCallback`, no `go_router` import, no `context.push`. ROADMAP SC#1 states "a day on the calendar **or a bar on the monthly chart**"; REQUIREMENTS CHART-07 states "o una barra del chart mensile". Only calendar tap is wired. |
+| 6 | Tapping a bar on the monthly chart navigates to DayDetailScreen via push | VERIFIED | Quick task 260616-m5n (commit 6ec2ebb): `monthly_bar_chart.dart` now has `touchCallback` in `BarTouchData` that fires `onBarTap` on `FlTapUpEvent` when `total > 0`; `history_screen.dart` passes `onBarTap: (dateKey) => context.push('/day/$dateKey')` |
 
 **Score:** 5/6 truths verified
 
@@ -69,7 +67,7 @@ human_verification:
 | `day_detail_screen.dart` | `allTargetHistoryProvider` | `ref.watch(allTargetHistoryProvider)` | WIRED | Line 46: exact pattern match |
 | `history_screen.dart` | `app_router.dart` | `context.push('/day/$dateKey')` | WIRED | Line 234: conditional push when `monthTotals[dateKey] > 0` |
 | `app_router.dart` | `day_detail_screen.dart` | `DayDetailScreen(dateKey: dateKey)` builder | WIRED | Lines 65-68: `final dateKey = state.pathParameters['dateKey']!; return DayDetailScreen(dateKey: dateKey)` |
-| `monthly_bar_chart.dart` | `app_router.dart` / day detail | `context.push('/day/...')` on bar tap | NOT_WIRED | `barTouchData` has no `touchCallback`; tooltip only. ROADMAP SC#1 and CHART-07 require this link |
+| `monthly_bar_chart.dart` | `app_router.dart` / day detail | `onBarTap` callback → `context.push('/day/...')` in HistoryScreen | WIRED | Quick task 260616-m5n: `touchCallback` fires `onBarTap` on `FlTapUpEvent` when `total > 0`; HistoryScreen passes the push callback |
 
 ### Data-Flow Trace (Level 4)
 
@@ -90,7 +88,7 @@ Step 7c: No `probe-*.sh` files declared or conventionally present for this phase
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|------------|-------------|--------|----------|
-| CHART-07 | 18-02 | Tapping a day (or bar on monthly chart) opens day detail screen via push | PARTIAL | Calendar tap: WIRED (`history_screen.dart:234`). Monthly chart bar tap: NOT WIRED (`monthly_bar_chart.dart` has tooltip-only barTouchData) |
+| CHART-07 | 18-02 | Tapping a day (or bar on monthly chart) opens day detail screen via push | SATISFIED | Calendar tap: WIRED (`history_screen.dart:234`). Monthly chart bar tap: WIRED via `onBarTap` callback (quick task 260616-m5n, commit 6ec2ebb) |
 | CHART-08 | 18-01 | Day detail shows per-entry bar chart (x=time, y=ml) | SATISFIED | `day_detail_screen.dart` lines 113-162: entries grouped by minute, `BarChartGroupData` built with HH:mm x-axis |
 | CHART-09 | 18-01 | Day detail shows total ml for the selected day | SATISFIED | `day_detail_screen.dart` line 108: `totalMl = entries.fold(0, ...)`, line 181: rendered via `dayDetailTotal(totalMl, targetMl)` |
 | CHART-10 | 18-01 | Day detail shows empty state for days without data | SATISFIED | `day_detail_screen.dart` lines 81-104: `if (entries.isEmpty)` branch with `dayDetailNoEntries` |
@@ -130,15 +128,9 @@ Step 7c: No `probe-*.sh` files declared or conventionally present for this phase
 
 ### Gaps Summary
 
-**1 gap blocking full goal achievement.**
+**No gaps. All 6 truths verified.**
 
-**CHART-07 partial implementation:** The ROADMAP Success Criterion 1 states "Tapping a day on the calendar **or a bar on the monthly chart** navigates to a separate day detail screen (push navigation)". REQUIREMENTS.md CHART-07 states "Toccando un giorno nel calendario (**o una barra del chart mensile**) si apre una schermata di dettaglio separata (push)".
-
-The calendar tap path is fully wired (`history_screen.dart` → `context.push('/day/$dateKey')`). However, `lib/presentation/widgets/monthly_bar_chart.dart` has no navigation on bar tap — `barTouchData` only configures `handleBuiltInTouches: true` with a tooltip. The monthly chart widget does not import `go_router` and has no `touchCallback`.
-
-Plan 18-02 narrowed the CHART-07 objective to "navigation from calendar to day detail via push" and did not mention the monthly chart bar tap. This planning narrowing does not reduce the ROADMAP contract.
-
-**Fix required:** Add a `touchCallback` to `BarTouchData` in `MonthlyBarChart` (or pass a callback from the parent `HistoryScreen`) that calls `context.push('/day/$dateKey')` when a bar is tapped, applying the same data-presence guard used in `onDaySelected`.
+CHART-07 gap (monthly chart bar tap not wired) was found during initial verification and resolved by quick task 260616-m5n (commit 6ec2ebb). Both navigation entry points — calendar day tap and monthly bar tap — now push to DayDetailScreen.
 
 ---
 

@@ -7,7 +7,7 @@
 - ✅ **v1.2 Bug Fixes & Feature Depth** — Phases 9-11 (shipped 2026-06-15)
 - ✅ **v1.3 Multilingual Support** — Phases 12-14 (shipped 2026-06-15)
 - ✅ **v1.4 Polish & Bug Fixes** — Phases 15-16 (shipped 2026-06-15)
-- 🚧 **v1.5 Charts** — Phases 17-18 (in progress)
+- ✅ **v1.5 Charts** — Phases 17-18 (shipped 2026-06-16)
 
 ## Phases
 
@@ -67,7 +67,7 @@ Full details: `.planning/milestones/v1.4-ROADMAP.md`
 
 </details>
 
-### v1.5 Charts (In Progress)
+### v1.5 Charts — SHIPPED 2026-06-16
 
 **Milestone Goal:** Add data visualization to the History screen with monthly and daily bar charts.
 
