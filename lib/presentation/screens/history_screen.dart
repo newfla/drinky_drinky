@@ -6,6 +6,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../core/providers/stream_providers.dart';
 import '../../domain/entities/target_history_entry.dart';
 import '../../l10n/l10n_extensions.dart';
+import '../widgets/monthly_bar_chart.dart';
 
 /// Convert an arbitrary DateTime to a dateKey string (YYYY-MM-DD).
 /// Matches the format used by todayDateKey() in stream_providers.dart.
@@ -249,7 +250,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       ),
                     ),
 
-                    // md spacing between calendar and day summary
+                    // md spacing between calendar and chart
+                    const SizedBox(height: 16),
+
+                    // ---- MonthlyBarChart (CHART-01 through CHART-06) ----
+                    MonthlyBarChart(
+                      monthTotals: monthTotals,
+                      year: focused.year,
+                      month: focused.month,
+                      targets: targets,
+                    ),
+
+                    // md spacing between chart and day summary
                     const SizedBox(height: 16),
 
                     // ---- DaySummaryArea ----
