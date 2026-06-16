@@ -8,6 +8,14 @@ A Flutter mobile app that helps users track their daily water intake and stay hy
 
 The user always knows how close they are to their daily hydration goal and gets reminded before they forget.
 
+## Current Milestone: v1.5 Charts
+
+**Goal:** Aggiungere visualizzazione dati nella History screen con grafici a barre mensili e giornalieri.
+
+**Target features:**
+- Grafico a barre mensile sotto il calendario (asse x = giorni del mese, asse y = ml totali giornalieri)
+- Schermata di dettaglio giornaliero (push separato) con grafico delle singole aggiunte (asse x = orario, asse y = ml)
+
 ## Shipped
 
 - ✅ **v1.0 MVP** — Phases 1-5 (2026-06-08)
@@ -130,4 +138,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-15 — Phase 16 complete. v1.4 milestone closed. All 16 phases shipped. DOC-01 validated.*
+*Last updated: 2026-06-16 — Milestone v1.5 Charts started. Monthly and daily bar charts scoped.*
