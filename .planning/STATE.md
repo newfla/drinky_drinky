@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-16)
 Phase: Milestone v1.5 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-06-16 — Milestone v1.5 completed and archived
+Last activity: 2026-06-16 - Completed quick task 260616-nmr: rimuovi l'emoticon dal testo delle notifiche
 
 ## Performance Metrics
 
@@ -88,6 +88,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260616-e76 | fix empty progress ring visibility on light theme | 2026-06-16 | 8d31c61 | [260616-e76-fix-empty-progress-ring-visibility-on-li](.planning/quick/260616-e76-fix-empty-progress-ring-visibility-on-li/) |
+| 260616-nmr | rimuovi l'emoticon dal testo delle notifiche | 2026-06-16 | 99b51e5 | [260616-nmr-rimuovi-l-emoticon-dal-testo-delle-notif](.planning/quick/260616-nmr-rimuovi-l-emoticon-dal-testo-delle-notif/) |
 
 ## Deferred Items
 
