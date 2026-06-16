@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-15)
 Phase: Milestone v1.4 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-06-15 — Milestone v1.4 completed and archived
+Last activity: 2026-06-16 - Completed quick task 260616-e76: fix empty progress ring visibility on light theme
 
 ## Performance Metrics
 
@@ -83,6 +83,12 @@ None yet.
 
 - [Phase 5]: Android OEM background killing may silently break notifications — requires physical device testing
 - [Research v1.3]: iOS CFBundleLocalizations must be in Info.plist or locale detection silently fails
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260616-e76 | fix empty progress ring visibility on light theme | 2026-06-16 | 8d31c61 | [260616-e76-fix-empty-progress-ring-visibility-on-li](.planning/quick/260616-e76-fix-empty-progress-ring-visibility-on-li/) |
 
 ## Deferred Items
 
