@@ -40,7 +40,7 @@ dependencies:
   intl: ^0.20.3
 
   # Theming
-  dynamic_color: ^1.9.0
+  dynamic_color: ^2.1.0
 
   # Notifications
   flutter_local_notifications: ^22.3.0
