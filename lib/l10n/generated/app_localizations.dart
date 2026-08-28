@@ -579,7 +579,7 @@ abstract class AppLocalizations {
   /// Body text of the hydration reminder push notification
   ///
   /// In en, this message translates to:
-  /// **'Time to drink water! 💧'**
+  /// **'Time to drink water!'**
   String get notificationBody;
 
   /// Total and target shown in litres above the bar chart on the Day Detail screen

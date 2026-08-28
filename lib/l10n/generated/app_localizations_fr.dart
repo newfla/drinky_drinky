@@ -294,7 +294,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mlUnit => 'ml';
 
   @override
-  String get notificationBody => 'C\'est l\'heure de boire de l\'eau ! 💧';
+  String get notificationBody => 'C\'est l\'heure de boire de l\'eau !';
 
   @override
   String dayDetailTotal(String total, String target) {
