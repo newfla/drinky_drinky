@@ -60,10 +60,10 @@ Built with Flutter, Riverpod, and Drift.
 
 ### Platform Requirements
 
-| Platform | Requirement |
-|----------|-------------|
-| Android  | compileSdk 36, minSdk 26 (Android 8.0+; required by permission_handler and flutter_local_notifications) |
-| iOS      | iOS 16.0+ |
+| Platform | Requirement                                                                                             |
+|----------|---------------------------------------------------------------------------------------------------------|
+| Android  | compileSdk 37, minSdk 26 (Android 8.0+; required by permission_handler and flutter_local_notifications) |
+| iOS      | iOS 16.0+                                                                                               |
 
 ## License
 
