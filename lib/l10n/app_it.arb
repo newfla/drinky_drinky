@@ -1,98 +1,65 @@
 {
   "@@locale": "it",
-
   "tabHome": "Home",
   "tabHistory": "Cronologia",
   "tabSettings": "Impostazioni",
-
-  "appTitle": "Drinky Drinky",
-
+  "appTitle": "Drinky",
   "goalReached": "Obiettivo raggiunto!",
-
   "currentIntake": "{current} / {target} L",
-
   "todaysIntake": "Cronologia odierna",
-
   "noDrinksLogged": "Nessuna bevanda registrata",
   "noDrinksLoggedHint": "Tocca il pulsante + per registrare la tua prima bevanda di oggi.",
-
   "mlAdded": "+{amount} ml aggiunti",
-
   "undo": "ANNULLA",
-
   "addWaterTooltip": "Aggiungi acqua",
-
   "presetButtonLabel": "+{amount} ml",
-
   "customAmountHint": "Quantità personalizzata",
-
   "addButton": "Aggiungi",
-
   "errorLoadingDataRestart": "Qualcosa è andato storto durante il caricamento dei dati. Riavvia l'app.",
-
   "settingsTitle": "Impostazioni",
-
   "sectionDailyGoal": "OBIETTIVO GIORNALIERO",
   "sectionQuickAddPresets": "PRESET DI AGGIUNTA RAPIDA",
   "sectionNotifications": "NOTIFICHE",
   "sectionHydration": "IDRATAZIONE",
-
   "recalculateHydration": "Ricalcola la raccomandazione di idratazione",
-
   "applyFromTomorrow": "Applica da domani",
   "applyFromTomorrowSubtitle": "Le modifiche all'obiettivo entreranno in vigore domani",
   "applyFromTodaySubtitle": "Le modifiche all'obiettivo entreranno in vigore oggi",
-
   "presetTitle": "Preset {number}",
   "amountMl": "{amount} ml",
-
   "notificationsDisabledBanner": "Le notifiche sono disabilitate. Tocca per aprire le impostazioni di sistema.",
   "openButton": "Apri",
-
   "intervalMinutes": "{minutes} min",
-
   "doNotDisturb": "Non disturbare",
   "toggleOn": "Attivo",
   "toggleOff": "Non attivo",
-
   "startTime": "Ora di inizio",
   "endTime": "Ora di fine",
-
   "errorLoadingData": "Qualcosa è andato storto durante il caricamento dei dati.",
-
   "historyTitle": "Cronologia",
-
   "noHistoryYet": "Nessuna cronologia",
   "noHistoryYetHint": "Inizia a registrare l'acqua nella scheda Home per vedere la tua cronologia qui.",
-
   "dayStreak": "{count, plural, =0{Nessuna serie} =1{1 giorno consecutivo} other{{count} giorni consecutivi}}",
-
   "daySummaryWithEntries": "{date} -- {total} di {target} ml",
   "daySummaryNoEntries": "{date} -- Nessun dato",
-
   "calendarDayGoalMet": "{month} {day}: obiettivo raggiunto",
   "calendarDayGoalNotMet": "{month} {day}: obiettivo non raggiunto",
   "calendarDay": "{month} {day}",
-
   "calculatorTitle": "Calcolatore di idratazione",
-
   "sexLabel": "Sesso",
   "sexMale": "Maschio",
   "sexFemale": "Femmina",
   "sexOther": "Altro",
-
   "weightLabel": "Peso",
   "weightInputLabel": "Peso (kg)",
   "weightUnit": "kg",
   "weightValidationError": "Inserisci un peso tra 1 e 300 kg",
-
   "climateLabel": "Clima",
   "climateCold": "Freddo",
   "climateMild": "Mite",
   "climateWarm": "Caldo",
   "climateVeryWarm": "Molto caldo",
   "climateHumid": "Afoso",
-
   "yourRecommendation": "La tua raccomandazione",
   "fillAllFields": "Compila tutti i campi",
   "privacyDisclaimer": "I tuoi dati (sesso, peso, clima) non vengono salvati né trasmessi. Il calcolo avviene interamente sul tuo dispositivo.",
@@ -100,24 +67,19 @@
   "skipButton": "Salta",
   "targetUpdateError": "Errore durante l'aggiornamento dell'obiettivo. Riprova.",
   "targetUpdated": "Obiettivo aggiornato a {amount}",
-
   "permissionTitle": "Rimani idratato con i promemoria",
   "permissionBody": "Drinky Drinky ti invia gentili promemoria per bere acqua durante la giornata.",
   "enableReminders": "Abilita promemoria",
   "skipForNow": "Salta per ora",
   "remindersEnabled": "Promemoria abilitati! Puoi regolarli in qualsiasi momento nelle Impostazioni.",
   "remindersDeclined": "Nessun problema -- puoi abilitare i promemoria in seguito nelle impostazioni del dispositivo.",
-
   "editPresetTitle": "Modifica preset {number}",
   "amountInputLabel": "Quantità (ml)",
   "presetValidationError": "Inserisci un valore tra 50 e 2000",
   "cancelButton": "Annulla",
   "confirmButton": "Conferma",
-
   "mlUnit": "ml",
-
   "notificationBody": "È ora di bere acqua!",
-
   "dayDetailTotal": "{total} L / {target} L obiettivo",
   "dayDetailNoEntries": "Nessun dato per questo giorno"
 }

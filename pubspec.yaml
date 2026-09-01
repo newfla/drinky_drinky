@@ -2,7 +2,7 @@ name: drinky_drinky
 description: "A hydration tracking app that helps you meet your daily water goal."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.10.0
