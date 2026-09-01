@@ -123,7 +123,7 @@ abstract class AppLocalizations {
   /// App name shown in the Home screen AppBar
   ///
   /// In en, this message translates to:
-  /// **'Drinky Drinky'**
+  /// **'Drinky'**
   String get appTitle;
 
   /// Text shown in the circular progress indicator when the daily water goal has been met

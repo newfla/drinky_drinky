@@ -18,7 +18,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get tabSettings => 'Ajustes';
 
   @override
-  String get appTitle => 'Drinky Drinky';
+  String get appTitle => 'Drinky';
 
   @override
   String get goalReached => '¡Meta alcanzada!';
