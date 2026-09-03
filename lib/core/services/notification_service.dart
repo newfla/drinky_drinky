@@ -56,7 +56,8 @@ class NotificationService {
       );
       await _plugin
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.createNotificationChannel(channel);
     }
 
@@ -68,18 +69,18 @@ class NotificationService {
   // ---------------------------------------------------------------------------
 
   NotificationDetails get _notificationDetails => const NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channelId,
-          _channelName,
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      );
+    android: AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      importance: Importance.high,
+      priority: Priority.high,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    ),
+  );
 
   // ---------------------------------------------------------------------------
   // Permission
@@ -89,35 +90,63 @@ class NotificationService {
   ///
   /// Returns true if the user granted permission.
   /// Does NOT use [permission_handler] for the prompt (per official docs, D-10).
-  Future<bool> requestPermission() async {
+  Future<bool> requestNotificationPermission() async {
     if (Platform.isAndroid) {
       final granted = await _plugin
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.requestNotificationsPermission();
       return granted ?? false;
     } else if (Platform.isIOS) {
       final granted = await _plugin
           .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
+            IOSFlutterLocalNotificationsPlugin
+          >()
           ?.requestPermissions(alert: true, badge: true, sound: true);
       return granted ?? false;
     }
     return false;
   }
 
+  /// Request notification permission using the plugin's native per-platform API.
+  ///
+  /// Only requests the "exact alarms" permission on Android, which is required for scheduling notifications with [zonedSchedule()].
+  Future<bool> requestAlarmPermission() async {
+    if (Platform.isAndroid) {
+      final alarmGranted = await _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.requestExactAlarmsPermission();
+      return alarmGranted ?? false;
+    }
+    return true; // iOS does not require alarm permission
+  }
+
+  /// Request both notification and alarm permissions.
+  ///
+  /// Returns true if both permissions are granted.
+  Future<bool> requestPermissions() async {
+    final notificationGranted = await requestNotificationPermission();
+    final alarmGranted = await requestAlarmPermission();
+    return notificationGranted && alarmGranted;
+  }
+
   /// Check current notification permission status WITHOUT prompting.
   ///
   /// Android: uses [permission_handler] for status check.
   /// iOS: uses plugin's [checkPermissions()] to avoid prompting.
-  Future<bool> permissionGranted() async {
+  Future<bool> permissionsGranted() async {
     if (Platform.isAndroid) {
-      final status = await Permission.notification.status;
-      return status.isGranted;
+      final notificationStatus = await Permission.notification.status;
+      final alarmStatus = await Permission.scheduleExactAlarm.status;
+      return notificationStatus.isGranted && alarmStatus.isGranted;
     } else if (Platform.isIOS) {
       final opts = await _plugin
           .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
+            IOSFlutterLocalNotificationsPlugin
+          >()
           ?.checkPermissions();
       return opts?.isEnabled ?? false;
     }
@@ -165,7 +194,7 @@ class NotificationService {
   /// - Does nothing if permission is not granted.
   Future<void> scheduleWindow(UserSettingsEntity settings) async {
     if (!_initialized) return;
-    if (!(await permissionGranted())) return;
+    if (!(await permissionsGranted())) return;
     if (settings.notificationIntervalMinutes <= 0) return;
 
     await cancelAll();
@@ -245,8 +274,7 @@ class NotificationService {
   bool _isInDnd(tz.TZDateTime slot, UserSettingsEntity settings) {
     if (!settings.dndEnabled) return false;
 
-    final startMinutes =
-        settings.dndStartHour * 60 + settings.dndStartMinute;
+    final startMinutes = settings.dndStartHour * 60 + settings.dndStartMinute;
     final endMinutes = settings.dndEndHour * 60 + settings.dndEndMinute;
     final slotMinutes = slot.hour * 60 + slot.minute;
 
