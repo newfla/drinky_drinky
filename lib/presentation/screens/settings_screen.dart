@@ -33,7 +33,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _checkPermission() async {
-    final granted = await NotificationService.instance.permissionGranted();
+    final granted = await NotificationService.instance.permissionsGranted();
     if (mounted) setState(() => _permissionDenied = !granted);
   }
 
@@ -46,9 +46,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       appBar: AppBar(title: Text(context.l10n.settingsTitle)),
       body: settingsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text(context.l10n.errorLoadingData),
-        ),
+        error: (e, _) => Center(child: Text(context.l10n.errorLoadingData)),
         data: (settings) {
           final presets = presetsAsync.value ?? <DrinkPresetEntity>[];
           return _buildBody(context, settings, presets);
@@ -91,16 +89,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _sectionLabel(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.labelSmall,
-      ),
+      child: Text(text, style: Theme.of(context).textTheme.labelSmall),
     );
   }
 
   Widget _dailyGoalCard(BuildContext context, UserSettingsEntity settings) {
-    final currentTarget =
-        _dailyTargetDrag ?? settings.dailyTargetMl.toDouble();
+    final currentTarget = _dailyTargetDrag ?? settings.dailyTargetMl.toDouble();
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -123,7 +117,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
               onChangeEnd: (val) {
                 setState(() => _dailyTargetDrag = null);
-                ref.read(settingsRepositoryProvider).updateTargetWithHistory(val.toInt());
+                ref
+                    .read(settingsRepositoryProvider)
+                    .updateTargetWithHistory(val.toInt());
               },
             ),
             const Divider(),
@@ -136,9 +132,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               value: settings.applyFromTomorrow,
               onChanged: (val) {
-                ref.read(settingsRepositoryProvider).updateSettings(
-                      settings.copyWith(applyFromTomorrow: val),
-                    );
+                ref
+                    .read(settingsRepositoryProvider)
+                    .updateSettings(settings.copyWith(applyFromTomorrow: val));
               },
             ),
           ],
@@ -163,10 +159,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _notificationsCard(
-    BuildContext context,
-    UserSettingsEntity settings,
-  ) {
+  Widget _notificationsCard(BuildContext context, UserSettingsEntity settings) {
     final currentInterval =
         _intervalDrag ?? settings.notificationIntervalMinutes.toDouble();
 
@@ -185,8 +178,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   topRight: Radius.circular(12),
                 ),
               ),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
                   Icon(
@@ -197,21 +189,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Expanded(
                     child: Text(
                       context.l10n.notificationsDisabledBanner,
-                      style:
-                          Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onErrorContainer,
-                              ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                      ),
                     ),
                   ),
                   TextButton(
-                    onPressed: () => openAppSettings(),
+                    onPressed: () async {
+                      await openAppSettings();
+                      await NotificationService.instance
+                          .requestAlarmPermission();
+                      await _checkPermission();
+                    },
                     child: Text(
                       context.l10n.openButton,
                       style: TextStyle(
-                        color:
-                            Theme.of(context).colorScheme.onErrorContainer,
+                        color: Theme.of(context).colorScheme.onErrorContainer,
                       ),
                     ),
                   ),
@@ -238,7 +231,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   },
                   onChangeEnd: (val) {
                     setState(() => _intervalDrag = null);
-                    ref.read(settingsRepositoryProvider).updateSettings(
+                    ref
+                        .read(settingsRepositoryProvider)
+                        .updateSettings(
                           settings.copyWith(
                             notificationIntervalMinutes: val.toInt(),
                           ),
@@ -257,12 +252,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // DND toggle (D-12)
           SwitchListTile(
             title: Text(context.l10n.doNotDisturb),
-            subtitle: Text(settings.dndEnabled ? context.l10n.toggleOn : context.l10n.toggleOff),
+            subtitle: Text(
+              settings.dndEnabled
+                  ? context.l10n.toggleOn
+                  : context.l10n.toggleOff,
+            ),
             value: settings.dndEnabled,
             onChanged: (val) {
-              ref.read(settingsRepositoryProvider).updateSettings(
-                    settings.copyWith(dndEnabled: val),
-                  );
+              ref
+                  .read(settingsRepositoryProvider)
+                  .updateSettings(settings.copyWith(dndEnabled: val));
               // D-05: Reschedule on DND toggle.
               NotificationService.instance.scheduleWindow(
                 settings.copyWith(dndEnabled: val),
@@ -315,21 +314,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }) async {
     final initial = isStart
         ? TimeOfDay(
-            hour: settings.dndStartHour, minute: settings.dndStartMinute)
-        : TimeOfDay(
-            hour: settings.dndEndHour, minute: settings.dndEndMinute);
+            hour: settings.dndStartHour,
+            minute: settings.dndStartMinute,
+          )
+        : TimeOfDay(hour: settings.dndEndHour, minute: settings.dndEndMinute);
 
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: initial,
-    );
+    final picked = await showTimePicker(context: context, initialTime: initial);
 
     if (picked != null && mounted) {
       final updated = isStart
           ? settings.copyWith(
-              dndStartHour: picked.hour, dndStartMinute: picked.minute)
+              dndStartHour: picked.hour,
+              dndStartMinute: picked.minute,
+            )
           : settings.copyWith(
-              dndEndHour: picked.hour, dndEndMinute: picked.minute);
+              dndEndHour: picked.hour,
+              dndEndMinute: picked.minute,
+            );
       ref.read(settingsRepositoryProvider).updateSettings(updated);
       // D-05: Reschedule on DND time change.
       NotificationService.instance.scheduleWindow(updated);
@@ -343,7 +344,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           '${minute.toString().padLeft(2, '0')}';
     } else {
       final localizations = MaterialLocalizations.of(context);
-      final period = hour >= 12 ? localizations.postMeridiemAbbreviation : localizations.anteMeridiemAbbreviation;
+      final period = hour >= 12
+          ? localizations.postMeridiemAbbreviation
+          : localizations.anteMeridiemAbbreviation;
       final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
       return '$displayHour:${minute.toString().padLeft(2, '0')} $period';
     }

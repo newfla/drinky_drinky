@@ -77,7 +77,7 @@ class _PermissionScreenState extends ConsumerState<PermissionScreen> {
   Future<void> _onEnableReminders() async {
     setState(() => _isLoading = true);
 
-    final granted = await NotificationService.instance.requestPermission();
+    final granted = await NotificationService.instance.requestPermissions();
 
     if (!mounted) return;
 
