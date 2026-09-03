@@ -224,8 +224,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Slider(
                   value: currentInterval,
                   min: 5,
-                  max: 240,
-                  divisions: 47,
+                  max: 60,
+                  divisions: 11,
                   onChanged: (val) {
                     setState(() => _intervalDrag = val);
                   },
